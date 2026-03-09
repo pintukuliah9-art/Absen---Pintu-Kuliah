@@ -1,0 +1,36 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: #f1f5f9;
+  @apply text-slate-800 antialiased;
+}
+
+/* Semi-formal refinements */
+.card-formal {
+  @apply bg-white border border-slate-200/60 shadow-sm rounded-2xl;
+}
+
+.btn-primary {
+  @apply bg-slate-900 text-white hover:bg-slate-800 transition-all active:scale-95 px-6 py-2.5 rounded-xl font-semibold text-sm;
+}
+
+.btn-secondary {
+  @apply bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all active:scale-95 px-6 py-2.5 rounded-xl font-semibold text-sm;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}

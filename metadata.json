@@ -1,0 +1,9 @@
+{
+  "name": "Pintu Kuliah",
+  "description": "A comprehensive employee attendance application with geolocation, selfie verification, and AI-powered insights.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}

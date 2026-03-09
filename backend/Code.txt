@@ -1,0 +1,361 @@
+/**
+ * @fileoverview API Backend AbsensiPro (Google Apps Script)
+ * 
+ * Script ini menangani semua permintaan dari aplikasi frontend (React).
+ * Menghubungkan frontend dengan database Google Sheets.
+ */
+
+// --- KONFIGURASI ---
+const SCRIPT_PROP = PropertiesService.getScriptProperties();
+
+// --- FUNGSI UTAMA (ENTRY POINTS) ---
+
+/**
+ * Menangani request GET (Cek status server)
+ */
+function doGet(e) {
+  return ContentService.createTextOutput(JSON.stringify({
+    status: 'success',
+    message: 'AbsensiPro API Online',
+    timestamp: new Date().toISOString()
+  })).setMimeType(ContentService.MimeType.JSON);
+}
+
+/**
+ * Menangani request POST (Semua operasi data: Baca, Tulis, Hapus)
+ */
+function doPost(e) {
+  const lock = LockService.getScriptLock();
+  const success = lock.tryLock(10000); // Tunggu antrian max 10 detik
+  if (!success) {
+    return responseJSON({ status: 'error', message: "Server sedang sibuk, silakan coba lagi dalam beberapa saat." });
+  }
+
+  try {
+    if (!e.postData || !e.postData.contents) {
+      throw new Error("Data tidak diterima");
+    }
+
+    const request = JSON.parse(e.postData.contents);
+    const action = request.action;
+    const payload = request.payload;
+
+    let result = {};
+
+    switch (action) {
+      case 'getAllData':
+        result = getAllData();
+        break;
+      case 'syncAttendance':
+        result = syncAttendance(payload);
+        break;
+      case 'syncRequest':
+        result = syncRequest(payload);
+        break;
+      case 'syncUser':
+        result = syncUser(payload);
+        break;
+      case 'deleteUser':
+        result = deleteUser(payload);
+        break;
+      case 'syncSettings':
+        result = syncSettings(payload);
+        break;
+      // Tambahkan case lain jika diperlukan nanti (misal: syncDepartment, syncShift)
+      default:
+        throw new Error(`Aksi tidak dikenal: ${action}`);
+    }
+
+    return responseJSON({ status: 'success', ...result });
+
+  } catch (error) {
+    return responseJSON({ status: 'error', message: error.toString() });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+// --- FUNGSI LOGIKA ---
+
+function getAllData() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  
+  return {
+    // Tabel Utama
+    users: getTableData(ss, 'users'),
+    jobRoles: getTableData(ss, 'job_roles'),
+    shifts: getTableData(ss, 'shifts'),
+    attendance: getTableData(ss, 'attendance'),
+    requests: getTableData(ss, 'requests'),
+    settings: getSettings(ss),
+    
+    // Tabel Tambahan (Baru)
+    departments: getTableData(ss, 'departments'),
+    branches: getTableData(ss, 'branches'),
+    leaveTypes: getTableData(ss, 'leave_types'),
+    leaveBalances: getTableData(ss, 'leave_balances'),
+    holidays: getTableData(ss, 'holidays'),
+    overtimeRules: getTableData(ss, 'overtime_rules'),
+    contracts: getTableData(ss, 'contracts'),
+    assets: getTableData(ss, 'assets'),
+    announcements: getTableData(ss, 'announcements'),
+    auditLogs: getTableData(ss, 'audit_logs'),
+    notifications: getTableData(ss, 'notifications')
+  };
+}
+
+function syncAttendance(record) {
+  // Handle Base64 photo storage to Drive
+  if (record.photoUrl && record.photoUrl.startsWith('data:image')) {
+    record.photoUrl = saveToDrive(record.photoUrl, `attendance_${record.userId}_${record.id}.jpg`);
+  }
+  return upsertRecord('attendance', record, 'id');
+}
+
+function syncRequest(record) {
+  // Handle Base64 attachment storage to Drive
+  if (record.attachment_url && record.attachment_url.startsWith('data:image')) {
+    record.attachment_url = saveToDrive(record.attachment_url, `request_${record.userId}_${record.id}.jpg`);
+  }
+  return upsertRecord('requests', record, 'id');
+}
+
+function syncUser(user) {
+  // Handle Base64 avatar storage to Drive
+  if (user.avatar && user.avatar.startsWith('data:image')) {
+    user.avatar = saveToDrive(user.avatar, `avatar_${user.id}.jpg`);
+  }
+  return upsertRecord('users', user, 'id');
+}
+
+function deleteUser(payload) {
+  return deleteRecord('users', payload.id);
+}
+
+function syncSettings(payload) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  
+  // 1. Update Settings Sheet
+  let sheet = ss.getSheetByName('settings');
+  if (!sheet) {
+    sheet = ss.insertSheet('settings');
+    sheet.appendRow(['office_name', 'office_lat', 'office_lng', 'office_radius_km', 'grace_period_minutes', 'api_url']);
+  }
+  
+  const settingsValues = [
+    payload.office_name,
+    payload.office_lat,
+    payload.office_lng,
+    payload.office_radius_km,
+    payload.grace_period_minutes,
+    payload.api_url
+  ];
+  
+  if (sheet.getLastRow() < 2) {
+    sheet.appendRow(settingsValues);
+  } else {
+    sheet.getRange(2, 1, 1, settingsValues.length).setValues([settingsValues]);
+  }
+
+  // 2. Update Shifts (Replace All)
+  if (payload.shifts && Array.isArray(payload.shifts)) {
+     replaceAllData(ss, 'shifts', payload.shifts);
+  }
+
+  // 3. Update Job Roles (Replace All)
+  if (payload.jobRoles && Array.isArray(payload.jobRoles)) {
+     replaceAllData(ss, 'job_roles', payload.jobRoles);
+  }
+  
+  return { message: "Pengaturan diperbarui" };
+}
+
+/**
+ * Mengganti seluruh data di tabel (kecuali header)
+ */
+function replaceAllData(ss, tableName, data) {
+  const sheet = ss.getSheetByName(tableName);
+  if (!sheet) return;
+  
+  // Clear existing data (keep header)
+  const lastRow = sheet.getLastRow();
+  if (lastRow > 1) {
+    sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).clearContent();
+  }
+  
+  if (!data || data.length === 0) return;
+
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  
+  const rows = data.map(item => {
+    return headers.map(header => {
+      let val = item[header];
+      if (typeof val === 'object' && val !== null) return JSON.stringify(val);
+      return val === undefined ? "" : val;
+    });
+  });
+  
+  if (rows.length > 0) {
+    sheet.getRange(2, 1, rows.length, rows[0].length).setValues(rows);
+  }
+}
+
+// --- FUNGSI BANTUAN (HELPER) ---
+
+/**
+ * Membaca semua data dari sheet menjadi array object JSON.
+ */
+function getTableData(ss, tableName) {
+  const sheet = ss.getSheetByName(tableName);
+  if (!sheet) return [];
+
+  const data = sheet.getDataRange().getValues();
+  if (data.length < 2) return []; // Cuma header atau kosong
+
+  const headers = data[0];
+  const rows = data.slice(1);
+
+  return rows.map(row => {
+    let obj = {};
+    headers.forEach((header, index) => {
+      obj[header] = row[index];
+    });
+    return obj;
+  });
+}
+
+/**
+ * Membaca pengaturan (hanya 1 baris).
+ */
+function getSettings(ss) {
+  const sheet = ss.getSheetByName('settings');
+  if (!sheet || sheet.getLastRow() < 2) return {};
+  
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const values = sheet.getRange(2, 1, 1, sheet.getLastColumn()).getValues()[0];
+  
+  let settings = {};
+  headers.forEach((h, i) => settings[h] = values[i]);
+  return settings;
+}
+
+/**
+ * Insert atau Update data berdasarkan ID.
+ */
+function upsertRecord(tableName, record, keyField) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(tableName);
+  
+  if (!sheet) {
+    // Jika sheet hilang, buat baru otomatis
+    sheet = ss.insertSheet(tableName);
+    const headers = Object.keys(record);
+    sheet.appendRow(headers);
+  }
+
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const keyIndex = headers.indexOf(keyField);
+  
+  if (keyIndex === -1) throw new Error(`Kolom kunci '${keyField}' tidak ditemukan di tabel '${tableName}'`);
+
+  // Siapkan data baris sesuai urutan header
+  const rowData = headers.map(header => {
+    let val = record[header];
+    // Konversi object/array ke string JSON
+    if (typeof val === 'object' && val !== null) {
+      return JSON.stringify(val);
+    }
+    // Format tanggal ISO
+    if (val instanceof Date) {
+      return val.toISOString();
+    }
+    return val === undefined ? "" : val;
+  });
+
+  // Cek apakah data sudah ada (berdasarkan ID)
+  const data = sheet.getDataRange().getValues();
+  let rowIndex = -1;
+
+  // Mulai dari baris 2 (index 1) karena baris 1 header
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][keyIndex]) === String(record[keyField])) {
+      rowIndex = i + 1; // Index baris spreadsheet (mulai dari 1)
+      break;
+    }
+  }
+
+  if (rowIndex > 0) {
+    // Update data lama
+    sheet.getRange(rowIndex, 1, 1, rowData.length).setValues([rowData]);
+    return { message: "Diperbarui", id: record[keyField] };
+  } else {
+    // Insert data baru
+    sheet.appendRow(rowData);
+    return { message: "Ditambahkan", id: record[keyField] };
+  }
+}
+
+/**
+ * Hapus data berdasarkan ID.
+ */
+function deleteRecord(tableName, id) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(tableName);
+  if (!sheet) return { message: "Tabel tidak ditemukan" };
+
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const idIndex = headers.indexOf('id');
+  
+  if (idIndex === -1) throw new Error("Kolom ID tidak ditemukan");
+
+  const data = sheet.getDataRange().getValues();
+  
+  // Loop mundur supaya aman saat menghapus baris
+  for (let i = data.length - 1; i >= 1; i--) {
+    if (String(data[i][idIndex]) === String(id)) {
+      sheet.deleteRow(i + 1);
+      return { message: "Dihapus", id: id };
+    }
+  }
+  
+  return { message: "Data tidak ditemukan" };
+}
+
+/**
+ * Format respon ke JSON.
+ */
+function responseJSON(data) {
+  return ContentService.createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+/**
+ * Menyimpan gambar Base64 ke Google Drive dan mengembalikan URL publik.
+ */
+function saveToDrive(base64Data, fileName) {
+  try {
+    const folderName = "AbsensiPro_Photos";
+    let folder;
+    const folders = DriveApp.getFoldersByName(folderName);
+    
+    if (folders.hasNext()) {
+      folder = folders.next();
+    } else {
+      folder = DriveApp.createFolder(folderName);
+    }
+    
+    // Extract base64 content
+    const base64Content = base64Data.split(',')[1];
+    const decoded = Utilities.base64Decode(base64Content);
+    const blob = Utilities.newBlob(decoded, 'image/jpeg', fileName);
+    
+    const file = folder.createFile(blob);
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    
+    // Return direct link for display
+    return `https://drive.google.com/uc?export=view&id=${file.getId()}`;
+  } catch (e) {
+    Logger.log("Error saving to Drive: " + e.toString());
+    return base64Data; // Fallback to base64 if failed
+  }
+}
