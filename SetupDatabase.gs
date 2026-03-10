@@ -80,7 +80,7 @@ function seedSuperAdmin(ss) {
       'id': 'admin-001',
       'nama': 'Super Admin',
       'username': 'superadmin',
-      'email': 'admin@absensipro.com',
+      'email': 'admin@pintukuliah.com',
       'id_karyawan': 'ADM-001',
       'peran': 'superadmin',
       'jabatan': 'Administrator',

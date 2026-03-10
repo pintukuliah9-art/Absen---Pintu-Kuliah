@@ -1,5 +1,5 @@
 /**
- * @fileoverview API Backend AbsensiPro (Google Apps Script)
+ * @fileoverview API Backend Pintu Kuliah (Google Apps Script)
  * 
  * Script ini menangani semua permintaan dari aplikasi frontend (React).
  * Menghubungkan frontend dengan database Google Sheets.
@@ -16,7 +16,7 @@ const SCRIPT_PROP = PropertiesService.getScriptProperties();
 function doGet(e) {
   return ContentService.createTextOutput(JSON.stringify({
     status: 'success',
-    message: 'AbsensiPro API Online',
+    message: 'Pintu Kuliah API Online',
     timestamp: new Date().toISOString()
   })).setMimeType(ContentService.MimeType.JSON);
 }
@@ -334,7 +334,7 @@ function responseJSON(data) {
  */
 function saveToDrive(base64Data, fileName) {
   try {
-    const folderName = "AbsensiPro_Photos";
+    const folderName = "PintuKuliah_Photos";
     let folder;
     const folders = DriveApp.getFoldersByName(folderName);
     

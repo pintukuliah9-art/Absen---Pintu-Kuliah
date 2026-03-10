@@ -1,6 +1,6 @@
 # Backend Setup Instructions (Google Apps Script)
 
-This guide explains how to deploy the backend for AbsensiPro using Google Sheets and Google Apps Script.
+This guide explains how to deploy the backend for Pintu Kuliah using Google Sheets and Google Apps Script.
 
 ## Prerequisites
 - A Google Account.
@@ -9,11 +9,11 @@ This guide explains how to deploy the backend for AbsensiPro using Google Sheets
 ## Step 1: Create a Google Sheet
 1. Go to [Google Sheets](https://sheets.google.com).
 2. Create a new blank spreadsheet.
-3. Rename it to **"AbsensiPro Database"**.
+3. Rename it to **"Pintu Kuliah Database"**.
 
 ## Step 2: Open Apps Script Editor
 1. In the spreadsheet, click on **Extensions** > **Apps Script**.
-2. Rename the project to **"AbsensiPro Backend"**.
+2. Rename the project to **"Pintu Kuliah Backend"**.
 
 ## Step 3: Add Code Files
 1. **Code.gs**:
@@ -35,7 +35,7 @@ This guide explains how to deploy the backend for AbsensiPro using Google Sheets
 3. You will be asked to **Review Permissions**.
    - Click **Review Permissions**.
    - Select your Google Account.
-   - Click **Advanced** > **Go to AbsensiPro Backend (unsafe)**.
+   - Click **Advanced** > **Go to Pintu Kuliah Backend (unsafe)**.
    - Click **Allow**.
 4. Wait for the execution to complete.
 5. Go back to your Google Sheet. You should see new tabs (sheets) created: `users`, `attendance`, `requests`, etc.

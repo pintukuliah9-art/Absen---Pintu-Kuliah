@@ -28,7 +28,7 @@ export const MOCK_ADMIN: User = {
   avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop',
   leaveQuota: 12,
   isActive: true,
-  email: 'admin@absensipro.com',
+  email: 'admin@pintukuliah.com',
   username: 'admin',
   employeeId: 'ADM-001'
 };

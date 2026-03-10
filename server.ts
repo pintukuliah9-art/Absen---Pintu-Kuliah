@@ -31,7 +31,7 @@ async function startServer() {
   }));
   
   // Explicit OPTIONS handler for preflight
-  app.options('*', cors());
+  app.options('*path', cors());
   
   // JSON Parse Error Handler
   app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -171,7 +171,7 @@ async function startServer() {
   } else {
     // Serve static files in production
     app.use(express.static(path.join(__dirname, "dist")));
-    app.get("*", (req, res) => {
+    app.get("*path", (req, res) => {
       res.sendFile(path.join(__dirname, "dist", "index.html"));
     });
   }

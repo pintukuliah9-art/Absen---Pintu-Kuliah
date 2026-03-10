@@ -5,7 +5,7 @@ import { MOCK_USER, MOCK_ADMIN, OTHER_USERS, OFFICE_LOCATION } from '../constant
 import { api } from './api';
 import { useToast } from '../components/Toast';
 
-const STORAGE_KEY = 'absensipro_data_v14'; // Bump version to clear old data
+const STORAGE_KEY = 'pintukuliah_data_v1'; // Updated storage key for Pintu Kuliah
 
 // Default Data (Fallback)
 const DEFAULT_JOB_ROLES: JobRole[] = [
@@ -106,7 +106,7 @@ const SEED_USERS: User[] = [
         position: 'System Owner',
         leaveQuota: 99,
         isActive: true,
-        email: 'super@absensipro.com',
+        email: 'super@pintukuliah.com',
         username: 'superadmin',
         employeeId: 'SUPER-001'
     },
