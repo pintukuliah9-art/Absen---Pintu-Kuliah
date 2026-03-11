@@ -123,8 +123,9 @@ const mapUserFromDB = (u: any): User => {
     const username = getValue(u, 'username');
     const name = getValue(u, ['nama', 'name']);
     
-    // Robust ID: Use 'id' column, fallback to 'employee_id', then 'username', then a slug of the name
-    const id = String(rawId || employeeId || username || (name ? `user-${name.toLowerCase().replace(/\s+/g, '-')}` : `temp-${Math.random().toString(36).substr(2, 9)}`));
+    // Robust ID: Use 'id' column, fallback to 'employee_id', then 'username', then a slug of the name + random
+    // We add a small random suffix if we have to fallback to name to avoid deduplication collisions
+    const id = String(rawId || employeeId || username || (name ? `user-${name.toLowerCase().replace(/\s+/g, '-')}-${Math.random().toString(36).substr(2, 4)}` : `temp-${Math.random().toString(36).substr(2, 9)}`));
 
     return {
         id,
@@ -133,7 +134,7 @@ const mapUserFromDB = (u: any): User => {
         username: String(username || ''),
         employeeId: String(employeeId || ''),
         role: getValue(u, ['peran', 'role']) || 'employee',
-        position: String(getValue(u, ['jabatan', 'position']) || ''), 
+        position: String(getValue(u, ['jabatan', 'position']) || 'Staff'), 
         jobRoleId: String(getValue(u, ['id_jabatan', 'job_role_id']) || ''),
         departmentId: String(getValue(u, ['id_departemen', 'department_id']) || ''),
         phone: String(getValue(u, ['telepon', 'phone']) || ''),

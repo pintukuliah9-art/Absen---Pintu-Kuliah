@@ -212,6 +212,11 @@ export const useStoreInternal = () => {
           // 2. Fetch from API
           try {
               const apiData = await api.getAllData();
+              console.log("[Store] Data received from API:", {
+                  users: apiData.users?.length,
+                  attendance: apiData.attendanceHistory?.length,
+                  requests: apiData.requests?.length
+              });
               
               // Merge API Data
               setState(prev => {
@@ -235,9 +240,12 @@ export const useStoreInternal = () => {
 
                   // Deduplicate and re-add pending items
                   if (mergedState.users) {
-                      // Only add SEED_USERS if the list is empty or we are in a fresh state
-                      // This prevents deleted seed users from coming back
+                      // Logic: If API returns users, we use them. 
+                      // If it returns 0 users, we use SEED_USERS.
+                      // If it returns users, we still might want to keep SEED_USERS for testing 
+                      // if the user hasn't added many real users yet.
                       if (mergedState.users.length === 0) {
+                          console.log("[Store] API returned 0 users, using SEED_USERS");
                           mergedState.users = SEED_USERS;
                       } else {
                           // Ensure default superadmin is ALWAYS there for safety
@@ -245,6 +253,11 @@ export const useStoreInternal = () => {
                           if (!hasSuper) {
                               mergedState.users = deduplicate([...mergedState.users, ...SEED_USERS.filter(u => u.role === 'superadmin')]);
                           }
+                          
+                          // If the user only has a few real users, maybe they still want the mock ones?
+                          // For now, let's stick to real users + superadmin to keep it clean.
+                          // But let's log it.
+                          console.log(`[Store] API returned ${mergedState.users.length} users.`);
                       }
                   }
                   

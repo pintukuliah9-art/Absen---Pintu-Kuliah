@@ -129,7 +129,12 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                                         </div>
                                         <div>
                                             <p className="text-sm font-black text-slate-800 truncate">{user.name}</p>
-                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest truncate mt-1">{user.position}</p>
+                                            <div className="flex flex-col items-center gap-0.5 mt-1">
+                                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest truncate">{user.position}</p>
+                                                {user.employeeId && (
+                                                    <p className="text-[9px] text-slate-300 font-medium truncate">ID: {user.employeeId}</p>
+                                                )}
+                                            </div>
                                         </div>
                                     </button>
                                 ))}

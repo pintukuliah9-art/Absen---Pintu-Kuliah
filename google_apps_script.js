@@ -1,10 +1,10 @@
 /**
- * ABSENSIPRO BACKEND - VERSI 3.9.19 (TIMESTAMP ID FORMAT)
+ * PINTU KULIAH BACKEND - VERSI 4.0.0
  * 
- * Fitur Baru:
- * 1. Format ID Karyawan: user-<timestamp> (Contoh: user-1772638031544)
- * 2. repairKaryawanIds: Mengisi ID yang kosong dengan format timestamp.
- * 3. handleUpsert: Otomatis buat ID format user-<timestamp> untuk data baru di sheet Karyawan.
+ * Fitur:
+ * 1. Format ID Karyawan: user-<timestamp>
+ * 2. Penanganan Sheet Fleksibel (Indonesia/Inggris)
+ * 3. Sinkronisasi Pengaturan & Data Master
  */
 
 // --- FUNGSI GLOBAL ---
@@ -12,8 +12,8 @@
 function doGet(e) {
   return ContentService.createTextOutput(JSON.stringify({
     status: 'success', 
-    version: '3.9.19',
-    message: 'Pintu Kuliah API v3.9.19 Online'
+    version: '4.0.0',
+    message: 'Pintu Kuliah API v4.0.0 Online'
   })).setMimeType(ContentService.MimeType.JSON);
 }
 
@@ -40,7 +40,7 @@ function doPost(e) {
       default: throw new Error("Aksi tidak dikenal: " + action);
     }
 
-    var response = { status: 'success', version: '3.9.19' };
+    var response = { status: 'success', version: '4.0.0' };
     for (var key in result) { response[key] = result[key]; }
     return ContentService.createTextOutput(JSON.stringify(response)).setMimeType(ContentService.MimeType.JSON);
   } catch (error) {
@@ -55,8 +55,8 @@ function doPost(e) {
  */
 function repairKaryawanIds() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName("Karyawan");
-  if (!sheet) return "Sheet Karyawan tidak ditemukan.";
+  var sheet = ss.getSheetByName("users") || ss.getSheetByName("Karyawan");
+  if (!sheet) return "Sheet users/Karyawan tidak ditemukan.";
   
   var lastRow = sheet.getLastRow();
   if (lastRow <= 1) return "Tidak ada data untuk diperbaiki.";
@@ -88,15 +88,26 @@ function repairKaryawanIds() {
 function handleGetAllData() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var tables = [
-    {k: 'users', n: 'Karyawan'}, {k: 'attendance', n: 'Absensi'},
-    {k: 'requests', n: 'Pengajuan'}, {k: 'tasks', n: 'Tugas'},
-    {k: 'work_reports', n: 'LaporanKerja'}, {k: 'settings', n: 'Pengaturan'},
-    {k: 'offices', n: 'LokasiKantor'}, {k: 'shifts', n: 'Shift'},
-    {k: 'job_roles', n: 'Jabatan'}, {k: 'leave_types', n: 'JenisCuti'}
+    {k: 'users', n: ['users', 'Karyawan']}, 
+    {k: 'attendance', n: ['attendance', 'Absensi']},
+    {k: 'requests', n: ['requests', 'Pengajuan']}, 
+    {k: 'tasks', n: ['tasks', 'Tugas']},
+    {k: 'work_reports', n: ['work_reports', 'LaporanKerja']}, 
+    {k: 'settings', n: ['settings', 'Pengaturan']},
+    {k: 'offices', n: ['branches', 'LokasiKantor', 'offices']}, 
+    {k: 'shifts', n: ['shifts', 'Shift']},
+    {k: 'job_roles', n: ['job_roles', 'Jabatan']}, 
+    {k: 'leave_types', n: ['leave_types', 'JenisCuti']}
   ];
   var result = {};
   tables.forEach(function(t) {
-    var sheet = ss.getSheetByName(t.n);
+    var sheet = null;
+    var names = Array.isArray(t.n) ? t.n : [t.n];
+    for (var i = 0; i < names.length; i++) {
+      sheet = ss.getSheetByName(names[i]);
+      if (sheet) break;
+    }
+    
     if (!sheet || sheet.getLastRow() <= 1) { result[t.k] = []; return; }
     var data = sheet.getDataRange().getValues();
     var headers = data[0];
@@ -109,16 +120,39 @@ function handleGetAllData() {
   return result;
 }
 
+function getSheetFlexible(name) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var mapping = {
+    "Karyawan": ["users", "Karyawan"],
+    "Absensi": ["attendance", "Absensi"],
+    "Pengajuan": ["requests", "Pengajuan"],
+    "Tugas": ["tasks", "Tugas"],
+    "LaporanKerja": ["work_reports", "LaporanKerja"],
+    "Pengaturan": ["settings", "Pengaturan"],
+    "LokasiKantor": ["branches", "LokasiKantor", "offices"],
+    "Shift": ["shifts", "Shift"],
+    "Jabatan": ["job_roles", "Jabatan"],
+    "JenisCuti": ["leave_types", "JenisCuti"]
+  };
+  
+  var names = mapping[name] || [name];
+  for (var i = 0; i < names.length; i++) {
+    var sheet = ss.getSheetByName(names[i]);
+    if (sheet) return sheet;
+  }
+  return null;
+}
+
 function handleUpsert(sheetName, data) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(sheetName);
+  var sheet = getSheetFlexible(sheetName);
   if (!sheet) { setupDatabase(); sheet = ss.getSheetByName(sheetName); }
   var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
   var allData = sheet.getDataRange().getValues();
   
   // Generate ID jika kosong
   if (!data.id) {
-    if (sheetName === "Karyawan") {
+    if (sheetName === "Karyawan" || sheetName === "users") {
       data.id = "user-" + Date.now();
     } else {
       data.id = "ID-" + Math.random().toString(36).substr(2, 9).toUpperCase();
@@ -144,7 +178,8 @@ function handleUpsert(sheetName, data) {
 
 function handleDelete(sheetName, id) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(sheetName);
+  var sheet = getSheetFlexible(sheetName);
+  if (!sheet) return { status: "error", message: "Sheet not found" };
   var data = sheet.getDataRange().getValues();
   for (var i = 1; i < data.length; i++) {
     if (String(data[i][0]) === String(id)) { sheet.deleteRow(i + 1); return { message: "Deleted" }; }
@@ -154,7 +189,7 @@ function handleDelete(sheetName, id) {
 
 function handleSyncSettings(payload) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName("Pengaturan");
+  var sheet = getSheetFlexible("Pengaturan");
   if (sheet) {
     var keys = ['api_url', 'office_name', 'office_lat', 'office_lng', 'office_radius_km', 'grace_period_minutes', 'role_mode'];
     keys.forEach(function(k) {
