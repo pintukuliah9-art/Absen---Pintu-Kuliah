@@ -34,7 +34,7 @@ async function startServer() {
   }));
   
   // Explicit OPTIONS handler for preflight
-  app.options('*all', cors());
+  app.options("*all", cors());
   
   // JSON Parse Error Handler
   app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -167,7 +167,7 @@ async function startServer() {
   });
 
   // Fallback for any other /api/* routes to prevent SPA fallback from returning HTML
-  app.all("/api/*", (req, res) => {
+  app.all("/api/*all", (req, res) => {
     console.warn(`[Server] Unhandled API route: ${req.method} ${req.url}`);
     res.status(404).json({ status: 'error', message: `API route not found: ${req.url}` });
   });

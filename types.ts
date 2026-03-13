@@ -191,6 +191,7 @@ export interface Task {
   title: string;
   description?: string;
   category: TaskCategory;
+  priority?: 'Low' | 'Medium' | 'High';
   assignedUserIds: string[]; // Specific users
   assignedRoleIds: string[]; // Specific job roles
   assignedDepartmentIds: string[]; // Specific departments
