@@ -17,6 +17,24 @@ import AdminWorkMonitor from './components/AdminWorkMonitor';
 import WorkReports from './components/WorkReports';
 import { useStore } from './services/store';
 import { RequestStatus } from './types';
+import { RefreshCw } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+
+const SyncIndicator: React.FC<{ isSyncing: boolean }> = ({ isSyncing }) => (
+  <AnimatePresence>
+    {isSyncing && (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 20 }}
+        className="fixed bottom-20 right-6 z-50 flex items-center gap-2 bg-white/90 backdrop-blur-sm border border-emerald-100 px-3 py-1.5 rounded-full shadow-lg text-emerald-600 text-xs font-medium"
+      >
+        <RefreshCw className="w-3 h-3 animate-spin" />
+        <span>Sinkronisasi...</span>
+      </motion.div>
+    )}
+  </AnimatePresence>
+);
 
 const AppContent: React.FC = () => {
   const { 
@@ -142,6 +160,7 @@ const AppContent: React.FC = () => {
                     settings={appSettings} 
                     onUpdateLocationLog={addLocationLog}
                     onNavigateToReports={() => setActiveTab('work-reports')}
+                    onNavigateToHistory={() => setActiveTab('history')}
                 />;
             case 'attendance':
                 return (
@@ -175,8 +194,24 @@ const AppContent: React.FC = () => {
                     onReset={resetData} 
                     onLogout={logout}
                 />;
+            case 'company-profile':
+                return <Settings 
+                    user={currentUser} 
+                    appSettings={appSettings} 
+                    onUpdateSettings={updateAppSettings} 
+                    onReset={resetData} 
+                    onLogout={logout}
+                    initialTab="company"
+                />;
             default:
-                return <Dashboard user={currentUser} history={myHistory} settings={appSettings} onUpdateLocationLog={addLocationLog} />;
+                return <Dashboard 
+                    user={currentUser} 
+                    history={myHistory} 
+                    settings={appSettings} 
+                    onUpdateLocationLog={addLocationLog} 
+                    onNavigateToReports={() => setActiveTab('work-reports')}
+                    onNavigateToHistory={() => setActiveTab('history')}
+                />;
         }
     }
 
@@ -244,6 +279,7 @@ const AppContent: React.FC = () => {
         }}
     >
       {renderContent()}
+      <SyncIndicator isSyncing={state.isSyncing} />
     </Layout>
   );
 };

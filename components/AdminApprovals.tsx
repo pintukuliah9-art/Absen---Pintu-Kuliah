@@ -89,225 +89,281 @@ const AdminApprovals: React.FC<AdminApprovalsProps> = ({ requests, users, onUpda
   };
 
   return (
-    <div className="space-y-8 fade-in relative pb-10 pt-14 md:pt-0">
+    <div className="space-y-8 fade-in relative pb-20 pt-16 md:pt-0">
         {/* Header & Bulk Actions */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div className="w-full">
-                <h2 className="text-2xl font-black text-gray-800 flex items-center gap-2 tracking-tighter">
-                    Menunggu Persetujuan
-                    <span className="bg-blue-600 text-white text-xs px-2.5 py-1 rounded-full font-black">{pendingRequests.length}</span>
+                <h2 className="text-2xl md:text-3xl font-black text-gray-900 flex items-center gap-3 tracking-tighter">
+                    Persetujuan
+                    <span className="bg-blue-600 text-white text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-widest">{pendingRequests.length}</span>
                 </h2>
-                <p className="text-gray-500 text-xs font-medium mt-1">Kelola izin, cuti, dan lembur karyawan.</p>
+                <p className="text-gray-500 text-xs md:text-sm font-medium mt-1">Kelola izin, cuti, dan lembur tim Anda secara efisien.</p>
             </div>
             {selectedIds.length > 0 && (
-                <div className="flex items-center justify-between w-full md:w-auto gap-3 bg-blue-50 px-4 py-3 rounded-2xl border border-blue-100 animate-in fade-in slide-in-from-bottom-2 shadow-sm">
-                    <span className="text-blue-800 text-xs font-black uppercase tracking-widest whitespace-nowrap">{selectedIds.length} dipilih</span>
+                <div className="flex items-center justify-between w-full sm:w-auto gap-4 bg-blue-600 px-5 py-3 rounded-2xl animate-in fade-in slide-in-from-bottom-4 shadow-xl shadow-blue-200">
+                    <span className="text-white text-[10px] font-black uppercase tracking-widest whitespace-nowrap">{selectedIds.length} Dipilih</span>
                     <div className="flex gap-2">
                         <button 
                             onClick={handleBulkReject}
-                            className="bg-white border border-red-200 text-red-600 text-[10px] px-4 py-2 rounded-xl font-black uppercase tracking-widest transition-all active:scale-95 shadow-sm"
+                            className="bg-white/10 hover:bg-white/20 text-white text-[10px] px-4 py-2 rounded-xl font-black uppercase tracking-widest transition-all active:scale-95 border border-white/20"
                         >
                             Tolak
                         </button>
                         <button 
                             onClick={handleBulkApprove}
-                            className="bg-blue-600 hover:bg-blue-700 text-white text-[10px] px-4 py-2 rounded-xl font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-blue-200"
+                            className="bg-white text-blue-600 text-[10px] px-4 py-2 rounded-xl font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg"
                         >
                             Setujui
                         </button>
                     </div>
                 </div>
             )}
-        </div>
+        </header>
 
         {/* Search Bar */}
-        <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex items-center gap-3">
-            <Search size={18} className="text-gray-400" />
-            <input 
-                type="text" 
-                placeholder="Cari nama karyawan atau jenis pengajuan..." 
-                className="flex-1 bg-transparent outline-none text-sm font-medium"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-            />
+        <div className="bg-white p-4 md:p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-4 sticky top-14 md:top-0 z-20">
+            <div className="flex-1 flex items-center gap-4 bg-gray-50 px-4 py-3 rounded-2xl border border-gray-100 focus-within:border-blue-400 focus-within:ring-4 focus-within:ring-blue-50 transition-all">
+                <Search size={20} className="text-gray-400" />
+                <input 
+                    type="text" 
+                    placeholder="Cari nama karyawan atau jenis pengajuan..." 
+                    className="flex-1 bg-transparent outline-none text-sm font-bold text-gray-800 placeholder:text-gray-400"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
+            </div>
         </div>
         
         {/* Pending List */}
         {filteredPending.length === 0 ? (
-            <div className="p-12 text-center bg-white rounded-xl border border-dashed border-gray-300">
-                <p className="text-gray-500">Tidak ada pengajuan yang sesuai pencarian.</p>
+            <div className="py-20 text-center bg-white rounded-[40px] border border-dashed border-gray-200">
+                <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <CheckSquare size={32} className="text-gray-300" />
+                </div>
+                <h3 className="text-lg font-black text-gray-900">Semua Beres!</h3>
+                <p className="text-gray-400 text-sm font-medium mt-1">Tidak ada pengajuan yang perlu diproses saat ini.</p>
             </div>
         ) : (
-            <div className="space-y-4">
-                <div className="flex items-center gap-2 mb-2 px-2">
-                     <button onClick={toggleSelectAll} className="text-gray-500 hover:text-blue-600 transition-colors">
-                        {selectedIds.length === pendingRequests.length && pendingRequests.length > 0 ? <CheckSquare size={20} className="text-blue-600" /> : <Square size={20} />}
+            <div className="space-y-6">
+                <div className="flex items-center gap-3 px-2">
+                     <button 
+                        onClick={toggleSelectAll} 
+                        className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${selectedIds.length === pendingRequests.length && pendingRequests.length > 0 ? 'bg-blue-600 border-blue-600 text-white' : 'border-gray-200 hover:border-blue-400'}`}
+                     >
+                        {selectedIds.length === pendingRequests.length && pendingRequests.length > 0 ? <Check size={14} strokeWidth={4} /> : null}
                      </button>
-                     <span className="text-xs text-gray-500 font-medium uppercase tracking-wide">Pilih Semua</span>
+                     <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Pilih Semua Pengajuan</span>
                 </div>
 
-                {filteredPending.map((req, index) => {
-                    const user = getUserById(req.userId, users);
-                    const conflictCount = getConflictCount(req);
-                    const isSelected = selectedIds.includes(req.id);
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {filteredPending.map((req, index) => {
+                        const user = getUserById(req.userId, users);
+                        const conflictCount = getConflictCount(req);
+                        const isSelected = selectedIds.includes(req.id);
 
-                    return (
-                        <div key={`${req.id}-${index}`} className={`bg-white p-6 rounded-xl border transition-all ${isSelected ? 'border-blue-400 shadow-md bg-blue-50/30' : 'border-gray-100 shadow-sm'}`}>
-                            <div className="flex gap-4">
-                                <div className="mt-1">
-                                    <button onClick={() => toggleSelect(req.id)} className="text-gray-400 hover:text-blue-600">
-                                        {isSelected ? <CheckSquare size={20} className="text-blue-600" /> : <Square size={20} />}
-                                    </button>
-                                </div>
-                                <div className="flex-shrink-0">
-                                    <img 
-                                        src={user?.avatar} 
-                                        alt="" 
-                                        className="w-12 h-12 rounded-full border border-gray-200 object-cover" 
-                                        onError={(e) => {
-                                            (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=random`;
-                                        }}
-                                    />
-                                </div>
-                                <div className="flex-1">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <div>
-                                            <h4 className="font-bold text-gray-900 text-lg">{user?.name}</h4>
-                                            <div className="flex gap-2 mt-1">
-                                                <span className="inline-block px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-700">
-                                                    {req.type}
-                                                </span>
-                                                {req.type === RequestType.LEAVE && (
-                                                    <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
-                                                        Sisa Kuota: {user?.leaveQuota || 0} Hari
-                                                    </span>
-                                                )}
-                                                <span className="text-xs text-gray-500 flex items-center gap-1">
-                                                    <Calendar size={12} /> {req.startDate} - {req.endDate}
-                                                </span>
+                        return (
+                            <div key={`${req.id}-${index}`} className={`bg-white p-6 rounded-[40px] border transition-all relative group ${isSelected ? 'border-blue-400 shadow-2xl shadow-blue-100 ring-4 ring-blue-50' : 'border-gray-100 shadow-sm hover:shadow-xl hover:shadow-gray-100'}`}>
+                                <div className="flex gap-5">
+                                    <div className="flex flex-col items-center gap-4">
+                                        <button 
+                                            onClick={() => toggleSelect(req.id)} 
+                                            className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${isSelected ? 'bg-blue-600 border-blue-600 text-white' : 'border-gray-200 hover:border-blue-400'}`}
+                                        >
+                                            {isSelected ? <Check size={14} strokeWidth={4} /> : null}
+                                        </button>
+                                        <div className="relative">
+                                            <img 
+                                                src={user?.avatar} 
+                                                alt="" 
+                                                className="w-16 h-16 rounded-3xl border-2 border-white shadow-md object-cover" 
+                                                onError={(e) => {
+                                                    (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=random`;
+                                                }}
+                                            />
+                                            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-xl flex items-center justify-center shadow-sm border border-gray-100">
+                                                <div className={`w-3 h-3 rounded-full ${user?.isActive ? 'bg-emerald-500' : 'bg-gray-300'}`} />
                                             </div>
                                         </div>
                                     </div>
-
-                                    <div className="bg-gray-50 p-3 rounded-lg text-gray-700 text-sm italic mb-3 border border-gray-100">
-                                        "{req.aiEnhancedReason || req.reason}"
-                                    </div>
-                                    
-                                    {/* Attachment Link */}
-                                    {req.attachmentUrl && (
-                                        <a href={req.attachmentUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-600 font-bold mb-3 block hover:underline flex items-center gap-1">
-                                            <FileText size={14} /> Lihat Lampiran Bukti
-                                        </a>
-                                    )}
-                                    
-                                    {/* Conflict Warning */}
-                                    {conflictCount > 0 && (
-                                        <div className="flex items-center gap-2 text-xs text-orange-600 bg-orange-50 px-3 py-2 rounded-lg mb-3 border border-orange-100">
-                                            <AlertTriangle size={14} />
-                                            <span className="font-semibold">Peringatan:</span>
-                                            {conflictCount} karyawan lain juga cuti pada tanggal ini.
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex justify-between items-start mb-4">
+                                            <div>
+                                                <h4 className="font-black text-gray-900 text-xl tracking-tight leading-none mb-2">{user?.name}</h4>
+                                                <div className="flex flex-wrap gap-2">
+                                                    <span className="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-100">
+                                                        {req.type}
+                                                    </span>
+                                                    {req.type === RequestType.LEAVE && (
+                                                        <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-100 uppercase tracking-widest">
+                                                            Sisa: {user?.leaveQuota || 0} Hari
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
                                         </div>
-                                    )}
 
-                                    <div className="flex flex-col items-end gap-2">
-                                        {req.syncStatus === 'pending' && (
-                                            <span className="flex items-center gap-1 text-[9px] font-bold text-orange-500 bg-orange-50 px-2 py-0.5 rounded-full border border-orange-100 animate-pulse">
-                                                <RefreshCw size={8} className="animate-spin" /> PENDING SYNC
-                                            </span>
+                                        <div className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">
+                                            <Calendar size={14} className="text-blue-500" />
+                                            <span>{req.startDate}</span>
+                                            <span className="text-gray-200">/</span>
+                                            <span>{req.endDate}</span>
+                                        </div>
+
+                                        <div className="bg-gray-50 p-4 rounded-2xl text-gray-700 text-sm font-bold mb-4 border border-gray-100 leading-relaxed relative">
+                                            <div className="absolute -top-2 left-4 px-2 bg-white text-[8px] font-black text-gray-400 uppercase tracking-widest border border-gray-100 rounded-lg">Alasan</div>
+                                            "{req.aiEnhancedReason || req.reason}"
+                                        </div>
+                                        
+                                        {/* Attachment Link */}
+                                        {req.attachmentUrl && (
+                                            <a href={req.attachmentUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-blue-600 bg-blue-50 px-4 py-2 rounded-xl mb-4 hover:bg-blue-100 transition-all border border-blue-100">
+                                                <FileText size={14} /> Lihat Lampiran
+                                            </a>
                                         )}
-                                        <div className="flex gap-3">
-                                            <button 
-                                                onClick={() => {
-                                                    onUpdateStatus(req.id, RequestStatus.APPROVED);
-                                                    showToast("Pengajuan disetujui", "success");
-                                                }}
-                                                className="bg-green-600 hover:bg-green-700 text-white py-1.5 px-4 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors"
-                                            >
-                                                <Check size={14} /> Setujui
-                                            </button>
-                                            <button 
-                                                onClick={() => openRejectModal(req.id)}
-                                                className="bg-white border border-red-200 text-red-600 hover:bg-red-50 py-1.5 px-4 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors"
-                                            >
-                                                <X size={14} /> Tolak
-                                            </button>
+                                        
+                                        {/* Conflict Warning */}
+                                        {conflictCount > 0 && (
+                                            <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-orange-600 bg-orange-50 px-4 py-3 rounded-2xl mb-4 border border-orange-100">
+                                                <AlertTriangle size={16} className="shrink-0" />
+                                                <span>Peringatan: {conflictCount} orang lain juga cuti di tanggal ini.</span>
+                                            </div>
+                                        )}
+
+                                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-gray-50">
+                                            <div className="flex items-center gap-2">
+                                                {req.syncStatus === 'pending' && (
+                                                    <span className="flex items-center gap-1.5 text-[9px] font-black text-orange-500 bg-orange-50 px-3 py-1 rounded-full border border-orange-100 animate-pulse uppercase tracking-widest">
+                                                        <RefreshCw size={10} className="animate-spin" /> Pending Sync
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="flex gap-2 w-full sm:w-auto">
+                                                <button 
+                                                    onClick={() => openRejectModal(req.id)}
+                                                    className="flex-1 sm:flex-none bg-white border border-gray-200 text-gray-500 hover:text-red-600 hover:bg-red-50 hover:border-red-100 py-3 px-6 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95"
+                                                >
+                                                    Tolak
+                                                </button>
+                                                <button 
+                                                    onClick={() => {
+                                                        onUpdateStatus(req.id, RequestStatus.APPROVED);
+                                                        showToast("Pengajuan disetujui", "success");
+                                                    }}
+                                                    className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-blue-200"
+                                                >
+                                                    Setujui
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    );
-                })}
+                        );
+                    })}
+                </div>
             </div>
         )}
 
+
         {/* Rejection Modal */}
         {rejectModalOpen && (
-            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                <div className="bg-white rounded-2xl w-full max-w-md p-6 animate-in zoom-in-95 duration-200">
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-bold text-gray-800">Tolak Pengajuan</h3>
-                        <button onClick={() => setRejectModalOpen(false)}><XCircle className="text-gray-400 hover:text-gray-600"/></button>
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-hidden">
+                <div 
+                    onClick={() => setRejectModalOpen(false)}
+                    className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                />
+                <div className="bg-white rounded-[40px] w-full max-w-md p-8 relative z-10 shadow-2xl animate-in zoom-in-95 duration-200">
+                    <div className="flex justify-between items-center mb-6">
+                        <div>
+                            <h3 className="text-2xl font-black text-gray-900 tracking-tighter">Tolak Pengajuan</h3>
+                            <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-1">Berikan alasan yang jelas</p>
+                        </div>
+                        <button onClick={() => setRejectModalOpen(false)} className="w-10 h-10 flex items-center justify-center bg-gray-50 rounded-xl text-gray-400 hover:text-gray-900 transition-all">
+                            <XCircle size={20}/>
+                        </button>
                     </div>
-                    <p className="text-sm text-gray-500 mb-4">Silahkan masukkan alasan penolakan agar karyawan dapat memahami keputusan ini.</p>
+                    <p className="text-xs text-gray-500 font-bold mb-6 leading-relaxed">Silahkan masukkan alasan penolakan agar karyawan dapat memahami keputusan ini dan melakukan perbaikan jika diperlukan.</p>
                     <textarea 
-                        className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none mb-4"
-                        rows={3}
-                        placeholder="Contoh: Kuota cuti tim sudah penuh..."
+                        className="w-full bg-gray-50 border border-gray-100 rounded-2xl p-5 text-sm font-bold focus:ring-4 focus:ring-red-500/10 outline-none mb-6 min-h-[120px] resize-none transition-all"
+                        placeholder="Contoh: Kuota cuti tim sudah penuh untuk periode ini..."
                         value={rejectReason}
                         onChange={(e) => setRejectReason(e.target.value)}
                     ></textarea>
-                    <div className="flex gap-3">
-                         <button onClick={() => setRejectModalOpen(false)} className="flex-1 py-2 text-gray-600 font-medium hover:bg-gray-100 rounded-lg">Batal</button>
-                         <button onClick={confirmReject} disabled={!rejectReason} className="flex-1 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 disabled:opacity-50">Tolak Pengajuan</button>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                         <button onClick={() => setRejectModalOpen(false)} className="w-full sm:flex-1 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500 hover:bg-gray-100 rounded-2xl transition-all">Batal</button>
+                         <button 
+                            onClick={confirmReject} 
+                            disabled={!rejectReason} 
+                            className="w-full sm:flex-1 py-4 bg-red-600 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl hover:bg-red-700 disabled:opacity-50 shadow-xl shadow-red-200 transition-all active:scale-95"
+                        >
+                            Konfirmasi Tolak
+                        </button>
                     </div>
                 </div>
             </div>
         )}
 
         {/* History List */}
-        <div className="pt-8 border-t border-gray-200">
-            <h2 className="text-xl font-bold text-gray-700 mb-4">Riwayat Persetujuan</h2>
-            <div className="space-y-3 opacity-80">
-                 {historyRequests.length === 0 && <p className="text-gray-400 text-sm">Belum ada riwayat.</p>}
+        <div className="pt-12 border-t border-gray-100">
+            <div className="flex items-center justify-between mb-8">
+                <div>
+                    <h2 className="text-xl md:text-2xl font-black text-gray-900 tracking-tighter">Riwayat Persetujuan</h2>
+                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-1">Daftar pengajuan yang telah diproses</p>
+                </div>
+                <div className="bg-gray-50 px-4 py-2 rounded-xl border border-gray-100">
+                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total: {historyRequests.length}</span>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                 {historyRequests.length === 0 && (
+                    <div className="col-span-full py-12 text-center bg-gray-50 rounded-[32px] border border-dashed border-gray-200">
+                        <p className="text-gray-400 text-xs font-black uppercase tracking-widest">Belum ada riwayat pengajuan</p>
+                    </div>
+                 )}
                  {historyRequests.map((req, index) => {
                      const user = getUserById(req.userId, users);
+                     const isApproved = req.status === RequestStatus.APPROVED;
                      return (
-                        <div key={`${req.id}-${index}`} className="bg-white p-4 rounded-lg border border-gray-100 flex justify-between items-center">
-                            <div className="flex items-center gap-3">
-                                <img 
-                                    src={user?.avatar} 
-                                    alt="" 
-                                    className="w-8 h-8 rounded-full grayscale object-cover" 
-                                    onError={(e) => {
-                                        (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=random`;
-                                    }}
-                                />
+                        <div key={`${req.id}-${index}`} className="bg-white p-5 rounded-[32px] border border-gray-100 flex justify-between items-center shadow-sm hover:shadow-md transition-all group">
+                            <div className="flex items-center gap-4">
+                                <div className="relative">
+                                    <img 
+                                        src={user?.avatar} 
+                                        alt="" 
+                                        className="w-10 h-10 rounded-2xl grayscale group-hover:grayscale-0 transition-all object-cover border border-gray-100" 
+                                        onError={(e) => {
+                                            (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=random`;
+                                        }}
+                                    />
+                                    <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-lg border-2 border-white ${isApproved ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                                </div>
                                 <div>
-                                    <p className="text-sm font-bold text-gray-700">{user?.name}</p>
-                                    <p className="text-xs text-gray-500">{req.type} • {req.startDate}</p>
+                                    <p className="text-sm font-black text-gray-900 leading-none mb-1">{user?.name}</p>
+                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">
+                                        {req.type} <span className="mx-1 text-gray-200">•</span> {req.startDate}
+                                    </p>
                                 </div>
                             </div>
-                                    <div className="flex flex-col items-end gap-2">
-                                        <div className="flex items-center gap-2">
-                                            {req.syncStatus === 'pending' && (
-                                                <span className="flex items-center gap-1 text-[9px] font-bold text-orange-500 bg-orange-50 px-2 py-0.5 rounded-full border border-orange-100 animate-pulse">
-                                                    <RefreshCw size={8} className="animate-spin" /> SYNCING...
-                                                </span>
-                                            )}
-                                            <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${
-                                                req.status === RequestStatus.APPROVED ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                                            }`}>
-                                                {req.status}
-                                            </span>
-                                        </div>
-                                    </div>
+                            <div className="flex flex-col items-end gap-2">
+                                <div className="flex items-center gap-2">
+                                    {req.syncStatus === 'pending' && (
+                                        <RefreshCw size={12} className="text-orange-400 animate-spin" />
+                                    )}
+                                    <span className={`px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest ${
+                                        isApproved ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-red-50 text-red-600 border border-red-100'
+                                    }`}>
+                                        {req.status}
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                      )
                  })}
             </div>
         </div>
     </div>
+
   );
 };
 

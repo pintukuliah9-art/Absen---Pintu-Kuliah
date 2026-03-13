@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Home, Calendar, ClipboardList, Settings, LogOut, User as UserIcon, Users, FileCheck, Briefcase, RefreshCw, AlertCircle, Eye, Menu, X, ChevronLeft, ChevronRight, CheckSquare, List, Activity } from 'lucide-react';
+import { Home, Calendar, ClipboardList, Settings, LogOut, User as UserIcon, Users, FileCheck, Briefcase, RefreshCw, AlertCircle, Eye, Menu, X, ChevronLeft, ChevronRight, CheckSquare, List, Activity, Shield } from 'lucide-react';
 import { User } from '../types';
 import { useStore } from '../services/store';
 import { motion, AnimatePresence } from 'motion/react';
@@ -20,14 +20,26 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, user
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSidebarMinimized, setIsSidebarMinimized] = useState(false);
 
-  // Auto-minimize sidebar when entering settings (sub-menu heavy page)
+  // Auto-minimize sidebar when entering settings or on tablet-sized screens
   useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth;
+      // If tablet size (between 768 and 1024), auto-minimize
+      if (width >= 768 && width < 1024) {
+        setIsSidebarMinimized(true);
+      } else if (width >= 1024 && activeTab !== 'settings') {
+        setIsSidebarMinimized(false);
+      }
+    };
+
+    handleResize(); // Run on mount
+    window.addEventListener('resize', handleResize);
+    
     if (activeTab === 'settings') {
       setIsSidebarMinimized(true);
-    } else {
-      // Optional: restore if you want it to be expanded by default on other pages
-      // setIsSidebarMinimized(false);
     }
+
+    return () => window.removeEventListener('resize', handleResize);
   }, [activeTab]);
   
   if (!user) return <>{children}</>;
@@ -104,53 +116,71 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, user
         </div>
       )}
 
-      {/* Sidebar (Desktop) */}
-      <aside className={`hidden md:flex flex-col transition-all duration-300 ease-in-out bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 h-screen sticky top-0 print:hidden ${isSidebarMinimized ? 'w-20' : 'w-64'}`}>
+      {/* Sidebar (Desktop & Tablet Rail) */}
+      <aside className={`hidden md:flex flex-col transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1) bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 h-screen sticky top-0 print:hidden ${isSidebarMinimized ? 'w-20' : 'w-72'}`}>
         <div className={`p-6 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between ${isSidebarMinimized ? 'px-4' : ''}`}>
           {!isSidebarMinimized && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <h1 className="text-2xl font-bold text-blue-600 dark:text-blue-400 tracking-tight">Pintu Kuliah</h1>
-              <div className="flex items-center gap-1 mt-1">
-                 <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-                   user.role === 'superadmin' ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' :
-                   user.role === 'admin' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300' : 
-                   'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
-                 }`}>
-                    {user.role === 'superadmin' ? 'Super Admin' : user.role === 'admin' ? 'Admin' : 'Employee'}
-                 </span>
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }} 
+              animate={{ opacity: 1, x: 0 }}
+              className="flex items-center gap-3"
+            >
+              <div className="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-blue-200">P</div>
+              <div>
+                <h1 className="text-xl font-black text-slate-900 dark:text-white tracking-tighter leading-none">Pintu Kuliah</h1>
+                <div className="flex items-center gap-1 mt-1">
+                   <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                     user.role === 'superadmin' ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' :
+                     user.role === 'admin' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300' : 
+                     'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
+                   }`}>
+                      {user.role === 'superadmin' ? 'Super Admin' : user.role === 'admin' ? 'Admin' : 'Employee'}
+                   </span>
+                </div>
               </div>
             </motion.div>
           )}
           {isSidebarMinimized && (
             <div className="w-full flex justify-center">
-              <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-black text-xl">A</div>
+              <motion.div 
+                whileHover={{ scale: 1.1, rotate: 5 }}
+                className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-blue-200"
+              >
+                P
+              </motion.div>
             </div>
           )}
         </div>
         
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto overflow-x-hidden">
+        <nav className="flex-1 p-4 space-y-2 overflow-y-auto overflow-x-hidden custom-scrollbar">
           {navItems.map((item) => (
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
               title={isSidebarMinimized ? item.label : ''}
-              className={`w-full flex items-center transition-all duration-200 group ${
-                isSidebarMinimized ? 'justify-center px-2 py-3' : 'gap-3 px-4 py-3'
-              } rounded-xl ${
+              className={`w-full flex items-center transition-all duration-300 group relative ${
+                isSidebarMinimized ? 'justify-center px-2 py-4' : 'gap-4 px-5 py-3.5'
+              } rounded-[20px] ${
                 activeTab === item.id
-                  ? 'bg-blue-50 text-blue-600 shadow-sm font-medium dark:bg-blue-900/30 dark:text-blue-400'
-                  : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200'
+                  ? 'bg-blue-600 text-white shadow-xl shadow-blue-100 font-bold'
+                  : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200'
               }`}
             >
-              <item.icon size={20} className={isSidebarMinimized ? 'flex-shrink-0' : ''} />
+              <item.icon size={22} className={`${isSidebarMinimized ? 'flex-shrink-0' : ''} ${activeTab === item.id ? 'scale-110' : 'group-hover:scale-110 transition-transform'}`} />
               {!isSidebarMinimized && (
                 <motion.span 
                   initial={{ opacity: 0, x: -10 }} 
                   animate={{ opacity: 1, x: 0 }}
-                  className="truncate"
+                  className="truncate text-[15px] tracking-tight"
                 >
                   {item.label}
                 </motion.span>
+              )}
+              {activeTab === item.id && isSidebarMinimized && (
+                <motion.div 
+                  layoutId="active-indicator"
+                  className="absolute left-0 w-1.5 h-8 bg-white rounded-r-full"
+                />
               )}
             </button>
           ))}
@@ -191,7 +221,11 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, user
             <img 
               src={user.avatar} 
               alt="User" 
+              referrerPolicy="no-referrer"
               className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-600 object-cover flex-shrink-0" 
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random`;
+              }}
             />
             {!isSidebarMinimized && (
               <motion.div 
@@ -206,6 +240,21 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, user
               </motion.div>
             )}
           </div>
+          {isAdmin && (
+            <button
+              onClick={() => setActiveTab('company-profile')}
+              className={`w-full flex items-center transition-all duration-300 rounded-2xl mb-3 ${
+                isSidebarMinimized ? 'justify-center p-2' : 'gap-3 px-4 py-3'
+              } bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 border border-blue-100 dark:border-blue-800/50 shadow-sm active:scale-95 group`}
+            >
+              <Shield size={18} className="group-hover:rotate-12 transition-transform" />
+              {!isSidebarMinimized && (
+                <span className="text-xs font-black uppercase tracking-widest truncate">
+                  {user.role === 'superadmin' ? 'Super Admin' : 'Admin Panel'}
+                </span>
+              )}
+            </button>
+          )}
           <button
             onClick={onLogout}
             title={isSidebarMinimized ? 'Keluar' : ''}
@@ -220,7 +269,8 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, user
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto h-screen pb-24 md:pb-0 relative print:h-auto print:overflow-visible">
+      <main className="flex-1 overflow-y-auto h-screen pb-32 md:pb-0 relative print:h-auto print:overflow-visible bg-slate-50/50 dark:bg-gray-900">
+        <div className="md:hidden h-14" /> {/* Spacer for Mobile Header */}
         {state.syncError && (
           <div className="sticky top-0 z-50 bg-red-600 text-white p-4 shadow-lg flex items-start gap-4 animate-in slide-in-from-top duration-300">
             <div className="bg-white/20 p-2 rounded-xl">
@@ -258,15 +308,18 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, user
       </main>
 
       {/* Mobile Nav Header */}
-      <header className="md:hidden fixed top-0 left-0 right-0 h-14 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between px-4 z-[60] shadow-sm print:hidden">
-          <h1 className="text-xl font-black text-blue-600 tracking-tighter">Pintu Kuliah</h1>
+      <header className="md:hidden fixed top-0 left-0 right-0 h-14 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-b border-gray-100 dark:border-gray-700 flex items-center justify-between px-5 z-[60] shadow-sm print:hidden">
+          <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center text-white font-black text-xs shadow-md shadow-blue-200">P</div>
+              <h1 className="text-lg font-black text-slate-900 dark:text-white tracking-tighter">Pintu Kuliah</h1>
+          </div>
           <div className="flex items-center gap-3">
-              {state.isLoading && <RefreshCw size={16} className="animate-spin text-blue-500" />}
+              {state.isLoading && <RefreshCw size={14} className="animate-spin text-blue-500" />}
               <button 
                 onClick={() => setIsMobileMenuOpen(true)}
-                className="p-2 bg-gray-50 dark:bg-gray-700 rounded-xl text-gray-600 dark:text-gray-300"
+                className="p-2 bg-slate-50 dark:bg-gray-700 rounded-xl text-slate-600 dark:text-gray-300 shadow-sm active:scale-90 transition-transform"
               >
-                  <Menu size={20} />
+                  <Menu size={18} />
               </button>
           </div>
       </header>
@@ -323,8 +376,12 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, user
                   <div className="flex items-center gap-4 mb-6">
                       <img 
                         src={user.avatar} 
+                        referrerPolicy="no-referrer"
                         className="w-12 h-12 rounded-full border-2 border-white shadow-md object-cover" 
                         alt=""
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random`;
+                        }}
                       />
                       <div className="min-w-0">
                           <p className="font-bold text-gray-800 dark:text-white truncate">{user.name}</p>
@@ -343,26 +400,63 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, user
         )}
       </AnimatePresence>
 
-      {/* Bottom Nav (Mobile) - Quick Access */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-t border-gray-100 dark:border-gray-700 px-4 py-2 flex justify-around items-center z-50 safe-area-bottom print:hidden">
+      {/* Floating Action Button (Mobile) - Quick Attendance */}
+      {!isAdmin && activeTab !== 'attendance' && (
+        <motion.button
+          initial={{ scale: 0, rotate: -45 }}
+          animate={{ scale: 1, rotate: 0 }}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={() => setActiveTab('attendance')}
+          className="md:hidden fixed bottom-24 right-5 w-14 h-14 bg-blue-600 text-white rounded-2xl shadow-2xl shadow-blue-600/40 flex items-center justify-center z-[45] border-2 border-white dark:border-gray-900"
+        >
+          <UserIcon size={24} strokeWidth={3} />
+          <motion.div 
+            animate={{ scale: [1, 1.2, 1] }}
+            transition={{ repeat: Infinity, duration: 2 }}
+            className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-red-500 rounded-full border-2 border-white dark:border-gray-900"
+          />
+        </motion.button>
+      )}
+
+      {/* Bottom Nav (Mobile) - Polished App-like Navigation */}
+      <nav className="md:hidden fixed bottom-4 left-4 right-4 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border border-white/20 dark:border-gray-700/50 rounded-[28px] px-3 py-2 flex justify-around items-center z-50 shadow-2xl shadow-blue-900/10 safe-area-bottom print:hidden">
         {navItems.slice(0, 4).map((item) => (
           <button
             key={item.id}
             onClick={() => setActiveTab(item.id)}
-            className={`flex flex-col items-center justify-center p-2 rounded-xl transition-all ${
-              activeTab === item.id ? 'text-blue-600 scale-110' : 'text-gray-400'
+            className={`flex flex-col items-center justify-center p-2 rounded-2xl transition-all relative ${
+              activeTab === item.id ? 'text-blue-600' : 'text-slate-400'
             }`}
           >
-            <item.icon size={22} strokeWidth={activeTab === item.id ? 2.5 : 2} />
-            <span className="text-[9px] font-black mt-1 uppercase tracking-tighter">{(item.label || '').split(' ')[0]}</span>
+            {activeTab === item.id && (
+              <motion.div 
+                layoutId="bottom-nav-indicator"
+                className="absolute inset-0 bg-blue-50 dark:bg-blue-900/10 rounded-2xl -z-10"
+              />
+            )}
+            <item.icon size={22} strokeWidth={activeTab === item.id ? 2.5 : 2} className={activeTab === item.id ? 'scale-110' : ''} />
+            <AnimatePresence>
+              {activeTab === item.id && (
+                <motion.span 
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  className="text-[9px] font-black mt-1 uppercase tracking-tighter"
+                >
+                  {(item.label || '').split(' ')[0]}
+                </motion.span>
+              )}
+            </AnimatePresence>
           </button>
         ))}
         <button
           onClick={() => setIsMobileMenuOpen(true)}
-          className="flex flex-col items-center justify-center p-2 text-gray-400"
+          className="flex flex-col items-center justify-center p-2 text-slate-400 active:scale-90 transition-transform"
         >
-          <Menu size={22} />
-          <span className="text-[9px] font-black mt-1 uppercase tracking-tighter">Lainnya</span>
+          <div className="w-10 h-10 bg-slate-900 dark:bg-white rounded-2xl flex items-center justify-center text-white dark:text-slate-900 shadow-lg">
+            <Menu size={20} />
+          </div>
         </button>
       </nav>
     </div>

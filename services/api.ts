@@ -3,7 +3,7 @@ import { AppState, User, AttendanceRecord, RequestRecord, AppSettings, JobRole, 
 
 // URL Google Apps Script Web App (Default)
 // Jika kosong, server akan menggunakan environment variable GAS_API_URL
-const DEFAULT_API_URL = (process.env.GAS_API_URL || "https://script.google.com/macros/s/AKfycbwJUYeZwv7tFhxv7z7QLtrQ3XWlM1AeaSajK8Lbg7Mqiy9ngN_LnzzXds4q-kVB063M/exec"); 
+const DEFAULT_API_URL = (process.env.GAS_API_URL || "https://script.google.com/macros/s/AKfycbyBGXKUFi7okwEX5T7wueF798lgvXGXCjVUOshZAF47piQJdiI5u3r4LP0uFtR2eWpq/exec"); 
 let API_URL = DEFAULT_API_URL;
 
 // Helper untuk POST request ke Google Apps Script via Express Proxy
@@ -16,48 +16,48 @@ const postData = async (action: string, payload: any = {}, retryCount = 0): Prom
         
         // Gunakan relative path untuk proxy agar browser menangani origin dengan benar
         const proxyUrl = '/api/proxy';
+        const fullUrl = `${window.location.origin}${proxyUrl}`;
         
-        console.log(`[API] Fetching from: ${proxyUrl} for action: ${action} (Attempt: ${retryCount + 1})`);
+        console.log(`[API] Fetching from: ${fullUrl} for action: ${action} (Attempt: ${retryCount + 1})`);
         
-        const response = await fetch(proxyUrl, {
+        const response = await fetch(fullUrl, {
             method: 'POST',
             headers: {
                 "Content-Type": "application/json",
+                "Accept": "application/json",
+                "X-Requested-With": "XMLHttpRequest"
             },
             body: JSON.stringify({ action, payload, apiUrl: apiUrlToSend }),
         });
         
+        const contentType = response.headers.get("content-type");
         const text = await response.text();
+        
+        console.log(`[API] Response from proxy: ${response.status} ${response.statusText} (${contentType})`);
+
+        if (contentType && contentType.includes("text/html")) {
+            console.error(`[API Error] Received HTML instead of JSON for ${action}. Response starts with:`, text.substring(0, 200));
+            
+            // Check if it's the React app's index.html
+            if (text.includes('<div id="root">') || text.includes('vite')) {
+                throw new Error("The API proxy route (/api/proxy) returned the application's HTML instead of JSON. This usually means the backend server is not handling the proxy route correctly or the request was redirected.");
+            }
+            
+            throw new Error("Server returned HTML instead of JSON. This usually means the Google Apps Script is not deployed with 'Who has access: Anyone' or the Script URL is incorrect.");
+        }
+
         let result;
         try {
             result = JSON.parse(text);
         } catch (e) {
-            // Not JSON
+            console.error(`[API Error] Failed to parse JSON for ${action}:`, e);
+            throw new Error(`Invalid JSON response from server: ${text.substring(0, 100)}...`);
         }
         
-        if (!response.ok) {
-            let errorMessage = response.statusText;
-            if (result && result.message) {
-                errorMessage = result.message;
-            } else if (text) {
-                 // If it's HTML, try to extract title or just show start
-                 const match = text.match(/<title>(.*?)<\/title>/i);
-                 if (match) errorMessage = `Server Error: ${match[1]}`;
-                 else errorMessage = `Server Error: ${text.substring(0, 100)}`;
-            }
-            console.error(`[API Error] ${action} (${response.status}):`, result || text.substring(0, 200));
+        if (!response.ok || result.status === 'error') {
+            const errorMessage = result.message || `Server Error: ${response.status}`;
+            console.error(`[API Error] ${action} failed:`, errorMessage);
             throw new Error(errorMessage);
-        }
-
-        const contentType = response.headers.get("content-type");
-        if (contentType && contentType.includes("text/html")) {
-            console.error(`[API Error] Received HTML instead of JSON for ${action}. Response starts with:`, text.substring(0, 100));
-            throw new Error("Server returned HTML instead of JSON. This usually means the Google Apps Script is not deployed with 'Who has access: Anyone' or the Script URL is incorrect.");
-        }
-
-        if (!result) {
-            console.error(`[API Error] Empty or invalid JSON response for ${action}:`, text.substring(0, 200));
-            throw new Error("Empty or invalid JSON response from server.");
         }
 
         return result;
@@ -65,9 +65,10 @@ const postData = async (action: string, payload: any = {}, retryCount = 0): Prom
         console.error(`[API] POST Error [${action}]:`, error.message);
         
         // Retry logic for "Failed to fetch" or network errors
-        if (retryCount < 2 && (error.message.includes('fetch') || error.message.includes('NetworkError') || error.message.includes('Failed to fetch'))) {
-            console.warn(`[API] Retrying ${action} in 2s...`);
-            await new Promise(resolve => setTimeout(resolve, 2000));
+        if (retryCount < 3 && (error.message.includes('fetch') || error.message.includes('NetworkError') || error.message.includes('Failed to fetch') || error.message.includes('Rate exceeded'))) {
+            const delay = Math.pow(2, retryCount) * 2000;
+            console.warn(`[API] Retrying ${action} in ${delay/1000}s due to network/rate error...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
             return postData(action, payload, retryCount + 1);
         }
         
@@ -255,15 +256,26 @@ export const api = {
         const tasks = data.tasks || [];
         const workReports = data.work_reports || data.workReports || [];
         const offices = data.offices || data.branches || [];
+        const departments = data.departments || [];
+        const rolePermissions = data.role_permissions || [];
 
         // Convert settings
         const settings: any = {};
         if (settingsData && typeof settingsData === 'object') {
             if (Array.isArray(settingsData)) {
                 settingsData.forEach((s: any) => {
-                    const key = getValue(s, ['kunci', 'key']);
+                    const key = getValue(s, ['kunci', 'key', 'id']);
                     const val = getValue(s, ['nilai', 'value']);
-                    if (key) settings[key] = val;
+                    if (key === 'app_config' && val) {
+                        try {
+                            const parsed = JSON.parse(val);
+                            Object.assign(settings, parsed);
+                        } catch (e) {
+                            console.warn("Failed to parse app_config:", e);
+                        }
+                    } else if (key) {
+                        settings[key] = val;
+                    }
                 });
             } else {
                 Object.assign(settings, settingsData);
@@ -279,7 +291,10 @@ export const api = {
             officeRadius: Number(settings?.radius_kantor_km || settings?.office_radius_km || 0.5),
             gracePeriodMinutes: Number(settings?.toleransi_menit || settings?.grace_period_minutes || 15), // Default 15 mins
             roleMode: (settings?.role_mode as any) || 'standard',
-            rolePermissions: Array.isArray(settings?.role_permissions) ? settings.role_permissions : undefined,
+            rolePermissions: Array.isArray(rolePermissions) ? rolePermissions.map((rp: any) => ({
+                role: rp.peran,
+                allowedModules: safeJsonParse(rp.modul_diizinkan, [])
+            })) : (Array.isArray(settings?.role_permissions) ? settings.role_permissions : undefined),
             offices: Array.isArray(offices) ? offices.map((o: any) => ({
                 id: String(getValue(o, 'id') || ''),
                 name: String(getValue(o, ['nama', 'name']) || ''),
@@ -312,6 +327,12 @@ export const api = {
                 quota: Number(getValue(l, ['kuota_per_tahun', 'quota_per_year']) || 12),
                 isPaid: toBoolean(getValue(l, ['dibayar', 'berbayar', 'is_paid'])),
                 requiresFile: toBoolean(getValue(l, ['butuh_lampiran', 'butuh_file', 'requires_file']))
+            })) : [],
+            departments: Array.isArray(departments) ? departments.map((d: any) => ({
+                id: String(d.id),
+                name: d.nama || d.name,
+                managerId: d.id_manajer || d.manager_id,
+                description: d.deskripsi || d.description
             })) : []
         };
 
@@ -341,7 +362,8 @@ export const api = {
             lng_keluar: record.checkOutLocation?.lng,
             id_kantor: record.officeId,
             nama_kantor: record.officeName,
-            catatan: record.notes
+            catatan: record.notes,
+            location_logs: record.locationLogs
         });
     },
 
@@ -426,6 +448,19 @@ export const api = {
                 level: j.level,
                 tanggung_jawab_utama: JSON.stringify(j.coreResponsibilities || []),
                 mode_login: j.loginMode || 'username'
+            })),
+            departments: settings.departments?.map(d => ({
+                id: d.id,
+                nama: d.name,
+                id_manajer: d.managerId,
+                deskripsi: d.description
+            })),
+            leaveTypes: settings.leaveTypes?.map(l => ({
+                id: l.id,
+                nama: l.name,
+                kuota_per_tahun: l.quota,
+                dibayar: l.isPaid,
+                butuh_lampiran: l.requiresFile
             }))
         });
     },

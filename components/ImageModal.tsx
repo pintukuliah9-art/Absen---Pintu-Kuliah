@@ -39,6 +39,9 @@ const ImageModal: React.FC<ImageModalProps> = ({ isOpen, imageUrl, onClose }) =>
                                 alt="Full Size" 
                                 className="max-w-full max-h-[75vh] object-contain rounded-2xl"
                                 referrerPolicy="no-referrer"
+                                onError={(e) => {
+                                    (e.target as HTMLImageElement).src = `https://picsum.photos/seed/broken/800/600`;
+                                }}
                             />
                         </div>
                         

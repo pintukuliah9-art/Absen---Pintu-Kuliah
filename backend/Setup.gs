@@ -11,19 +11,20 @@ function setupDatabase() {
     return;
   }
   
-  // Definisi Tabel dan Kolom (Header)
+  // Definisi Tabel dan Kolom (Header) - Menggunakan Bahasa Indonesia
   const tables = {
-    'users': ['id', 'nama', 'username', 'email', 'id_karyawan', 'peran', 'jabatan', 'id_jabatan', 'id_departemen', 'telepon', 'tgl_bergabung', 'kuota_cuti', 'status_aktif', 'url_avatar', 'tempat_lahir', 'tgl_lahir', 'gender', 'alamat', 'dok_ktp', 'dok_kk', 'dok_ijazah', 'mode_login'],
-    'attendance': ['id', 'id_user', 'tanggal', 'jam_masuk', 'jam_keluar', 'status', 'kerja_online', 'url_foto', 'lat_masuk', 'lng_masuk', 'lat_keluar', 'lng_keluar', 'id_kantor', 'nama_kantor', 'catatan'],
-    'tasks': ['id', 'judul', 'deskripsi', 'kategori', 'id_user_ditugaskan', 'id_peran_ditugaskan', 'id_dept_ditugaskan', 'aktif', 'dibuat_pada', 'dibuat_oleh'],
-    'work_reports': ['id', 'id_user', 'id_tugas', 'tanggal', 'status', 'catatan', 'url_bukti', 'dikirim_pada'],
-    'requests': ['id', 'id_user', 'tipe', 'tgl_mulai', 'tgl_selesai', 'alasan', 'alasan_ai', 'status', 'id_tipe_cuti', 'url_lampiran'],
-    'settings': ['nama_kantor', 'lat_kantor', 'lng_kantor', 'radius_kantor_km', 'toleransi_menit'],
-    'job_roles': ['id', 'judul', 'level', 'tanggung_jawab_utama'],
-    'shifts': ['id', 'nama', 'jam_mulai', 'jam_selesai', 'mulai_istirahat', 'selesai_istirahat', 'mulai_lembur', 'fleksibel', 'hari_kerja', 'id_user_ditugaskan'],
-    'branches': ['id', 'nama', 'lat', 'lng', 'radius'],
-    'leave_types': ['id', 'nama', 'kuota_per_tahun', 'dibayar', 'butuh_lampiran'],
-    'departments': ['id', 'nama', 'id_manajer', 'deskripsi']
+    'Karyawan': ['id', 'id_karyawan', 'nama', 'username', 'peran', 'jabatan', 'id_jabatan', 'id_departemen', 'telepon', 'tgl_bergabung', 'kuota_cuti', 'status_aktif', 'url_avatar', 'tempat_lahir', 'tgl_lahir', 'gender', 'alamat', 'dok_ktp', 'dok_kk', 'dok_ijazah', 'mode_login'],
+    'Absensi': ['id', 'id_user', 'tanggal', 'jam_masuk', 'jam_keluar', 'status', 'kerja_online', 'url_foto', 'lat_masuk', 'lng_masuk', 'lat_keluar', 'lng_keluar', 'id_kantor', 'nama_kantor', 'catatan', 'location_logs'],
+    'Pengajuan': ['id', 'id_user', 'tipe', 'tgl_mulai', 'tgl_selesai', 'alasan', 'alasan_ai', 'status', 'id_tipe_cuti', 'url_lampiran'],
+    'Tugas': ['id', 'judul', 'deskripsi', 'kategori', 'id_user_ditugaskan', 'id_peran_ditugaskan', 'id_dept_ditugaskan', 'aktif', 'dibuat_pada', 'dibuat_oleh'],
+    'LaporanKerja': ['id', 'tanggal', 'id_user', 'id_tugas', 'status', 'catatan', 'url_bukti', 'dikirim_pada'],
+    'Pengaturan': ['kunci', 'nilai'],
+    'LokasiKantor': ['id', 'nama', 'lat', 'lng', 'radius'],
+    'Shift': ['id', 'nama', 'jam_masuk', 'jam_selesai', 'mulai_istirahat', 'selesai_istirahat', 'mulai_lembur', 'fleksibel', 'hari_kerja', 'id_user_ditugaskan'],
+    'Jabatan': ['id', 'judul', 'level', 'tugas_1', 'tugas_2', 'tugas_3', 'tugas_4', 'tugas_5', 'tugas_6', 'tugas_7', 'tugas_8', 'tugas_9', 'tugas_10', 'tugas_11', 'tugas_12', 'tugas_13', 'tugas_14', 'tugas_15', 'tugas_16', 'tugas_17', 'tugas_18', 'tugas_19', 'tugas_20', 'mode_login'],
+    'JenisCuti': ['id', 'nama', 'kuota_per_tahun', 'berbayar', 'butuh_file'],
+    'Departemen': ['id', 'nama', 'id_manajer', 'deskripsi'],
+    'IzinPeran': ['peran', 'modul_diizinkan']
   };
 
   for (let tableName in tables) {
@@ -48,10 +49,11 @@ function setupDatabase() {
         }
       }
 
-      // Format Header (Opsional tapi bagus untuk tampilan)
+      // Format Header (Bold, Frozen, Orange)
       sheet.getRange(1, 1, 1, headers.length)
         .setFontWeight("bold")
-        .setBackground("#f3f3f3")
+        .setBackground("#E67E22")
+        .setFontColor("#FFFFFF")
         .setHorizontalAlignment("center");
       sheet.setFrozenRows(1);
       

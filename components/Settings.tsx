@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { User, AppSettings, Shift, JobRole, OfficeLocation } from '../types';
-import { User as UserIcon, Bell, Shield, Save, MapPin, Clock, Trash2, Moon, LogOut, Plus, Edit2, Users, Check, X, Briefcase, List, Calendar, Mail, Phone, Home, FileText, Download, Eye, Award, Crosshair, Camera, CheckCircle2, Loader2, ChevronRight, Sun, ShieldAlert, AlertCircle, Fingerprint, Globe, Search } from 'lucide-react';
+import { User as UserIcon, Bell, Shield, Save, MapPin, Clock, Trash2, Moon, LogOut, Plus, Edit2, Users, Check, X, Briefcase, List, Calendar, Mail, Phone, Home, FileText, Download, Eye, Award, Crosshair, Camera, CheckCircle2, Loader2, ChevronRight, Sun, ShieldAlert, AlertCircle, Fingerprint, Globe, Search, Link as LinkIcon, Zap, Info, RefreshCw, DownloadCloud, Navigation } from 'lucide-react';
 import { WEEK_DAYS } from '../constants';
 import { useStore } from '../services/store';
 import { useToast } from './Toast';
@@ -14,6 +14,7 @@ interface SettingsProps {
   onUpdateSettings: (settings: AppSettings) => void;
   onReset: () => void;
   onLogout: () => void;
+  initialTab?: 'profile' | 'company' | 'security' | 'locations' | 'shifts' | 'jobs' | 'permissions';
 }
 
 const MODULES = [
@@ -29,10 +30,16 @@ const MODULES = [
     { id: 'settings', name: 'Pengaturan Sistem', icon: Shield, desc: 'Konfigurasi aplikasi, lokasi, dan hak akses.' },
 ];
 
-const Settings: React.FC<SettingsProps> = ({ user, appSettings, onUpdateSettings, onReset, onLogout }) => {
+const Settings: React.FC<SettingsProps> = ({ user, appSettings, onUpdateSettings, onReset, onLogout, initialTab }) => {
   const { state, updateUser } = useStore(); 
   const { showToast } = useToast();
-  const [activeTab, setActiveTab] = useState<'profile' | 'company' | 'security' | 'locations' | 'shifts' | 'jobs' | 'permissions'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'company' | 'security' | 'locations' | 'shifts' | 'jobs' | 'permissions'>(initialTab || 'profile');
+  
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
   
   const SETTINGS_MENU = [
     { id: 'profile', label: 'Profil Saya', icon: UserIcon, desc: 'Informasi pribadi dan keamanan akun.', roles: ['employee', 'manager', 'hr', 'admin', 'superadmin'] },
@@ -50,6 +57,7 @@ const Settings: React.FC<SettingsProps> = ({ user, appSettings, onUpdateSettings
   const [config, setConfig] = useState<AppSettings>(appSettings);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isTestingApi, setIsTestingApi] = useState(false);
   const [profileForm, setProfileForm] = useState<Partial<User>>({
       name: user.name,
       phone: user.phone,
@@ -601,44 +609,49 @@ const Settings: React.FC<SettingsProps> = ({ user, appSettings, onUpdateSettings
   };
 
   return (
-    <div className="flex h-full bg-slate-50/50 rounded-3xl overflow-hidden border border-slate-200/60 shadow-sm">
+    <div className="flex flex-col lg:flex-row h-full bg-slate-50/50 rounded-[40px] overflow-hidden border border-slate-200/60 shadow-sm">
       {/* Sidebar Navigation */}
-      <aside className="w-64 bg-white border-r border-slate-100 flex flex-col shrink-0">
-        <div className="p-5 border-b border-slate-50">
-          <h2 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em]">Pengaturan</h2>
+      <aside className="w-full lg:w-80 bg-white border-b lg:border-b-0 lg:border-r border-slate-100 flex flex-col shrink-0 sticky top-0 z-30">
+        <div className="p-8 border-b border-slate-50 hidden lg:block">
+          <h2 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em]">Pengaturan Sistem</h2>
         </div>
-        <nav className="flex-1 overflow-y-auto p-3 space-y-1 custom-scrollbar">
+        <nav className="flex lg:flex-col overflow-x-auto lg:overflow-y-auto p-4 lg:p-6 gap-3 custom-scrollbar-hide lg:custom-scrollbar">
           {filteredMenu.map((item) => (
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id as any)}
-              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-all duration-200 group ${
+              className={`flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-500 group shrink-0 lg:shrink ${
                 activeTab === item.id
-                  ? 'bg-slate-900 text-white shadow-md shadow-slate-200'
+                  ? 'bg-slate-900 text-white shadow-2xl shadow-slate-200 translate-x-1'
                   : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
               }`}
             >
-              <item.icon size={16} className={activeTab === item.id ? 'text-white' : 'text-slate-400 group-hover:text-slate-600'} />
+              <div className={`p-2.5 rounded-xl transition-all duration-500 ${activeTab === item.id ? 'bg-white/10 rotate-6' : 'bg-slate-50 group-hover:bg-white group-hover:rotate-6'}`}>
+                <item.icon size={20} className={activeTab === item.id ? 'text-white' : 'text-slate-400 group-hover:text-slate-600'} />
+              </div>
               <div className="text-left">
-                <p className="text-[11px] font-bold leading-none">{item.label}</p>
+                <p className="text-[11px] font-black leading-none uppercase tracking-[0.15em]">{item.label}</p>
               </div>
             </button>
           ))}
         </nav>
-        <div className="p-4 border-t border-slate-50">
-          <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-white rounded-lg shadow-sm"><AlertCircle size={14} className="text-slate-400" /></div>
-              <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Bantuan</p>
+        <div className="p-8 border-t border-slate-50 hidden lg:block mt-auto">
+          <div className="bg-slate-50/80 rounded-[32px] p-8 border border-slate-100 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full -mr-8 -mt-8 transition-transform duration-700 group-hover:scale-150"></div>
+            <div className="flex items-center gap-4 mb-4 relative z-10">
+              <div className="w-10 h-10 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-slate-100">
+                <AlertCircle size={18} className="text-blue-500" />
+              </div>
+              <p className="text-[11px] font-black text-slate-800 uppercase tracking-widest leading-none">Pusat Bantuan</p>
             </div>
-            <p className="text-[10px] text-slate-400 font-medium leading-relaxed">Butuh bantuan konfigurasi? Hubungi tim IT Support kami.</p>
+            <p className="text-[11px] text-slate-400 font-bold leading-relaxed relative z-10">Butuh bantuan konfigurasi? Hubungi tim IT Support kami.</p>
           </div>
         </div>
       </aside>
 
       {/* Content Area */}
-      <main className="flex-1 overflow-y-auto bg-white custom-scrollbar">
-        <div className="max-w-4xl mx-auto p-8">
+      <main className="flex-1 overflow-y-auto bg-white custom-scrollbar relative">
+        <div className="max-w-5xl mx-auto p-6 md:p-10 lg:p-12">
           <AnimatePresence mode="wait">
             {/* Profile Tab */}
           {activeTab === 'profile' && (
@@ -650,27 +663,34 @@ const Settings: React.FC<SettingsProps> = ({ user, appSettings, onUpdateSettings
                   className="grid grid-cols-1 lg:grid-cols-3 gap-8"
               >
                 {/* Left Column: Identity & Actions */}
-                <div className="lg:col-span-1 space-y-6">
-                    <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center text-center relative overflow-hidden">
-                        <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-br from-blue-500 to-indigo-600 opacity-10"></div>
+                <div className="lg:col-span-1 space-y-8">
+                    <div className="bg-white p-8 md:p-10 rounded-[40px] md:rounded-[48px] shadow-sm border border-slate-100 flex flex-col items-center text-center relative overflow-hidden group">
+                        <div className="absolute top-0 left-0 w-full h-40 bg-gradient-to-br from-blue-500/5 to-indigo-600/5"></div>
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full -mr-16 -mt-16 transition-transform duration-1000 group-hover:scale-150"></div>
                         
-                        <div className="relative mb-6 group cursor-pointer z-10" onClick={() => fileInputRef.current?.click()}>
-                            <div className="w-32 h-32 rounded-full border-4 border-white shadow-xl overflow-hidden relative bg-slate-100 flex items-center justify-center">
-                                {profileForm.avatar || user.avatar ? (
-                                    <img 
-                                        src={profileForm.avatar || user.avatar} 
-                                        alt="Profile" 
-                                        className="w-full h-full object-cover transition-transform group-hover:scale-110" 
-                                    />
-                                ) : (
-                                    <UserIcon size={48} className="text-slate-300" />
-                                )}
-                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <Camera size={28} className="text-white" />
+                        <div className="relative mb-8 group cursor-pointer z-10 mt-6" onClick={() => fileInputRef.current?.click()}>
+                                <div className="w-36 h-36 md:w-44 md:h-44 rounded-full border-8 border-white shadow-2xl overflow-hidden relative bg-slate-100 flex items-center justify-center transition-transform duration-500 group-hover:scale-105">
+                                    {profileForm.avatar || user.avatar ? (
+                                        <img 
+                                            src={profileForm.avatar || user.avatar} 
+                                            alt="Profile" 
+                                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                                            referrerPolicy="no-referrer"
+                                            onError={(e) => {
+                                                (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random`;
+                                            }}
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full bg-slate-900 flex items-center justify-center text-white text-4xl font-black">
+                                            {user.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)}
+                                        </div>
+                                    )}
+                                    <div className="absolute inset-0 bg-slate-900/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 backdrop-blur-sm">
+                                        <Camera size={32} className="text-white transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500" />
+                                    </div>
                                 </div>
-                            </div>
-                            <div className={`absolute bottom-2 right-2 w-8 h-8 rounded-full border-4 border-white flex items-center justify-center shadow-lg ${user.isActive ? 'bg-emerald-500' : 'bg-rose-500'}`}>
-                                {user.isActive && <Check size={14} className="text-white font-bold"/>}
+                            <div className={`absolute bottom-3 right-3 w-12 h-12 rounded-full border-4 border-white flex items-center justify-center shadow-xl transition-transform duration-500 group-hover:scale-110 ${user.isActive ? 'bg-emerald-500' : 'bg-rose-500'}`}>
+                                {user.isActive && <Check size={20} className="text-white font-black"/>}
                             </div>
                             <input 
                                 type="file" 
@@ -681,9 +701,9 @@ const Settings: React.FC<SettingsProps> = ({ user, appSettings, onUpdateSettings
                             />
                         </div>
                         
-                        <h3 className="text-2xl font-bold text-slate-900 z-10">{user.name}</h3>
-                        <p className="text-sm font-semibold text-slate-400 uppercase tracking-wider mt-1 z-10">
-                            {userJobRole?.title || user.position}
+                        <h3 className="text-3xl md:text-4xl font-black text-slate-900 z-10 tracking-tighter leading-tight">{user.name}</h3>
+                        <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em] mt-3 z-10">
+                            {userJobRole?.title || user.position || 'Administrator'}
                         </p>
                         
                         {/* Avatar Save Button */}
@@ -691,15 +711,15 @@ const Settings: React.FC<SettingsProps> = ({ user, appSettings, onUpdateSettings
                             <button 
                                 onClick={handleSaveProfile}
                                 disabled={isSaving}
-                                className="mt-4 px-6 py-2 bg-green-600 text-white text-xs font-black rounded-full hover:bg-green-700 shadow-lg shadow-green-100 flex items-center gap-2 animate-bounce"
+                                className="mt-8 px-10 py-4 bg-emerald-600 text-white text-[11px] font-black uppercase tracking-widest rounded-full hover:bg-emerald-700 shadow-2xl shadow-emerald-100 flex items-center gap-3 animate-bounce z-10"
                             >
-                                {isSaving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                                {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
                                 Simpan Foto Baru
                             </button>
                         )}
 
-                        <div className="flex gap-2 mt-6 mb-8 z-10">
-                            <span className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${
+                        <div className="flex flex-wrap justify-center gap-3 mt-8 mb-10 z-10">
+                            <span className={`px-5 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest border shadow-sm ${
                                 user.role === 'superadmin' ? 'bg-rose-50 text-rose-600 border-rose-100' :
                                 user.role === 'admin' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 
                                 'bg-sky-50 text-sky-600 border-sky-100'
@@ -707,35 +727,37 @@ const Settings: React.FC<SettingsProps> = ({ user, appSettings, onUpdateSettings
                                 {user.role === 'superadmin' ? 'Super Admin' : user.role === 'admin' ? 'Administrator' : 'Karyawan'}
                             </span>
                             {userJobRole && (
-                                <span className="px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-amber-600 border border-amber-100">
+                                <span className="px-5 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest bg-amber-50 text-amber-600 border border-amber-100 shadow-sm">
                                     {userJobRole.level}
                                 </span>
                             )}
                         </div>
 
-                            <div className="w-full space-y-3 z-10">
-                                <div className="bg-slate-50/50 p-4 rounded-2xl flex justify-between items-center text-sm border border-slate-100">
-                                    <span className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">Bergabung</span>
-                                    <span className="font-bold text-slate-800">{user.joinDate ? new Date(user.joinDate).toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year: 'numeric'}) : '-'}</span>
-                                </div>
-                                <div className="bg-slate-50/50 p-4 rounded-2xl flex justify-between items-center text-sm border border-slate-100">
-                                    <span className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">Sisa Cuti</span>
-                                    <span className="font-bold text-blue-600">{user.leaveQuota} Hari</span>
-                                </div>
-                                <button 
-                                    onClick={() => setIsEditingProfile(!isEditingProfile)}
-                                    className={`w-full py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-95 ${isEditingProfile ? 'bg-slate-100 text-slate-600' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-100'}`}
-                                >
-                                    {isEditingProfile ? <X size={18}/> : <Edit2 size={18}/>}
-                                    {isEditingProfile ? 'Batal Perubahan' : 'Lengkapi Biodata'}
-                                </button>
+                        <div className="w-full space-y-4 z-10">
+                            <div className="bg-slate-50/80 p-6 rounded-3xl flex flex-col items-center gap-1 border border-slate-100 group/item hover:bg-white hover:shadow-md transition-all duration-500">
+                                <span className="text-slate-400 font-black uppercase text-[10px] tracking-[0.2em]">Bergabung Sejak</span>
+                                <span className="font-black text-slate-800 text-lg tracking-tight">
+                                    {user.joinDate ? new Date(user.joinDate).toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year: 'numeric'}) : '-'}
+                                </span>
                             </div>
+                            <div className="bg-slate-50/80 p-6 rounded-3xl flex flex-col items-center gap-1 border border-slate-100 group/item hover:bg-white hover:shadow-md transition-all duration-500">
+                                <span className="text-slate-400 font-black uppercase text-[10px] tracking-[0.2em]">Sisa Kuota Cuti</span>
+                                <span className="font-black text-blue-600 text-2xl tracking-tighter">{user.leaveQuota} Hari</span>
+                            </div>
+                            <button 
+                                onClick={() => setIsEditingProfile(!isEditingProfile)}
+                                className={`w-full py-5 rounded-[24px] font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-4 transition-all duration-500 active:scale-95 shadow-xl ${isEditingProfile ? 'bg-slate-100 text-slate-600 shadow-slate-50' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-100'}`}
+                            >
+                                {isEditingProfile ? <X size={20}/> : <Edit2 size={20}/>}
+                                {isEditingProfile ? 'Batal Perubahan' : 'Lengkapi Biodata'}
+                            </button>
+                        </div>
                     </div>
                     
-                    <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 space-y-4">
-                        <h4 className="font-bold text-slate-800 uppercase text-xs tracking-widest mb-4">Keamanan & Akun</h4>
-                        <button onClick={onLogout} className="w-full bg-rose-50 text-rose-600 border border-rose-100 font-bold py-3.5 rounded-xl hover:bg-rose-100 flex items-center justify-center gap-2 text-sm transition-all active:scale-95">
-                            <LogOut size={18} /> Keluar Sesi
+                    <div className="bg-white p-8 md:p-10 rounded-[40px] md:rounded-[48px] shadow-sm border border-slate-100 space-y-6">
+                        <h4 className="font-black text-slate-800 uppercase text-[11px] tracking-[0.3em] mb-2">Keamanan & Akun</h4>
+                        <button onClick={onLogout} className="w-full bg-rose-50 text-rose-600 border border-rose-100 font-black py-5 rounded-[24px] hover:bg-rose-100 flex items-center justify-center gap-4 text-xs uppercase tracking-widest transition-all duration-500 active:scale-95 group">
+                            <LogOut size={20} className="transition-transform group-hover:-translate-x-1" /> Keluar Sesi
                         </button>
                     </div>
                 </div>
@@ -744,22 +766,22 @@ const Settings: React.FC<SettingsProps> = ({ user, appSettings, onUpdateSettings
                 <div className="lg:col-span-2 space-y-8">
                     {isEditingProfile ? (
                         <motion.form 
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
                             onSubmit={handleSaveProfile} 
-                            className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100"
+                            className="bg-white p-6 md:p-10 rounded-[32px] md:rounded-[40px] shadow-sm border border-slate-100"
                         >
-                            <div className="flex items-center gap-4 mb-8 pb-4 border-b border-gray-50">
-                                <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl"><Edit2 size={24} /></div>
+                            <div className="flex items-center gap-5 mb-10 pb-6 border-b border-slate-50">
+                                <div className="p-4 bg-blue-50 text-blue-600 rounded-2xl shadow-sm"><Edit2 size={24} /></div>
                                 <div>
-                                    <h3 className="text-xl font-black text-gray-900">Manajemen Profil</h3>
-                                    <p className="text-xs text-gray-400">Anda hanya dapat mengubah data pribadi (Biodata).</p>
+                                    <h3 className="text-2xl font-black text-slate-900">Manajemen Profil</h3>
+                                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Lengkapi biodata diri Anda dengan benar.</p>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div className="md:col-span-2">
-                                    <div className="flex items-center gap-2 mb-4">
+                                    <div className="flex items-center gap-3 mb-6">
                                         <div className="h-px flex-1 bg-slate-100"></div>
                                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Biodata Diri</span>
                                         <div className="h-px flex-1 bg-slate-100"></div>
@@ -767,92 +789,108 @@ const Settings: React.FC<SettingsProps> = ({ user, appSettings, onUpdateSettings
                                 </div>
 
                                 <div className="md:col-span-2">
-                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Nama Lengkap</label>
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">Nama Lengkap</label>
                                     <input 
                                         type="text" required
-                                        className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                        className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-slate-800 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all"
                                         value={profileForm.name}
                                         onChange={e => setProfileForm({...profileForm, name: e.target.value})}
                                     />
                                 </div>
                                 
                                 <div>
-                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">No. Handphone</label>
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">No. Handphone</label>
                                     <input 
                                         type="tel"
-                                        className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                        className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-slate-800 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all"
                                         value={profileForm.phone}
                                         onChange={e => setProfileForm({...profileForm, phone: e.target.value})}
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Jenis Kelamin</label>
-                                    <select 
-                                        className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all appearance-none"
-                                        value={profileForm.gender}
-                                        onChange={e => setProfileForm({...profileForm, gender: e.target.value as 'L' | 'P'})}
-                                    >
-                                        <option value="">Pilih Jenis Kelamin</option>
-                                        <option value="L">Laki-laki</option>
-                                        <option value="P">Perempuan</option>
-                                    </select>
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">Jenis Kelamin</label>
+                                    <div className="relative">
+                                        <select 
+                                            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-slate-800 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all appearance-none"
+                                            value={profileForm.gender}
+                                            onChange={e => setProfileForm({...profileForm, gender: e.target.value as 'L' | 'P'})}
+                                        >
+                                            <option value="">Pilih Jenis Kelamin</option>
+                                            <option value="L">Laki-laki</option>
+                                            <option value="P">Perempuan</option>
+                                        </select>
+                                        <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                            <ChevronRight size={18} className="rotate-90" />
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div>
-                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Tempat Lahir</label>
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">Tempat Lahir</label>
                                     <input 
                                         type="text"
-                                        className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                        className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-slate-800 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all"
                                         value={profileForm.birthPlace}
                                         onChange={e => setProfileForm({...profileForm, birthPlace: e.target.value})}
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Tanggal Lahir</label>
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">Tanggal Lahir</label>
                                     <input 
                                         type="date"
-                                        className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                        className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-slate-800 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all"
                                         value={profileForm.birthDate ? new Date(profileForm.birthDate).toISOString().split('T')[0] : ''}
                                         onChange={e => setProfileForm({...profileForm, birthDate: e.target.value})}
                                     />
                                 </div>
 
                                 <div className="md:col-span-2">
-                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Alamat Domisili</label>
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">Alamat Domisili</label>
                                     <textarea 
-                                        className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none h-32 resize-none transition-all"
+                                        className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-slate-800 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none h-32 resize-none transition-all"
                                         value={profileForm.address}
                                         onChange={e => setProfileForm({...profileForm, address: e.target.value})}
                                     />
                                 </div>
 
-                                <div className="md:col-span-2 mt-4">
-                                    <div className="flex items-center gap-2 mb-4">
+                                <div className="md:col-span-2 mt-6">
+                                    <div className="flex items-center gap-3 mb-6">
                                         <div className="h-px flex-1 bg-slate-100"></div>
                                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Dokumen Karyawan</span>
                                         <div className="h-px flex-1 bg-slate-100"></div>
                                     </div>
                                 </div>
 
-                                <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-4">
                                     {/* KTP */}
-                                    <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl">
-                                        <div className="flex items-center justify-between mb-3">
-                                            <span className="text-[10px] font-black text-slate-500 uppercase">KTP (Identitas)</span>
-                                            {profileForm.documents?.ktp && <CheckCircle2 size={14} className="text-emerald-500" />}
+                                    <div className="p-5 bg-slate-50 border border-slate-100 rounded-3xl">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">KTP</span>
+                                            {profileForm.documents?.ktp && <CheckCircle2 size={16} className="text-emerald-500" />}
                                         </div>
                                         <div className="relative group">
-                                            <div className="w-full h-24 bg-white border-2 border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center gap-1 cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-all overflow-hidden">
+                                            <div className="w-full h-28 bg-white border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-all overflow-hidden">
                                                 {profileForm.documents?.ktp ? (
-                                                    <img src={profileForm.documents.ktp} className="w-full h-full object-cover opacity-50" alt="KTP" />
+                                                    <img 
+                                                        src={profileForm.documents.ktp} 
+                                                        className="w-full h-full object-cover opacity-60 group-hover:opacity-40 transition-opacity" 
+                                                        alt="KTP" 
+                                                        referrerPolicy="no-referrer" 
+                                                    />
                                                 ) : (
-                                                    <FileText size={20} className="text-slate-300" />
+                                                    <FileText size={24} className="text-slate-300" />
                                                 )}
-                                                <span className="text-[9px] font-bold text-slate-400 group-hover:text-blue-500">
-                                                    {profileForm.documents?.ktp ? 'Ganti File' : 'Unggah KTP'}
-                                                </span>
+                                                <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-blue-500/10">
+                                                    <Camera size={20} className="text-blue-600 mb-1" />
+                                                    <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">
+                                                        {profileForm.documents?.ktp ? 'Ganti' : 'Unggah'}
+                                                    </span>
+                                                </div>
+                                                {!profileForm.documents?.ktp && (
+                                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:hidden">Unggah</span>
+                                                )}
                                                 <input 
                                                     type="file" 
                                                     accept="image/*,application/pdf"
@@ -864,21 +902,32 @@ const Settings: React.FC<SettingsProps> = ({ user, appSettings, onUpdateSettings
                                     </div>
 
                                     {/* KK */}
-                                    <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl">
-                                        <div className="flex items-center justify-between mb-3">
-                                            <span className="text-[10px] font-black text-slate-500 uppercase">Kartu Keluarga</span>
-                                            {profileForm.documents?.kk && <CheckCircle2 size={14} className="text-emerald-500" />}
+                                    <div className="p-5 bg-slate-50 border border-slate-100 rounded-3xl">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">KK</span>
+                                            {profileForm.documents?.kk && <CheckCircle2 size={16} className="text-emerald-500" />}
                                         </div>
                                         <div className="relative group">
-                                            <div className="w-full h-24 bg-white border-2 border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center gap-1 cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-all overflow-hidden">
+                                            <div className="w-full h-28 bg-white border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-all overflow-hidden">
                                                 {profileForm.documents?.kk ? (
-                                                    <img src={profileForm.documents.kk} className="w-full h-full object-cover opacity-50" alt="KK" />
+                                                    <img 
+                                                        src={profileForm.documents.kk} 
+                                                        className="w-full h-full object-cover opacity-60 group-hover:opacity-40 transition-opacity" 
+                                                        alt="KK" 
+                                                        referrerPolicy="no-referrer" 
+                                                    />
                                                 ) : (
-                                                    <FileText size={20} className="text-slate-300" />
+                                                    <FileText size={24} className="text-slate-300" />
                                                 )}
-                                                <span className="text-[9px] font-bold text-slate-400 group-hover:text-blue-500">
-                                                    {profileForm.documents?.kk ? 'Ganti File' : 'Unggah KK'}
-                                                </span>
+                                                <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-blue-500/10">
+                                                    <Camera size={20} className="text-blue-600 mb-1" />
+                                                    <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">
+                                                        {profileForm.documents?.kk ? 'Ganti' : 'Unggah'}
+                                                    </span>
+                                                </div>
+                                                {!profileForm.documents?.kk && (
+                                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:hidden">Unggah</span>
+                                                )}
                                                 <input 
                                                     type="file" 
                                                     accept="image/*,application/pdf"
@@ -890,21 +939,32 @@ const Settings: React.FC<SettingsProps> = ({ user, appSettings, onUpdateSettings
                                     </div>
 
                                     {/* Ijazah */}
-                                    <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl">
-                                        <div className="flex items-center justify-between mb-3">
-                                            <span className="text-[10px] font-black text-slate-500 uppercase">Ijazah Terakhir</span>
-                                            {profileForm.documents?.ijazah && <CheckCircle2 size={14} className="text-emerald-500" />}
+                                    <div className="p-5 bg-slate-50 border border-slate-100 rounded-3xl">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Ijazah</span>
+                                            {profileForm.documents?.ijazah && <CheckCircle2 size={16} className="text-emerald-500" />}
                                         </div>
                                         <div className="relative group">
-                                            <div className="w-full h-24 bg-white border-2 border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center gap-1 cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-all overflow-hidden">
+                                            <div className="w-full h-28 bg-white border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-all overflow-hidden">
                                                 {profileForm.documents?.ijazah ? (
-                                                    <img src={profileForm.documents.ijazah} className="w-full h-full object-cover opacity-50" alt="Ijazah" />
+                                                    <img 
+                                                        src={profileForm.documents.ijazah} 
+                                                        className="w-full h-full object-cover opacity-60 group-hover:opacity-40 transition-opacity" 
+                                                        alt="Ijazah" 
+                                                        referrerPolicy="no-referrer" 
+                                                    />
                                                 ) : (
-                                                    <FileText size={20} className="text-slate-300" />
+                                                    <FileText size={24} className="text-slate-300" />
                                                 )}
-                                                <span className="text-[9px] font-bold text-slate-400 group-hover:text-blue-500">
-                                                    {profileForm.documents?.ijazah ? 'Ganti File' : 'Unggah Ijazah'}
-                                                </span>
+                                                <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-blue-500/10">
+                                                    <Camera size={20} className="text-blue-600 mb-1" />
+                                                    <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">
+                                                        {profileForm.documents?.ijazah ? 'Ganti' : 'Unggah'}
+                                                    </span>
+                                                </div>
+                                                {!profileForm.documents?.ijazah && (
+                                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:hidden">Unggah</span>
+                                                )}
                                                 <input 
                                                     type="file" 
                                                     accept="image/*,application/pdf"
@@ -916,8 +976,8 @@ const Settings: React.FC<SettingsProps> = ({ user, appSettings, onUpdateSettings
                                     </div>
                                 </div>
 
-                                <div className="md:col-span-2 mt-4">
-                                    <div className="flex items-center gap-2 mb-4">
+                                <div className="md:col-span-2 mt-6">
+                                    <div className="flex items-center gap-3 mb-6">
                                         <div className="h-px flex-1 bg-slate-100"></div>
                                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Keamanan</span>
                                         <div className="h-px flex-1 bg-slate-100"></div>
@@ -925,29 +985,29 @@ const Settings: React.FC<SettingsProps> = ({ user, appSettings, onUpdateSettings
                                 </div>
 
                                 <div className="md:col-span-2">
-                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Password Baru</label>
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">Password Baru</label>
                                     <input 
                                         type="password"
                                         placeholder="Kosongkan jika tidak ingin mengubah password"
-                                        className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                        className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-slate-800 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all"
                                         value={profileForm.password}
                                         onChange={e => setProfileForm({...profileForm, password: e.target.value})}
                                     />
                                 </div>
                             </div>
 
-                            <div className="mt-10 flex justify-end gap-4">
+                            <div className="mt-12 flex flex-col sm:flex-row justify-end gap-4">
                                 <button 
                                     type="button"
                                     onClick={() => setIsEditingProfile(false)}
-                                    className="px-8 py-3.5 text-gray-500 font-black text-sm hover:bg-gray-50 rounded-2xl transition-all active:scale-95"
+                                    className="px-10 py-4 text-slate-500 font-black text-xs uppercase tracking-widest hover:bg-slate-50 rounded-2xl transition-all active:scale-95"
                                 >
                                     Batal
                                 </button>
                                 <button 
                                     type="submit"
                                     disabled={isSaving}
-                                    className="px-8 py-3.5 bg-blue-600 text-white font-black text-sm rounded-2xl hover:bg-blue-700 shadow-xl shadow-blue-100 transition-all flex items-center gap-2 active:scale-95"
+                                    className="px-10 py-4 bg-slate-900 text-white font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-slate-800 shadow-xl shadow-slate-200 transition-all flex items-center justify-center gap-3 active:scale-95"
                                 >
                                     {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
                                     Simpan Perubahan
@@ -955,48 +1015,56 @@ const Settings: React.FC<SettingsProps> = ({ user, appSettings, onUpdateSettings
                             </div>
                         </motion.form>
                     ) : (
-                        <div className="space-y-8">
+                        <div className="space-y-10">
                             {/* Biodata Card */}
                             <motion.div 
-                                initial={{ opacity: 0, x: 20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100"
+                                 initial={{ opacity: 0, y: 20 }}
+                                 animate={{ opacity: 1, y: 0 }}
+                                 className="bg-white p-8 md:p-12 rounded-[48px] shadow-sm border border-slate-100 relative overflow-hidden"
                             >
-                                <div className="flex items-center gap-4 mb-8 pb-4 border-b border-gray-50">
-                                    <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl"><UserIcon size={24} /></div>
-                                    <h3 className="text-xl font-black text-gray-900">Informasi Dasar</h3>
+                                <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full -mr-32 -mt-32"></div>
+                                
+                                <div className="flex items-center gap-6 mb-12 pb-8 border-b border-slate-50 relative z-10">
+                                    <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl shadow-sm flex items-center justify-center"><UserIcon size={28} /></div>
+                                    <h3 className="text-3xl font-black text-slate-900 tracking-tighter">Informasi Dasar</h3>
                                 </div>
                                 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-10 relative z-10">
                                     <div className="group">
-                                        <label className="text-[10px] text-gray-400 uppercase font-black tracking-widest block mb-2">Email Perusahaan</label>
-                                        <div className="flex items-center gap-3 text-gray-800 text-sm font-black bg-gray-50/50 p-4 rounded-2xl border border-gray-100 group-hover:border-blue-200 transition-colors">
-                                            <Mail size={18} className="text-blue-500"/> {user.email || '-'}
+                                        <label className="text-[11px] text-slate-400 uppercase font-black tracking-[0.3em] block mb-4 ml-1">Email Perusahaan</label>
+                                        <div className="flex items-center gap-5 text-slate-800 text-sm font-black bg-slate-50/50 p-6 rounded-[24px] border border-slate-100 group-hover:border-blue-200 group-hover:bg-white group-hover:shadow-lg transition-all duration-500">
+                                            <div className="w-10 h-10 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center transition-transform duration-500 group-hover:scale-110"><Mail size={20} className="text-blue-500"/></div>
+                                            <span className="truncate">{user.email || '-'}</span>
                                         </div>
                                     </div>
                                     <div className="group">
-                                        <label className="text-[10px] text-gray-400 uppercase font-black tracking-widest block mb-2">No. Handphone</label>
-                                        <div className="flex items-center gap-3 text-gray-800 text-sm font-black bg-gray-50/50 p-4 rounded-2xl border border-gray-100 group-hover:border-blue-200 transition-colors">
-                                            <Phone size={18} className="text-blue-500"/> {user.phone || '-'}
+                                        <label className="text-[11px] text-slate-400 uppercase font-black tracking-[0.3em] block mb-4 ml-1">No. Handphone</label>
+                                        <div className="flex items-center gap-5 text-slate-800 text-sm font-black bg-slate-50/50 p-6 rounded-[24px] border border-slate-100 group-hover:border-blue-200 group-hover:bg-white group-hover:shadow-lg transition-all duration-500">
+                                            <div className="w-10 h-10 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center transition-transform duration-500 group-hover:scale-110"><Phone size={20} className="text-blue-500"/></div>
+                                            <span className="truncate">{user.phone || '-'}</span>
                                         </div>
                                     </div>
                                     <div className="group">
-                                        <label className="text-[10px] text-gray-400 uppercase font-black tracking-widest block mb-2">Tempat, Tanggal Lahir</label>
-                                        <div className="flex items-center gap-3 text-gray-800 text-sm font-black bg-gray-50/50 p-4 rounded-2xl border border-gray-100 group-hover:border-blue-200 transition-colors">
-                                            <Calendar size={18} className="text-blue-500"/> 
-                                            {user.birthPlace || '-'}, {user.birthDate ? new Date(user.birthDate).toLocaleDateString('id-ID', { dateStyle: 'long' }) : '-'}
+                                        <label className="text-[11px] text-slate-400 uppercase font-black tracking-[0.3em] block mb-4 ml-1">Tempat, Tanggal Lahir</label>
+                                        <div className="flex items-center gap-5 text-slate-800 text-sm font-black bg-slate-50/50 p-6 rounded-[24px] border border-slate-100 group-hover:border-blue-200 group-hover:bg-white group-hover:shadow-lg transition-all duration-500">
+                                            <div className="w-10 h-10 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center transition-transform duration-500 group-hover:scale-110"><Calendar size={20} className="text-blue-500"/></div>
+                                            <span className="truncate">
+                                                {user.birthPlace || '-'}, {user.birthDate ? new Date(user.birthDate).toLocaleDateString('id-ID', { dateStyle: 'long' }) : '-'}
+                                            </span>
                                         </div>
                                     </div>
                                     <div className="group">
-                                        <label className="text-[10px] text-gray-400 uppercase font-black tracking-widest block mb-2">Jenis Kelamin</label>
-                                        <div className="flex items-center gap-3 text-gray-800 text-sm font-black bg-gray-50/50 p-4 rounded-2xl border border-gray-100 group-hover:border-blue-200 transition-colors">
-                                            <UserIcon size={18} className="text-blue-500"/> {user.gender === 'L' ? 'Laki-laki' : user.gender === 'P' ? 'Perempuan' : '-'}
+                                        <label className="text-[11px] text-slate-400 uppercase font-black tracking-[0.3em] block mb-4 ml-1">Jenis Kelamin</label>
+                                        <div className="flex items-center gap-5 text-slate-800 text-sm font-black bg-slate-50/50 p-6 rounded-[24px] border border-slate-100 group-hover:border-blue-200 group-hover:bg-white group-hover:shadow-lg transition-all duration-500">
+                                            <div className="w-10 h-10 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center transition-transform duration-500 group-hover:scale-110"><UserIcon size={20} className="text-blue-500"/></div>
+                                            <span className="truncate">{user.gender === 'L' ? 'Laki-laki' : user.gender === 'P' ? 'Perempuan' : '-'}</span>
                                         </div>
                                     </div>
                                     <div className="md:col-span-2 group">
-                                        <label className="text-[10px] text-gray-400 uppercase font-black tracking-widest block mb-2">Alamat Domisili</label>
-                                        <div className="flex items-start gap-3 text-gray-800 text-sm font-black bg-gray-50/50 p-5 rounded-2xl border border-gray-100 group-hover:border-blue-200 transition-colors">
-                                            <Home size={18} className="text-blue-500 mt-1 flex-shrink-0"/> {user.address || '-'}
+                                        <label className="text-[11px] text-slate-400 uppercase font-black tracking-[0.3em] block mb-4 ml-1">Alamat Domisili</label>
+                                        <div className="flex items-start gap-6 text-slate-800 text-sm font-black bg-slate-50/50 p-8 rounded-[32px] border border-slate-100 group-hover:border-blue-200 group-hover:bg-white group-hover:shadow-lg transition-all duration-500">
+                                            <div className="w-12 h-12 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center flex-shrink-0 mt-1 transition-transform duration-500 group-hover:scale-110"><Home size={24} className="text-blue-500"/></div>
+                                            <span className="leading-relaxed text-base">{user.address || '-'}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -1004,55 +1072,59 @@ const Settings: React.FC<SettingsProps> = ({ user, appSettings, onUpdateSettings
 
                             {/* Job Description Card */}
                             <motion.div 
-                                initial={{ opacity: 0, x: 20 }}
-                                animate={{ opacity: 1, x: 0 }}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.1 }}
-                                className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100"
+                                className="bg-white p-8 md:p-12 rounded-[48px] shadow-sm border border-slate-100 relative overflow-hidden"
                             >
-                                <div className="flex items-center gap-4 mb-8 pb-4 border-b border-gray-50">
-                                    <div className="p-3 bg-orange-50 text-orange-600 rounded-2xl"><Briefcase size={24} /></div>
+                                <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 rounded-full -mr-32 -mt-32"></div>
+                                
+                                <div className="flex items-center gap-6 mb-12 pb-8 border-b border-slate-50 relative z-10">
+                                    <div className="w-14 h-14 bg-amber-50 text-amber-600 rounded-2xl shadow-sm flex items-center justify-center"><Briefcase size={28} /></div>
                                     <div>
-                                        <h3 className="text-xl font-black text-gray-900">Tanggung Jawab Pekerjaan</h3>
-                                        <p className="text-xs text-gray-400 uppercase tracking-widest font-black mt-1">
-                                            {userJobRole?.title || user.position}
+                                        <h3 className="text-3xl font-black text-slate-900 tracking-tighter">Tanggung Jawab Pekerjaan</h3>
+                                        <p className="text-[11px] text-amber-500 uppercase tracking-[0.3em] font-black mt-2">
+                                            {userJobRole?.title || user.position || 'Administrator'}
                                         </p>
                                     </div>
                                 </div>
 
                                 {userJobRole ? (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
                                         {userJobRole.coreResponsibilities.map((resp, idx) => (
-                                            <div key={idx} className="flex gap-4 items-start p-5 rounded-2xl bg-orange-50/30 border border-orange-100 group hover:bg-orange-50 transition-colors">
-                                                <div className="w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                                    <CheckCircle2 className="text-orange-600" size={14} />
+                                            <div key={idx} className="flex gap-6 items-start p-8 rounded-[32px] bg-slate-50/50 border border-slate-100 group hover:bg-white hover:border-amber-200 hover:shadow-xl transition-all duration-500">
+                                                <div className="w-10 h-10 rounded-2xl bg-white border border-slate-100 flex items-center justify-center flex-shrink-0 mt-0.5 shadow-sm group-hover:bg-amber-50 group-hover:border-amber-100 transition-all duration-500">
+                                                    <CheckCircle2 className="text-amber-600" size={20} />
                                                 </div>
-                                                <span className="text-sm font-bold text-gray-700 leading-relaxed">{resp}</span>
+                                                <span className="text-sm font-black text-slate-700 leading-relaxed">{resp}</span>
                                             </div>
                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="text-center py-12 bg-gray-50/50 rounded-3xl border border-dashed border-gray-200">
-                                        <div className="mx-auto w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4 shadow-sm">
-                                            <List className="text-gray-300" size={24} />
+                                    <div className="text-center py-20 bg-slate-50/50 rounded-[40px] border border-dashed border-slate-200 relative z-10">
+                                        <div className="mx-auto w-24 h-24 bg-white rounded-full flex items-center justify-center mb-8 shadow-sm border border-slate-100">
+                                            <List className="text-slate-300" size={40} />
                                         </div>
-                                        <p className="text-gray-400 text-sm font-bold">Daftar tugas belum diatur oleh administrator.</p>
+                                        <p className="text-slate-400 text-[11px] font-black uppercase tracking-[0.3em]">Daftar tugas belum diatur oleh admin.</p>
                                     </div>
                                 )}
                             </motion.div>
 
                             {/* Documents Card */}
                             <motion.div 
-                                initial={{ opacity: 0, x: 20 }}
-                                animate={{ opacity: 1, x: 0 }}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.2 }}
-                                className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100"
+                                className="bg-white p-8 md:p-12 rounded-[48px] shadow-sm border border-slate-100 relative overflow-hidden"
                             >
-                                <div className="flex items-center gap-4 mb-8 pb-4 border-b border-gray-50">
-                                    <div className="p-3 bg-purple-50 text-purple-600 rounded-2xl"><Award size={24} /></div>
-                                    <h3 className="text-xl font-black text-gray-900">Arsip Dokumen</h3>
+                                <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/5 rounded-full -mr-32 -mt-32"></div>
+                                
+                                <div className="flex items-center gap-6 mb-12 pb-8 border-b border-slate-50 relative z-10">
+                                    <div className="w-14 h-14 bg-purple-50 text-purple-600 rounded-2xl shadow-sm flex items-center justify-center"><Award size={28} /></div>
+                                    <h3 className="text-3xl font-black text-slate-900 tracking-tighter">Arsip Dokumen</h3>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
                                     {user.documents && (user.documents.ktp || user.documents.kk || user.documents.ijazah) ? (
                                         <>
                                             {renderDocPreview('KTP', user.documents.ktp)}
@@ -1060,12 +1132,12 @@ const Settings: React.FC<SettingsProps> = ({ user, appSettings, onUpdateSettings
                                             {renderDocPreview('Ijazah', user.documents.ijazah)}
                                         </>
                                     ) : (
-                                        <div className="col-span-2 text-center py-12 bg-gray-50/50 rounded-3xl border border-dashed border-gray-200">
-                                            <div className="mx-auto w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4 shadow-sm">
-                                                <FileText className="text-gray-300" size={24} />
+                                        <div className="col-span-2 text-center py-20 bg-slate-50/50 rounded-[40px] border border-dashed border-slate-200">
+                                            <div className="mx-auto w-24 h-24 bg-white rounded-full flex items-center justify-center mb-8 shadow-sm border border-slate-100">
+                                                <FileText className="text-slate-300" size={40} />
                                             </div>
-                                            <p className="text-gray-400 text-sm font-bold">Belum ada dokumen yang diunggah.</p>
-                                            <p className="text-[10px] text-gray-400 uppercase tracking-widest mt-1">Hubungi admin untuk melengkapi data berkas Anda.</p>
+                                            <p className="text-slate-400 text-[11px] font-black uppercase tracking-[0.3em]">Belum ada dokumen yang diunggah.</p>
+                                            <p className="text-[10px] text-slate-400 uppercase tracking-[0.2em] mt-3 font-black">Silakan lengkapi berkas melalui menu edit profil.</p>
                                         </div>
                                     )}
                                 </div>
@@ -1080,27 +1152,27 @@ const Settings: React.FC<SettingsProps> = ({ user, appSettings, onUpdateSettings
                     {activeTab === 'company' && (user.role === 'admin' || user.role === 'superadmin') && (
                         <motion.div 
                             key="company"
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
                             className="space-y-8"
                         >
-                            <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
-                                <div className="flex items-center gap-4 mb-8 pb-4 border-b border-gray-50">
-                                    <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl"><Globe size={24} /></div>
+                            <div className="bg-white p-6 md:p-10 rounded-[32px] md:rounded-[40px] shadow-sm border border-slate-100">
+                                <div className="flex items-center gap-5 mb-10 pb-6 border-b border-slate-50">
+                                    <div className="p-4 bg-blue-50 text-blue-600 rounded-2xl shadow-sm"><Globe size={24} /></div>
                                     <div>
-                                        <h3 className="text-xl font-black text-gray-900">Informasi Perusahaan</h3>
-                                        <p className="text-xs text-gray-400">Detail identitas organisasi dan kantor pusat.</p>
+                                        <h3 className="text-2xl font-black text-slate-900">Informasi Perusahaan</h3>
+                                        <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Detail identitas organisasi dan kantor pusat.</p>
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     <div className="md:col-span-2">
-                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Nama Perusahaan / Kantor</label>
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1 block">Nama Perusahaan / Kantor</label>
                                         <input 
                                             type="text" 
                                             value={config.officeName || ''} 
                                             onChange={e => setConfig({...config, officeName: e.target.value})} 
-                                            className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-slate-800 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all"
                                             placeholder="Contoh: PT. Maju Bersama"
                                         />
                                     </div>
@@ -1110,7 +1182,7 @@ const Settings: React.FC<SettingsProps> = ({ user, appSettings, onUpdateSettings
                                                 onUpdateSettings(config).catch((e: any) => showToast(`Gagal sinkronisasi: ${e.message}`, "error")); 
                                                 showToast('Informasi perusahaan disimpan', 'success'); 
                                             }}
-                                            className="px-8 py-3.5 bg-blue-600 text-white rounded-2xl font-black text-sm hover:bg-blue-700 transition-all active:scale-95 flex items-center gap-2"
+                                            className="w-full sm:w-auto px-10 py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-800 shadow-xl shadow-slate-200 transition-all active:scale-95 flex items-center justify-center gap-3"
                                         >
                                             <Save size={18} /> Simpan Perubahan
                                         </button>
@@ -1120,123 +1192,125 @@ const Settings: React.FC<SettingsProps> = ({ user, appSettings, onUpdateSettings
                         </motion.div>
                     )}
 
-                    {/* Security & Login Tab */}
+                    {/* Security Tab */}
                     {activeTab === 'security' && (user.role === 'admin' || user.role === 'superadmin') && (
                         <motion.div 
                             key="security"
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
                             className="space-y-8"
                         >
-                            <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
-                                <div className="flex items-center gap-4 mb-8 pb-4 border-b border-gray-50">
-                                    <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl"><Fingerprint size={24} /></div>
+                            <div className="bg-white p-6 md:p-10 rounded-[32px] md:rounded-[40px] shadow-sm border border-slate-100">
+                                <div className="flex items-center gap-5 mb-10 pb-6 border-b border-slate-50">
+                                    <div className="p-4 bg-rose-50 text-rose-600 rounded-2xl shadow-sm"><Shield size={24} /></div>
                                     <div>
-                                        <h3 className="text-xl font-black text-gray-900">Metode Login & Keamanan</h3>
-                                        <p className="text-xs text-gray-400">Konfigurasi cara masuk dan akses sistem.</p>
+                                        <h3 className="text-2xl font-black text-slate-900">Integrasi & Keamanan</h3>
+                                        <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Konfigurasi endpoint API dan sinkronisasi data.</p>
                                     </div>
                                 </div>
-                                <div className="space-y-8">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                        <div className="md:col-span-2">
-                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">URL Google Apps Script Web App</label>
-                                            <div className="flex gap-2">
+                                
+                                <div className="space-y-10">
+                                    <div className="group">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1 block">Google Apps Script Web App URL</label>
+                                        <div className="flex flex-col sm:flex-row gap-3">
+                                            <div className="relative flex-1">
                                                 <input 
                                                     type="url" 
                                                     value={config.apiUrl || ''} 
                                                     onChange={e => setConfig({...config, apiUrl: e.target.value})} 
-                                                    className="flex-1 px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                                    className="w-full pl-12 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-slate-800 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all"
                                                     placeholder="https://script.google.com/macros/s/.../exec"
                                                 />
-                                                <button 
-                                                    onClick={async () => {
-                                                        if (!config.apiUrl) {
-                                                            showToast('Masukkan URL API terlebih dahulu', 'error');
-                                                            return;
-                                                        }
-                                                        try {
-                                                            showToast('Mengetes koneksi...', 'info');
-                                                            const response = await fetch('/api/proxy', {
-                                                                method: 'POST',
-                                                                headers: { "Content-Type": "application/json" },
-                                                                body: JSON.stringify({ action: 'ping', apiUrl: config.apiUrl })
-                                                            });
-                                                            const data = await response.json();
-                                                            if (data.status === 'success' || data.status === 'ok' || data.message === 'pong') {
-                                                                showToast('Koneksi Berhasil!', 'success');
-                                                            } else {
-                                                                showToast('Koneksi Gagal: ' + (data.message || 'Unknown error'), 'error');
-                                                            }
-                                                        } catch (e) {
-                                                            showToast('Gagal terhubung ke backend', 'error');
-                                                        }
-                                                    }}
-                                                    className="px-4 bg-slate-100 text-slate-600 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all active:scale-95"
-                                                >
-                                                    Test
-                                                </button>
+                                                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400">
+                                                    <LinkIcon size={18} />
+                                                </div>
                                             </div>
-                                            <div className="mt-3 p-4 bg-blue-50/50 rounded-2xl border border-blue-100">
-                                                <p className="text-[10px] text-blue-700 font-bold leading-relaxed">
-                                                    <span className="block mb-1 uppercase tracking-wider">Cara Menghubungkan:</span>
-                                                    1. Buka Google Apps Script editor.<br/>
-                                                    2. Deploy sebagai Web App (Akses: Anyone).<br/>
-                                                    3. Copy URL Web App dan tempel di atas.<br/>
-                                                    4. Klik 'Simpan Pengaturan' di bawah.
-                                                </p>
-                                            </div>
+                                            <button 
+                                                onClick={async () => {
+                                                    if (!config.apiUrl) return showToast('Masukkan URL API terlebih dahulu', 'error');
+                                                    setIsTestingApi(true);
+                                                    try {
+                                                        const response = await fetch('/api/proxy', {
+                                                            method: 'POST',
+                                                            headers: { "Content-Type": "application/json" },
+                                                            body: JSON.stringify({ action: 'ping', apiUrl: config.apiUrl })
+                                                        });
+                                                        const data = await response.json();
+                                                        if (data.status === 'success' || data.status === 'ok' || data.message === 'pong') {
+                                                            showToast('Koneksi Berhasil!', 'success');
+                                                        } else {
+                                                            showToast('Koneksi Gagal: ' + (data.message || 'Unknown error'), 'error');
+                                                        }
+                                                    } catch (e) {
+                                                        showToast('Gagal terhubung ke backend', 'error');
+                                                    } finally {
+                                                        setIsTestingApi(false);
+                                                    }
+                                                }}
+                                                disabled={isTestingApi}
+                                                className="px-8 py-4 bg-blue-50 text-blue-600 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-100 transition-all flex items-center justify-center gap-2 active:scale-95"
+                                            >
+                                                {isTestingApi ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} />}
+                                                Test Koneksi
+                                            </button>
                                         </div>
-                                        <div>
-                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Toleransi Keterlambatan (Menit)</label>
-                                            <input 
-                                                type="number" 
-                                                min="0" 
-                                                value={config.gracePeriodMinutes || 0} 
-                                                onChange={e => setConfig({...config, gracePeriodMinutes: parseInt(e.target.value)})} 
-                                                className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                            />
+                                        <div className="mt-4 p-5 bg-blue-50/50 rounded-2xl border border-blue-100 flex gap-4">
+                                            <div className="p-2 bg-white rounded-xl shadow-sm border border-blue-100 h-fit"><Info size={16} className="text-blue-500" /></div>
+                                            <p className="text-[11px] text-blue-700 leading-relaxed font-bold">
+                                                Pastikan Anda telah mempublikasikan Google Apps Script sebagai "Web App" dengan akses "Anyone" agar sistem dapat melakukan sinkronisasi data secara real-time.
+                                            </p>
                                         </div>
                                     </div>
 
-                                    <div className="flex justify-between items-center pt-4 border-t border-gray-50">
-                                        <div className="flex gap-2">
-                                            <button 
-                                                onClick={() => {
-                                                    if (window.confirm("Hapus semua data lokal dan reset ke pengaturan awal? Anda akan keluar dari sistem.")) {
-                                                        onReset();
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-6 border-t border-slate-50">
+                                        <button 
+                                            onClick={() => {
+                                                if (window.confirm("Hapus semua data lokal dan reset ke pengaturan awal? Anda akan keluar dari sistem.")) {
+                                                    onReset();
+                                                }
+                                            }}
+                                            className="p-6 bg-rose-50 border border-rose-100 rounded-[32px] text-left group hover:bg-rose-100 transition-all active:scale-95"
+                                        >
+                                            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center mb-4 shadow-sm group-hover:shadow-md transition-all">
+                                                <RefreshCw size={24} className="text-rose-500" />
+                                            </div>
+                                            <h4 className="text-sm font-black text-rose-700 uppercase tracking-widest mb-1">Reset Data Lokal</h4>
+                                            <p className="text-[10px] text-rose-500/80 font-bold leading-relaxed uppercase tracking-wider">Hapus cache dan pengaturan yang tersimpan di browser ini.</p>
+                                        </button>
+
+                                        <button 
+                                            onClick={async () => {
+                                                if (window.confirm("Impor data karyawan awal ke backend?")) {
+                                                    try {
+                                                        showToast("Memulai impor data...", "info");
+                                                        const { seedEmployees } = await import('../services/seed_data');
+                                                        await seedEmployees();
+                                                        showToast("Data karyawan berhasil diimpor!", "success");
+                                                    } catch (e: any) {
+                                                        showToast("Gagal impor: " + e.message, "error");
                                                     }
-                                                }}
-                                                className="px-6 py-3.5 bg-rose-50 text-rose-600 rounded-2xl font-black text-xs hover:bg-rose-100 transition-all active:scale-95 flex items-center gap-2"
-                                            >
-                                                <Trash2 size={18} /> Reset Data Lokal
-                                            </button>
-                                            <button 
-                                                onClick={async () => {
-                                                    if (window.confirm("Impor 22 data karyawan awal ke backend?")) {
-                                                        try {
-                                                            showToast("Memulai impor data...", "info");
-                                                            const { seedEmployees } = await import('../services/seed_data');
-                                                            await seedEmployees();
-                                                            showToast("Data karyawan berhasil diimpor!", "success");
-                                                        } catch (e: any) {
-                                                            showToast("Gagal impor: " + e.message, "error");
-                                                        }
-                                                    }
-                                                }}
-                                                className="px-6 py-3.5 bg-amber-50 text-amber-600 rounded-2xl font-black text-xs hover:bg-amber-100 transition-all active:scale-95 flex items-center gap-2"
-                                            >
-                                                <Users size={18} /> Impor Data Awal
-                                            </button>
-                                        </div>
+                                                }
+                                            }}
+                                            className="p-6 bg-indigo-50 border border-indigo-100 rounded-[32px] text-left group hover:bg-indigo-100 transition-all active:scale-95"
+                                        >
+                                            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center mb-4 shadow-sm group-hover:shadow-md transition-all">
+                                                <DownloadCloud size={24} className="text-indigo-500" />
+                                            </div>
+                                            <h4 className="text-sm font-black text-indigo-700 uppercase tracking-widest mb-1">Impor Database</h4>
+                                            <p className="text-[10px] text-indigo-500/80 font-bold leading-relaxed uppercase tracking-wider">Tarik data karyawan terbaru dari Google Sheets ke sistem lokal.</p>
+                                        </button>
+                                    </div>
+
+                                    <div className="flex justify-end pt-6">
                                         <button 
                                             onClick={() => { 
                                                 onUpdateSettings(config).catch((e: any) => showToast(`Gagal sinkronisasi: ${e.message}`, "error")); 
                                                 showToast('Pengaturan keamanan disimpan', 'success'); 
                                             }}
-                                            className="px-8 py-3.5 bg-blue-600 text-white rounded-2xl font-black text-sm hover:bg-blue-700 transition-all active:scale-95 flex items-center gap-2"
+                                            className="w-full sm:w-auto px-10 py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-800 shadow-xl shadow-slate-200 transition-all active:scale-95 flex items-center justify-center gap-3"
                                         >
-                                            <Save size={18} /> Simpan Pengaturan
+                                            <Save size={18} /> Simpan Perubahan
                                         </button>
                                     </div>
                                 </div>
@@ -1248,59 +1322,76 @@ const Settings: React.FC<SettingsProps> = ({ user, appSettings, onUpdateSettings
                     {activeTab === 'locations' && (user.role === 'admin' || user.role === 'superadmin') && (
                         <motion.div 
                             key="locations"
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
                             className="space-y-8"
                         >
-                            <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
-                                <div className="flex items-center justify-between mb-8 pb-4 border-b border-gray-50">
-                                    <div className="flex items-center gap-4">
-                                        <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl"><MapPin size={24} /></div>
-                                        <div>
-                                            <h3 className="text-xl font-black text-gray-900">Lokasi Kantor & Cabang</h3>
-                                            <p className="text-xs text-gray-400">Daftar lokasi kantor yang diizinkan untuk absensi WFO.</p>
-                                        </div>
-                                    </div>
-                                    <button 
-                                        onClick={openAddOffice} 
-                                        className="bg-blue-600 text-white px-6 py-3 rounded-2xl text-sm font-black flex items-center gap-2 hover:bg-blue-700 shadow-xl shadow-blue-100 transition-all active:scale-95"
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                <div>
+                                    <h3 className="text-2xl font-black text-slate-900">Lokasi Kantor</h3>
+                                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Kelola titik koordinat presensi karyawan.</p>
+                                </div>
+                                <button 
+                                    onClick={openAddOffice}
+                                    className="px-8 py-4 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 shadow-xl shadow-blue-100 transition-all active:scale-95 flex items-center justify-center gap-3"
+                                >
+                                    <Plus size={18} /> Tambah Lokasi
+                                </button>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {config.offices?.map((office) => (
+                                    <motion.div 
+                                        layout
+                                        key={office.id} 
+                                        className="bg-white p-6 rounded-[32px] shadow-sm border border-slate-100 group hover:shadow-xl hover:border-blue-100 transition-all relative overflow-hidden"
                                     >
-                                        <Plus size={18} /> Tambah Lokasi
-                                    </button>
-                                </div>
-                                
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    {(config.offices || []).map(office => (
-                                        <div key={office.id} className="border border-gray-100 rounded-3xl p-6 hover:shadow-lg transition-all bg-gray-50/30 group relative overflow-hidden">
-                                            <div className="flex justify-between items-start mb-4 relative z-10">
-                                                <div>
-                                                    <h4 className="font-black text-gray-900 text-lg">{office.name}</h4>
-                                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Radius: {office.radius * 1000} Meter</p>
-                                                </div>
-                                                <div className="flex gap-2">
-                                                    <button onClick={() => openEditOffice(office)} className="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"><Edit2 size={16}/></button>
-                                                    <button onClick={() => deleteOffice(office.id)} className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"><Trash2 size={16}/></button>
-                                                </div>
+                                        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-blue-500/5 to-transparent rounded-bl-full"></div>
+                                        
+                                        <div className="flex justify-between items-start mb-6 relative z-10">
+                                            <div className="p-4 bg-blue-50 text-blue-600 rounded-2xl group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                                <MapPin size={24} />
                                             </div>
-                                            <div className="text-[10px] font-bold text-gray-500 bg-white p-3 rounded-xl border border-gray-50 shadow-sm relative z-10">
-                                                <div className="flex justify-between mb-1">
-                                                    <span>LATITUDE:</span>
-                                                    <span className="text-gray-800">{office.lat.toFixed(6)}</span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span>LONGITUDE:</span>
-                                                    <span className="text-gray-800">{office.lng.toFixed(6)}</span>
+                                            <div className="flex gap-2">
+                                                <button onClick={() => openEditOffice(office)} className="p-3 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all">
+                                                    <Edit2 size={18} />
+                                                </button>
+                                                <button onClick={() => deleteOffice(office.id)} className="p-3 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all">
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div className="relative z-10">
+                                            <h4 className="text-xl font-black text-slate-800 mb-2">{office.name}</h4>
+                                            <div className="flex items-center gap-2 text-blue-600 mb-6">
+                                                <div className="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></div>
+                                                <span className="text-[10px] font-black uppercase tracking-widest">Radius: {office.radius} Meter</span>
+                                            </div>
+
+                                            <div className="space-y-3">
+                                                <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                                    <div className="p-2 bg-white rounded-lg shadow-sm"><Navigation size={14} className="text-slate-400" /></div>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Koordinat</span>
+                                                        <span className="text-xs font-black text-slate-700">{office.lat.toFixed(6)}, {office.lng.toFixed(6)}</span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    ))}
-                                    {(config.offices || []).length === 0 && (
-                                        <div className="md:col-span-2 text-center py-12 bg-gray-50/50 rounded-3xl border border-dashed border-gray-200">
-                                            <p className="text-gray-400 text-sm font-bold">Belum ada lokasi kantor yang ditambahkan.</p>
+                                    </motion.div>
+                                ))}
+
+                                {(!config.offices || config.offices.length === 0) && (
+                                    <div className="md:col-span-2 text-center py-20 bg-white rounded-[40px] border border-dashed border-slate-200">
+                                        <div className="mx-auto w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mb-6">
+                                            <MapPin size={40} className="text-slate-200" />
                                         </div>
-                                    )}
-                                </div>
+                                        <h4 className="text-lg font-black text-slate-800 uppercase tracking-widest">Belum Ada Lokasi</h4>
+                                        <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-2">Tambahkan lokasi kantor untuk memulai sistem presensi.</p>
+                                    </div>
+                                )}
                             </div>
                         </motion.div>
                     )}
@@ -1309,64 +1400,105 @@ const Settings: React.FC<SettingsProps> = ({ user, appSettings, onUpdateSettings
                     {activeTab === 'shifts' && (user.role === 'admin' || user.role === 'superadmin') && (
                         <motion.div 
                             key="shifts"
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
-                            className="space-y-6"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            className="space-y-8"
                         >
-                            <div className="bg-white p-6 rounded-2xl border border-slate-200/60 shadow-sm">
-                                <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-50">
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2 bg-slate-100 text-slate-600 rounded-xl"><Clock size={20} /></div>
-                                        <div>
-                                            <h3 className="text-lg font-bold text-slate-900">Jadwal & Shift Kerja</h3>
-                                            <p className="text-xs text-slate-400">Kelola jam kerja dan penugasan karyawan.</p>
-                                        </div>
-                                    </div>
-                                    <button 
-                                        onClick={openAddShift} 
-                                        className="bg-slate-900 text-white px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-slate-800 transition-all active:scale-95"
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                <div>
+                                    <h3 className="text-2xl font-black text-slate-900">Jadwal Kerja</h3>
+                                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Atur jam masuk, pulang, dan hari kerja karyawan.</p>
+                                </div>
+                                <button 
+                                    onClick={openAddShift}
+                                    className="px-8 py-4 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 shadow-xl shadow-blue-100 transition-all active:scale-95 flex items-center justify-center gap-3"
+                                >
+                                    <Plus size={18} /> Tambah Jadwal
+                                </button>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {config.shifts?.map((shift) => (
+                                    <motion.div 
+                                        layout
+                                        key={shift.id} 
+                                        className="bg-white p-6 rounded-[32px] shadow-sm border border-slate-100 group hover:shadow-xl hover:border-blue-100 transition-all"
                                     >
-                                        <Plus size={16} /> Tambah Jadwal
-                                    </button>
-                                </div>
-                                
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    {config.shifts.map(shift => (
-                                        <div key={shift.id} className="p-4 bg-slate-50/50 border border-slate-100 rounded-xl hover:bg-slate-50 transition-all group">
-                                            <div className="flex items-center justify-between mb-3">
-                                                <div className="flex items-center gap-3">
-                                                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${shift.isFlexible ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'}`}>
-                                                        <Clock size={18} />
-                                                    </div>
-                                                    <div>
-                                                        <h4 className="font-bold text-slate-900 text-sm">{shift.name}</h4>
-                                                        <p className="text-[10px] font-bold text-slate-500">{shift.startTime} - {shift.endTime}</p>
-                                                    </div>
+                                        <div className="flex justify-between items-start mb-6">
+                                            <div className="flex items-center gap-4">
+                                                <div className="p-4 bg-blue-50 text-blue-600 rounded-2xl group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                                    <Clock size={24} />
                                                 </div>
-                                                <div className="flex gap-1">
-                                                    <button onClick={() => openEditShift(shift)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"><Edit2 size={14}/></button>
-                                                    <button onClick={() => deleteShift(shift.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"><Trash2 size={14}/></button>
+                                                <div>
+                                                    <h4 className="text-lg font-black text-slate-800">{shift.name}</h4>
+                                                    <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${shift.isFlexible ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-slate-50 text-slate-500 border border-slate-100'}`}>
+                                                        {shift.isFlexible ? 'Flexible / Online' : 'Fixed / Kantor'}
+                                                    </span>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-                                                <div className="flex gap-1">
-                                                    {['S', 'S', 'R', 'K', 'J', 'S', 'M'].map((day, i) => (
-                                                        <span key={i} className={`text-[8px] font-bold w-4 h-4 flex items-center justify-center rounded ${shift.workDays.includes(i+1) ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-400'}`}>
-                                                            {day}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                                <span className="text-[10px] font-bold text-slate-400">{shift.assignedUserIds.length} Staff</span>
+                                            <div className="flex gap-1">
+                                                <button onClick={() => openEditShift(shift)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all">
+                                                    <Edit2 size={16} />
+                                                </button>
+                                                <button onClick={() => deleteShift(shift.id)} className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all">
+                                                    <Trash2 size={16} />
+                                                </button>
                                             </div>
                                         </div>
-                                    ))}
-                                    {config.shifts.length === 0 && (
-                                        <div className="text-center py-10 bg-slate-50/50 rounded-xl border border-dashed border-slate-200 col-span-full">
-                                            <p className="text-slate-400 text-xs font-medium">Belum ada jadwal yang ditambahkan.</p>
+
+                                        <div className="grid grid-cols-2 gap-3 mb-6">
+                                            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Masuk</span>
+                                                <span className="text-sm font-black text-slate-800">{shift.startTime}</span>
+                                            </div>
+                                            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Pulang</span>
+                                                <span className="text-sm font-black text-slate-800">{shift.endTime}</span>
+                                            </div>
                                         </div>
-                                    )}
-                                </div>
+
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'].map((day, idx) => {
+                                                const isActive = shift.workDays.includes(idx + 1);
+                                                return (
+                                                    <span key={day} className={`w-9 h-9 flex items-center justify-center rounded-xl text-[10px] font-black transition-all ${isActive ? 'bg-blue-600 text-white shadow-md shadow-blue-100' : 'bg-slate-50 text-slate-300'}`}>
+                                                        {day}
+                                                    </span>
+                                                );
+                                            })}
+                                        </div>
+
+                                        <div className="mt-6 pt-6 border-t border-slate-50 flex items-center justify-between">
+                                            <div className="flex -space-x-2">
+                                                {shift.assignedUserIds.slice(0, 5).map((uid) => {
+                                                    const u = state.users.find(u => u.id === uid);
+                                                    return (
+                                                        <div key={uid} className="w-8 h-8 rounded-full border-2 border-white bg-slate-100 overflow-hidden shadow-sm">
+                                                            <img src={u?.avatar || `https://ui-avatars.com/api/?name=${u?.name}`} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                                                        </div>
+                                                    );
+                                                })}
+                                                {shift.assignedUserIds.length > 5 && (
+                                                    <div className="w-8 h-8 rounded-full border-2 border-white bg-slate-900 text-white flex items-center justify-center text-[10px] font-black shadow-sm">
+                                                        +{shift.assignedUserIds.length - 5}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{shift.assignedUserIds.length} Karyawan</span>
+                                        </div>
+                                    </motion.div>
+                                ))}
+
+                                {(!config.shifts || config.shifts.length === 0) && (
+                                    <div className="md:col-span-2 text-center py-20 bg-white rounded-[40px] border border-dashed border-slate-200">
+                                        <div className="mx-auto w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mb-6">
+                                            <Clock size={40} className="text-slate-200" />
+                                        </div>
+                                        <h4 className="text-lg font-black text-slate-800 uppercase tracking-widest">Belum Ada Jadwal</h4>
+                                        <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-2">Tambahkan jadwal kerja untuk mengatur jam operasional.</p>
+                                    </div>
+                                )}
                             </div>
                         </motion.div>
                     )}
@@ -1375,76 +1507,99 @@ const Settings: React.FC<SettingsProps> = ({ user, appSettings, onUpdateSettings
                     {activeTab === 'jobs' && (user.role === 'admin' || user.role === 'superadmin') && (
                         <motion.div 
                             key="jobs"
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
-                            className="space-y-6"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            className="space-y-8"
                         >
-                            <div className="bg-white p-6 rounded-2xl border border-slate-200/60 shadow-sm">
-                                <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-50">
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2 bg-slate-100 text-slate-600 rounded-xl"><Briefcase size={20} /></div>
-                                        <div>
-                                            <h3 className="text-lg font-bold text-slate-900">Manajemen Jabatan</h3>
-                                            <p className="text-xs text-slate-400">Atur struktur posisi dan tanggung jawab.</p>
-                                        </div>
-                                    </div>
-                                    <button 
-                                        onClick={openAddJob} 
-                                        className="bg-slate-900 text-white px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-slate-800 transition-all active:scale-95"
-                                    >
-                                        <Plus size={16} /> Tambah Jabatan
-                                    </button>
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                <div>
+                                    <h3 className="text-2xl font-black text-slate-900">Manajemen Jabatan</h3>
+                                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Struktur organisasi dan tanggung jawab karyawan.</p>
                                 </div>
-                                
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    {(config.jobRoles || []).map(job => {
-                                        const employeeCount = state.users.filter(u => u.jobRoleId === job.id).length;
-                                        const getLevelColor = (level: string) => {
-                                            switch (level) {
-                                                case 'Executive': return 'text-purple-600 bg-purple-50';
-                                                case 'Manager': return 'text-orange-600 bg-orange-50';
-                                                case 'Senior': return 'text-blue-600 bg-blue-50';
-                                                default: return 'text-slate-600 bg-slate-50';
-                                            }
-                                        };
+                                <button 
+                                    onClick={openAddJob}
+                                    className="px-8 py-4 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 shadow-xl shadow-blue-100 transition-all active:scale-95 flex items-center justify-center gap-3"
+                                >
+                                    <Plus size={18} /> Tambah Jabatan
+                                </button>
+                            </div>
 
-                                        return (
-                                            <div key={job.id} className="p-4 bg-slate-50/50 border border-slate-100 rounded-xl hover:bg-slate-50 transition-all group">
-                                                <div className="flex items-center justify-between mb-3">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-10 h-10 rounded-lg bg-white border border-slate-100 flex items-center justify-center text-slate-400 group-hover:text-slate-600 shadow-sm">
-                                                            <Briefcase size={18} />
-                                                        </div>
-                                                        <div>
-                                                            <h4 className="font-bold text-slate-900 text-sm">{job.title}</h4>
-                                                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded-md ${getLevelColor(job.level)}`}>
-                                                                {job.level}
-                                                            </span>
-                                                        </div>
+                            <div className="space-y-12">
+                                {(config.jobRoles || []).map((job) => {
+                                    const employeeCount = state.users.filter(u => u.jobRoleId === job.id).length;
+                                    
+                                    return (
+                                        <motion.div 
+                                            layout
+                                            key={job.id} 
+                                            className="bg-white rounded-[40px] shadow-sm border border-slate-100 overflow-hidden group hover:shadow-xl transition-all"
+                                        >
+                                            <div 
+                                                onClick={() => openEditJob(job)}
+                                                className="p-8 border-b border-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 cursor-pointer hover:bg-slate-50/50 transition-colors"
+                                            >
+                                                <div className="flex items-center gap-4">
+                                                    <div className="p-4 bg-slate-900 text-white rounded-2xl">
+                                                        <Briefcase size={24} />
                                                     </div>
-                                                    <div className="flex gap-1">
-                                                        <button onClick={() => openEditJob(job)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"><Edit2 size={14}/></button>
-                                                        <button onClick={() => deleteJob(job.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"><Trash2 size={14}/></button>
+                                                    <div>
+                                                        <h4 className="text-2xl font-black text-slate-900 uppercase tracking-tight">{job.title}</h4>
+                                                        <div className="flex items-center gap-3 mt-1">
+                                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                                                                <Users size={12} /> {employeeCount} Karyawan
+                                                            </span>
+                                                            <div className="w-1 h-1 rounded-full bg-slate-200"></div>
+                                                            <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">{job.level}</span>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                                <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-                                                    <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1">
-                                                        <Users size={10} /> {employeeCount} Staff
-                                                    </span>
-                                                    <span className="text-[10px] font-bold text-slate-400 italic truncate max-w-[100px]">
-                                                        {job.coreResponsibilities.length} Tugas
-                                                    </span>
+                                                <div className="flex gap-2">
+                                                    <button onClick={() => openEditJob(job)} className="px-5 py-3 bg-blue-50 text-blue-600 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all flex items-center gap-2">
+                                                        <Edit2 size={14} /> Edit Jabatan
+                                                    </button>
+                                                    <button onClick={() => deleteJob(job.id)} className="p-3 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all">
+                                                        <Trash2 size={18} />
+                                                    </button>
                                                 </div>
                                             </div>
-                                        );
-                                    })}
-                                    {(config.jobRoles || []).length === 0 && (
-                                        <div className="text-center py-10 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
-                                            <p className="text-slate-400 text-xs font-medium">Belum ada jabatan yang ditambahkan.</p>
+
+                                            <div className="p-0">
+                                                <table className="w-full border-collapse">
+                                                    <thead>
+                                                        <tr className="bg-[#F27D26]">
+                                                            <th className="w-16 py-4 px-6 text-left text-[11px] font-black text-white uppercase tracking-widest border-r border-white/10">No</th>
+                                                            <th className="py-4 px-6 text-left text-[11px] font-black text-white uppercase tracking-widest">Tugas / Aktivitas</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {job.coreResponsibilities.map((resp, idx) => (
+                                                            <tr key={idx} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
+                                                                <td className="py-4 px-6 text-sm font-black text-slate-400 border-r border-slate-50">{idx + 1}</td>
+                                                                <td className="py-4 px-6 text-sm font-bold text-slate-700">{resp}</td>
+                                                            </tr>
+                                                        ))}
+                                                        {job.coreResponsibilities.length === 0 && (
+                                                            <tr>
+                                                                <td colSpan={2} className="py-12 text-center text-[10px] font-black text-slate-300 uppercase tracking-widest">Belum ada tugas ditambahkan</td>
+                                                            </tr>
+                                                        )}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </motion.div>
+                                    );
+                                })}
+
+                                {(config.jobRoles || []).length === 0 && (
+                                    <div className="text-center py-20 bg-white rounded-[40px] border border-dashed border-slate-200">
+                                        <div className="mx-auto w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mb-6">
+                                            <Briefcase size={40} className="text-slate-200" />
                                         </div>
-                                    )}
-                                </div>
+                                        <h4 className="text-lg font-black text-slate-800 uppercase tracking-widest">Belum Ada Jabatan</h4>
+                                        <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-2">Tambahkan struktur jabatan untuk mengatur tanggung jawab karyawan.</p>
+                                    </div>
+                                )}
                             </div>
                         </motion.div>
                     )}
@@ -1452,90 +1607,96 @@ const Settings: React.FC<SettingsProps> = ({ user, appSettings, onUpdateSettings
                     {activeTab === 'permissions' && user.role === 'superadmin' && (
                         <motion.div 
                             key="permissions"
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
-                            className="space-y-6"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            className="space-y-8"
                         >
-                            <div className="bg-white p-6 rounded-2xl border border-slate-200/60 shadow-sm">
-                                <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-50">
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2 bg-slate-100 text-slate-600 rounded-xl"><ShieldAlert size={20} /></div>
-                                        <div>
-                                            <h3 className="text-lg font-bold text-slate-900">Hak Akses (RBAC)</h3>
-                                            <p className="text-xs text-slate-400">Atur modul yang dapat diakses oleh setiap level jabatan.</p>
-                                        </div>
-                                    </div>
-                                    <button 
-                                        onClick={() => {
-                                            onUpdateSettings(config).catch((e: any) => showToast(`Gagal sinkronisasi: ${e.message}`, "error"));
-                                            showToast("Hak akses berhasil disinkronkan!", "success");
-                                        }}
-                                        className="bg-slate-900 text-white px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-slate-800 transition-all active:scale-95"
-                                    >
-                                        <Save size={16} /> Simpan Perubahan
-                                    </button>
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                <div>
+                                    <h3 className="text-2xl font-black text-slate-900">Hak Akses (RBAC)</h3>
+                                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Atur modul yang dapat diakses oleh setiap level jabatan.</p>
                                 </div>
+                                <button 
+                                    onClick={() => {
+                                        onUpdateSettings(config).catch((e: any) => showToast(`Gagal sinkronisasi: ${e.message}`, "error"));
+                                        showToast("Hak akses berhasil disinkronkan!", "success");
+                                    }}
+                                    className="px-8 py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-800 shadow-xl shadow-slate-200 transition-all active:scale-95 flex items-center justify-center gap-3"
+                                >
+                                    <Save size={18} /> Simpan Perubahan
+                                </button>
+                            </div>
 
-                                <div className="space-y-6">
-                                    {['employee', 'manager', 'hr', 'admin'].map((role) => {
-                                        const rolePerm = config.rolePermissions?.find(p => p.role === role) || { role: role as any, allowedModules: [] };
-                                        const roleLabel = role === 'employee' ? 'Karyawan' : role === 'manager' ? 'Manager' : role === 'hr' ? 'HRD' : 'Administrator';
-                                        
-                                        return (
-                                            <div key={role} className="space-y-3">
-                                                <div className="flex items-center gap-2">
-                                                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{roleLabel}</h4>
-                                                    <div className="h-px flex-1 bg-slate-100"></div>
+                            <div className="space-y-10">
+                                {['employee', 'manager', 'hr', 'admin'].map((role) => {
+                                    const rolePerm = config.rolePermissions?.find(p => p.role === role) || { role: role as any, allowedModules: [] };
+                                    const roleLabel = role === 'employee' ? 'Karyawan' : role === 'manager' ? 'Manager' : role === 'hr' ? 'HRD' : 'Administrator';
+                                    
+                                    return (
+                                        <div key={role} className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm">
+                                            <div className="flex items-center gap-4 mb-8">
+                                                <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400">
+                                                    <Fingerprint size={24} />
                                                 </div>
-
-                                                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2">
-                                                    {MODULES.map((module) => {
-                                                        const isAllowed = rolePerm.allowedModules.includes(module.id);
-                                                        return (
-                                                            <button
-                                                                key={module.id}
-                                                                onClick={() => {
-                                                                    const currentPerms = config.rolePermissions || [];
-                                                                    const existingIdx = currentPerms.findIndex(p => p.role === role);
-                                                                    let newPerms = [...currentPerms];
-                                                                    
-                                                                    if (existingIdx >= 0) {
-                                                                        const modules = [...currentPerms[existingIdx].allowedModules];
-                                                                        if (isAllowed) {
-                                                                            newPerms[existingIdx] = { ...newPerms[existingIdx], allowedModules: modules.filter(m => m !== module.id) };
-                                                                        } else {
-                                                                            newPerms[existingIdx] = { ...newPerms[existingIdx], allowedModules: [...modules, module.id] };
-                                                                        }
-                                                                    } else {
-                                                                        newPerms.push({ role: role as any, allowedModules: [module.id] });
-                                                                    }
-                                                                    
-                                                                    setConfig({ ...config, rolePermissions: newPerms });
-                                                                }}
-                                                                className={`p-2.5 rounded-xl border text-center transition-all relative group ${
-                                                                    isAllowed 
-                                                                        ? 'border-slate-900 bg-slate-900 text-white shadow-sm' 
-                                                                        : 'border-slate-100 bg-white hover:border-slate-200 text-slate-600'
-                                                                }`}
-                                                            >
-                                                                <div className="flex flex-col items-center gap-1">
-                                                                    <module.icon size={12} className={isAllowed ? 'text-slate-300' : 'text-slate-400'} />
-                                                                    <span className="font-bold text-[9px] truncate w-full">{module.name}</span>
-                                                                </div>
-                                                                {isAllowed && (
-                                                                    <div className="absolute top-1 right-1">
-                                                                        <div className="w-2 h-2 bg-emerald-500 rounded-full border border-white"></div>
-                                                                    </div>
-                                                                )}
-                                                            </button>
-                                                        );
-                                                    })}
+                                                <div>
+                                                    <h4 className="text-lg font-black text-slate-800 uppercase tracking-widest">{roleLabel}</h4>
+                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Konfigurasi Modul Akses</p>
                                                 </div>
+                                                <div className="h-px flex-1 bg-slate-50"></div>
                                             </div>
-                                        );
-                                    })}
-                                </div>
+
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                                                {MODULES.map((module) => {
+                                                    const isAllowed = rolePerm.allowedModules.includes(module.id);
+                                                    return (
+                                                        <button
+                                                            key={module.id}
+                                                            onClick={() => {
+                                                                const currentPerms = config.rolePermissions || [];
+                                                                const existingIdx = currentPerms.findIndex(p => p.role === role);
+                                                                let newPerms = [...currentPerms];
+                                                                
+                                                                if (existingIdx >= 0) {
+                                                                    const modules = [...currentPerms[existingIdx].allowedModules];
+                                                                    if (isAllowed) {
+                                                                        newPerms[existingIdx] = { ...newPerms[existingIdx], allowedModules: modules.filter(m => m !== module.id) };
+                                                                    } else {
+                                                                        newPerms[existingIdx] = { ...newPerms[existingIdx], allowedModules: [...modules, module.id] };
+                                                                    }
+                                                                } else {
+                                                                    newPerms.push({ role: role as any, allowedModules: [module.id] });
+                                                                }
+                                                                
+                                                                setConfig({ ...config, rolePermissions: newPerms });
+                                                            }}
+                                                            className={`p-4 rounded-2xl border text-left transition-all relative group flex flex-col gap-3 ${
+                                                                isAllowed 
+                                                                    ? 'border-blue-600 bg-blue-600 text-white shadow-lg shadow-blue-100' 
+                                                                    : 'border-slate-100 bg-slate-50 hover:border-slate-200 text-slate-600'
+                                                            }`}
+                                                        >
+                                                            <div className={`p-2 rounded-lg w-fit ${isAllowed ? 'bg-white/20' : 'bg-white shadow-sm'}`}>
+                                                                <module.icon size={16} className={isAllowed ? 'text-white' : 'text-slate-400'} />
+                                                            </div>
+                                                            <div className="space-y-0.5">
+                                                                <span className="font-black text-[10px] uppercase tracking-widest block truncate">{module.name}</span>
+                                                                <span className={`text-[8px] font-bold uppercase tracking-tighter block truncate ${isAllowed ? 'text-blue-100' : 'text-slate-400'}`}>
+                                                                    {isAllowed ? 'Akses Aktif' : 'Terbatas'}
+                                                                </span>
+                                                            </div>
+                                                            {isAllowed && (
+                                                                <div className="absolute top-3 right-3">
+                                                                    <Check size={14} className="text-white" />
+                                                                </div>
+                                                            )}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </motion.div>
                     )}
@@ -1545,49 +1706,65 @@ const Settings: React.FC<SettingsProps> = ({ user, appSettings, onUpdateSettings
 
       {/* Office Modal */}
       {isOfficeModalOpen && (
-          <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm">
-              <div className="bg-white w-full max-w-3xl rounded-[2rem] flex flex-col max-h-[95vh] shadow-2xl animate-in zoom-in-95 overflow-hidden">
-                  <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                      <div className="flex items-center gap-3">
-                          <div className="p-2 bg-blue-100 text-blue-600 rounded-xl"><MapPin size={20}/></div>
-                          <h3 className="text-xl font-black text-gray-800">{editingOffice ? 'Edit Lokasi Kantor' : 'Tambah Lokasi Baru'}</h3>
+          <div className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-4 backdrop-blur-md">
+              <motion.div 
+                  initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  className="bg-white w-full max-w-3xl rounded-[40px] flex flex-col max-h-[95vh] shadow-2xl overflow-hidden border border-white/20"
+              >
+                  <div className="p-8 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+                      <div className="flex items-center gap-4">
+                          <div className="p-3 bg-blue-600 text-white rounded-2xl shadow-lg shadow-blue-100">
+                              <MapPin size={24}/>
+                          </div>
+                          <div>
+                              <h3 className="text-2xl font-black text-slate-900">{editingOffice ? 'Edit Lokasi' : 'Tambah Lokasi'}</h3>
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Konfigurasi titik koordinat presensi.</p>
+                          </div>
                       </div>
-                      <button onClick={() => setIsOfficeModalOpen(false)} className="p-2 hover:bg-gray-200 rounded-full transition-colors"><X size={24} className="text-gray-500"/></button>
+                      <button onClick={() => setIsOfficeModalOpen(false)} className="p-3 hover:bg-slate-100 rounded-2xl transition-all active:scale-90">
+                          <X size={24} className="text-slate-400"/>
+                      </button>
                   </div>
-                  <div className="p-8 overflow-y-auto space-y-8">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                  <div className="p-8 overflow-y-auto space-y-8 custom-scrollbar">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                           <div className="md:col-span-2">
-                              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Nama Lokasi / Cabang</label>
-                              <input 
-                                  type="text" 
-                                  value={officeForm.name} 
-                                  onChange={e => setOfficeForm({...officeForm, name: e.target.value})} 
-                                  className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                  placeholder="Contoh: Kantor Cabang Bandung"
-                              />
+                              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">Nama Lokasi / Cabang</label>
+                              <div className="relative group">
+                                  <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-600 transition-colors">
+                                      <Home size={18} />
+                                  </div>
+                                  <input 
+                                      type="text" 
+                                      value={officeForm.name} 
+                                      onChange={e => setOfficeForm({...officeForm, name: e.target.value})} 
+                                      className="w-full pl-12 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-[20px] text-sm font-black text-slate-700 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all placeholder:text-slate-300"
+                                      placeholder="Contoh: Kantor Pusat Jakarta"
+                                  />
+                              </div>
                           </div>
                           
                           <div className="md:col-span-2">
-                              <div className="flex items-center justify-between mb-3">
-                                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Pilih Titik di Peta</label>
+                              <div className="flex items-center justify-between mb-4">
+                                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Pilih Titik di Peta</label>
                                   <button 
                                       type="button" 
                                       onClick={handleGetCurrentLocation}
-                                      className="text-[10px] bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg font-black flex items-center gap-2 hover:bg-blue-100 transition-colors"
+                                      className="px-4 py-2 bg-blue-50 text-blue-600 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-blue-600 hover:text-white transition-all active:scale-95 shadow-sm"
                                   >
                                       <Crosshair size={14}/> Gunakan Lokasi Saya
                                   </button>
                               </div>
                               
-                              {/* Search Bar */}
-                              <div className="relative mb-4">
-                                  <form onSubmit={handleSearchLocation} className="flex gap-2">
-                                      <div className="flex-1 bg-gray-50 border border-gray-100 rounded-2xl flex items-center px-4 focus-within:ring-2 focus-within:ring-blue-500 transition-all">
-                                          <Search size={16} className="text-gray-400" />
+                              <div className="relative mb-6">
+                                  <form onSubmit={handleSearchLocation} className="flex gap-3">
+                                      <div className="flex-1 bg-slate-50 border border-slate-100 rounded-[20px] flex items-center px-5 focus-within:ring-4 focus-within:ring-blue-500/10 focus-within:border-blue-500 transition-all group">
+                                          <Search size={18} className="text-slate-400 group-focus-within:text-blue-600 transition-colors" />
                                           <input 
                                               type="text" 
                                               placeholder="Cari alamat atau koordinat..."
-                                              className="w-full bg-transparent border-none outline-none py-3 text-sm font-bold px-3"
+                                              className="w-full bg-transparent border-none outline-none py-4 text-sm font-black px-4 text-slate-700 placeholder:text-slate-300"
                                               value={searchQuery}
                                               onChange={(e) => setSearchQuery(e.target.value)}
                                           />
@@ -1595,58 +1772,84 @@ const Settings: React.FC<SettingsProps> = ({ user, appSettings, onUpdateSettings
                                       <button 
                                           type="submit"
                                           disabled={isSearching}
-                                          className="bg-slate-900 text-white px-6 rounded-2xl text-xs font-black hover:bg-slate-800 transition-all disabled:opacity-50"
+                                          className="bg-slate-900 text-white px-8 rounded-[20px] font-black text-xs uppercase tracking-widest hover:bg-slate-800 transition-all active:scale-95 disabled:opacity-50 shadow-lg shadow-slate-200"
                                       >
-                                          {isSearching ? <Loader2 size={16} className="animate-spin" /> : 'Cari'}
+                                          {isSearching ? <Loader2 size={18} className="animate-spin" /> : 'Cari'}
                                       </button>
                                   </form>
 
-                                  {/* Search Results Dropdown */}
-                                  {searchResults.length > 0 && (
-                                      <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-[10001] max-h-60 overflow-y-auto">
-                                          {searchResults.map((res, i) => (
-                                              <button 
-                                                  key={i}
-                                                  type="button"
-                                                  onClick={() => selectSearchResult(res)}
-                                                  className="w-full text-left p-4 hover:bg-gray-50 border-b border-gray-50 last:border-none flex items-start gap-3 transition-colors"
-                                              >
-                                                  <div className="p-2 bg-gray-50 rounded-lg shrink-0 mt-0.5"><MapPin size={14} className="text-gray-400" /></div>
-                                                  <span className="text-xs font-bold text-gray-600 leading-relaxed">{res.display_name}</span>
-                                              </button>
-                                          ))}
-                                      </div>
-                                  )}
+                                  <AnimatePresence>
+                                      {searchResults.length > 0 && (
+                                          <motion.div 
+                                              initial={{ opacity: 0, y: 10 }}
+                                              animate={{ opacity: 1, y: 0 }}
+                                              exit={{ opacity: 0, y: 10 }}
+                                              className="absolute top-full left-0 right-0 mt-3 bg-white rounded-[24px] shadow-2xl border border-slate-100 overflow-hidden z-[10001] max-h-60 overflow-y-auto custom-scrollbar"
+                                          >
+                                              {searchResults.map((res, i) => (
+                                                  <button 
+                                                      key={i}
+                                                      type="button"
+                                                      onClick={() => selectSearchResult(res)}
+                                                      className="w-full text-left p-5 hover:bg-blue-50 border-b border-slate-50 last:border-none flex items-start gap-4 transition-all group"
+                                                  >
+                                                      <div className="p-2.5 bg-slate-50 rounded-xl group-hover:bg-white transition-colors"><MapPin size={16} className="text-slate-400 group-hover:text-blue-600" /></div>
+                                                      <span className="text-xs font-black text-slate-600 leading-relaxed group-hover:text-blue-700">{res.display_name}</span>
+                                                  </button>
+                                              ))}
+                                          </motion.div>
+                                      )}
+                                  </AnimatePresence>
                               </div>
 
-                              <div className="h-64 w-full rounded-2xl overflow-hidden border border-gray-100 relative z-0 shadow-inner">
+                              <div className="h-72 w-full rounded-[24px] overflow-hidden border border-slate-100 relative z-0 shadow-inner group">
                                   <div id="office-map" ref={mapContainerRef} className="h-full w-full"></div>
+                                  <div className="absolute bottom-4 left-4 right-4 p-3 bg-white/90 backdrop-blur-sm rounded-xl border border-white/20 shadow-lg pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest text-center">Geser pin untuk menyesuaikan titik koordinat</p>
+                                  </div>
                               </div>
                           </div>
 
-                          <div>
-                              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Latitude</label>
-                              <input 
-                                  type="number" step="any"
-                                  value={officeForm.lat} 
-                                  onChange={e => setOfficeForm({...officeForm, lat: parseFloat(e.target.value)})} 
-                                  className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                              />
+                          <div className="space-y-2">
+                              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Latitude</label>
+                              <div className="relative">
+                                  <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-slate-300">
+                                      <Navigation size={16} />
+                                  </div>
+                                  <input 
+                                      type="number" step="any"
+                                      value={officeForm.lat} 
+                                      onChange={e => setOfficeForm({...officeForm, lat: parseFloat(e.target.value)})} 
+                                      className="w-full pl-12 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-[20px] text-sm font-black text-slate-700 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all"
+                                  />
+                              </div>
                           </div>
-                          <div>
-                              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Longitude</label>
-                              <input 
-                                  type="number" step="any"
-                                  value={officeForm.lng} 
-                                  onChange={e => setOfficeForm({...officeForm, lng: parseFloat(e.target.value)})} 
-                                  className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                              />
+                          <div className="space-y-2">
+                              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Longitude</label>
+                              <div className="relative">
+                                  <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-slate-300">
+                                      <Navigation size={16} className="rotate-90" />
+                                  </div>
+                                  <input 
+                                      type="number" step="any"
+                                      value={officeForm.lng} 
+                                      onChange={e => setOfficeForm({...officeForm, lng: parseFloat(e.target.value)})} 
+                                      className="w-full pl-12 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-[20px] text-sm font-black text-slate-700 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all"
+                                  />
+                              </div>
                           </div>
 
-                          <div className="md:col-span-2 bg-blue-50/50 p-6 rounded-2xl border border-blue-100">
-                              <div className="flex justify-between items-center mb-4">
-                                  <label className="text-[10px] font-black text-blue-700 uppercase tracking-widest">Radius Toleransi</label>
-                                  <span className="text-sm font-black text-blue-700 bg-white px-3 py-1 rounded-xl border border-blue-200 shadow-sm">{(officeForm.radius || 0.1) * 1000} Meter</span>
+                          <div className="md:col-span-2 bg-blue-50/50 p-8 rounded-[32px] border border-blue-100">
+                              <div className="flex justify-between items-center mb-6">
+                                  <div className="flex items-center gap-3">
+                                      <div className="p-2 bg-blue-600 text-white rounded-lg shadow-md shadow-blue-100">
+                                          <Crosshair size={14}/>
+                                      </div>
+                                      <label className="text-[10px] font-black text-blue-700 uppercase tracking-widest">Radius Toleransi Presensi</label>
+                                  </div>
+                                  <span className="text-xs font-black text-blue-700 bg-white px-4 py-2 rounded-xl border border-blue-200 shadow-sm">
+                                      {Math.round((officeForm.radius || 0.1) * 1000)} Meter
+                                  </span>
                               </div>
                               <input 
                                   type="range" 
@@ -1657,44 +1860,80 @@ const Settings: React.FC<SettingsProps> = ({ user, appSettings, onUpdateSettings
                                   onChange={e => setOfficeForm({...officeForm, radius: parseFloat(e.target.value)})} 
                                   className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
                               />
+                              <div className="flex justify-between mt-3">
+                                  <span className="text-[8px] font-black text-blue-300 uppercase tracking-widest">10 Meter</span>
+                                  <span className="text-[8px] font-black text-blue-300 uppercase tracking-widest">2 Kilometer</span>
+                              </div>
                           </div>
                       </div>
                   </div>
-                  <div className="p-6 border-t border-gray-100 flex justify-end gap-3 bg-gray-50">
-                      <button onClick={() => setIsOfficeModalOpen(false)} className="px-6 py-3 text-gray-500 font-black text-sm hover:bg-gray-200 rounded-2xl transition-all">Batal</button>
-                       <button 
+                  
+                  <div className="p-8 border-t border-slate-50 flex flex-col sm:flex-row justify-end gap-4 bg-slate-50/50">
+                      <button 
+                          onClick={() => setIsOfficeModalOpen(false)} 
+                          className="px-8 py-4 text-slate-400 font-black text-xs uppercase tracking-widest hover:bg-slate-100 rounded-2xl transition-all active:scale-95"
+                      >
+                          Batal
+                      </button>
+                      <button 
                           onClick={saveOffice} 
                           disabled={isSaving}
-                          className="px-8 py-3 bg-blue-600 text-white font-black text-sm rounded-2xl hover:bg-blue-700 shadow-xl shadow-blue-100 transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2"
+                          className="px-10 py-4 bg-blue-600 text-white font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-blue-700 shadow-xl shadow-blue-100 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
                       >
                           {isSaving ? (
                               <>
-                                  <Loader2 size={16} className="animate-spin" />
+                                  <Loader2 size={18} className="animate-spin" />
                                   Menyimpan...
                               </>
-                          ) : 'Simpan Lokasi'}
+                          ) : (
+                              <>
+                                  <Save size={18} />
+                                  Simpan Lokasi
+                              </>
+                          )}
                       </button>
                   </div>
-              </div>
+              </motion.div>
           </div>
       )}
       {isShiftModalOpen && (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-              <div className="bg-white w-full max-w-2xl rounded-2xl flex flex-col max-h-[90vh] shadow-2xl animate-in zoom-in-95">
-                  <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-2xl">
-                      <h3 className="text-lg font-bold text-gray-800">{editingShift ? 'Edit Jadwal' : 'Buat Jadwal Baru'}</h3>
-                      <button onClick={() => setIsShiftModalOpen(false)}><X className="text-gray-500 hover:text-gray-800"/></button>
-                  </div>
-                  <div className="p-6 overflow-y-auto space-y-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Nama Jadwal</label>
-                              <input type="text" value={shiftForm.name} onChange={e => setShiftForm({...shiftForm, name: e.target.value})} className="w-full px-3 py-2 border rounded-lg" placeholder="Contoh: Shift Pagi"/>
+          <div className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-4 backdrop-blur-md">
+              <motion.div 
+                  initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  className="bg-white w-full max-w-2xl rounded-[40px] flex flex-col max-h-[90vh] shadow-2xl overflow-hidden border border-white/20"
+              >
+                  <div className="p-8 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+                      <div className="flex items-center gap-4">
+                          <div className="p-3 bg-indigo-600 text-white rounded-2xl shadow-lg shadow-indigo-100">
+                              <Calendar size={24}/>
                           </div>
                           <div>
-                               <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Tipe Lokasi</label>
+                              <h3 className="text-2xl font-black text-slate-900">{editingShift ? 'Edit Jadwal' : 'Buat Jadwal'}</h3>
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Konfigurasi jam kerja dan hari aktif.</p>
+                          </div>
+                      </div>
+                      <button onClick={() => setIsShiftModalOpen(false)} className="p-3 hover:bg-slate-100 rounded-2xl transition-all active:scale-90">
+                          <X size={24} className="text-slate-400"/>
+                      </button>
+                  </div>
+
+                  <div className="p-8 overflow-y-auto space-y-8 custom-scrollbar">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                          <div className="space-y-2">
+                              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Nama Jadwal</label>
+                              <input 
+                                  type="text" 
+                                  value={shiftForm.name} 
+                                  onChange={e => setShiftForm({...shiftForm, name: e.target.value})} 
+                                  className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-[20px] text-sm font-black text-slate-700 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all placeholder:text-slate-300" 
+                                  placeholder="Contoh: Shift Pagi"
+                              />
+                          </div>
+                          <div className="space-y-2">
+                               <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Tipe Lokasi</label>
                                <select 
-                                    className="w-full px-3 py-2 border rounded-lg bg-white"
+                                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-[20px] text-sm font-black text-slate-700 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all appearance-none cursor-pointer"
                                     value={shiftForm.isFlexible ? 'online' : 'offline'}
                                     onChange={e => setShiftForm({...shiftForm, isFlexible: e.target.value === 'online'})}
                                >
@@ -1703,65 +1942,168 @@ const Settings: React.FC<SettingsProps> = ({ user, appSettings, onUpdateSettings
                                </select>
                           </div>
                       </div>
-                      <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
-                          <h4 className="text-sm font-bold text-blue-800 mb-3 flex items-center gap-2"><Clock size={16}/> Pengaturan Waktu</h4>
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                              <div><label className="text-xs text-gray-600 block mb-1">Jam Masuk</label><input type="time" value={shiftForm.startTime} onChange={e => setShiftForm({...shiftForm, startTime: e.target.value})} className="w-full border rounded px-2 py-1"/></div>
-                              <div><label className="text-xs text-gray-600 block mb-1">Jam Pulang</label><input type="time" value={shiftForm.endTime} onChange={e => setShiftForm({...shiftForm, endTime: e.target.value})} className="w-full border rounded px-2 py-1"/></div>
-                              <div><label className="text-xs text-gray-600 block mb-1">Mulai Lembur</label><input type="time" value={shiftForm.overtimeStart} onChange={e => setShiftForm({...shiftForm, overtimeStart: e.target.value})} className="w-full border rounded px-2 py-1"/></div>
+
+                      <div className="bg-indigo-50/50 p-8 rounded-[32px] border border-indigo-100 space-y-6">
+                          <div className="flex items-center gap-3 mb-2">
+                              <div className="p-2 bg-indigo-600 text-white rounded-lg shadow-md shadow-indigo-100">
+                                  <Clock size={16}/>
+                              </div>
+                              <h4 className="text-[10px] font-black text-indigo-700 uppercase tracking-widest">Pengaturan Waktu Kerja</h4>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                              <div className="space-y-2">
+                                  <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest block ml-1">Jam Masuk</label>
+                                  <input type="time" value={shiftForm.startTime} onChange={e => setShiftForm({...shiftForm, startTime: e.target.value})} className="w-full bg-white border border-indigo-100 rounded-xl px-4 py-3 text-sm font-black text-indigo-900 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all"/>
+                              </div>
+                              <div className="space-y-2">
+                                  <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest block ml-1">Jam Pulang</label>
+                                  <input type="time" value={shiftForm.endTime} onChange={e => setShiftForm({...shiftForm, endTime: e.target.value})} className="w-full bg-white border border-indigo-100 rounded-xl px-4 py-3 text-sm font-black text-indigo-900 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all"/>
+                              </div>
+                              <div className="space-y-2">
+                                  <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest block ml-1">Mulai Lembur</label>
+                                  <input type="time" value={shiftForm.overtimeStart} onChange={e => setShiftForm({...shiftForm, overtimeStart: e.target.value})} className="w-full bg-white border border-indigo-100 rounded-xl px-4 py-3 text-sm font-black text-indigo-900 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all"/>
+                              </div>
                           </div>
                       </div>
-                      <div>
-                          <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Hari Aktif</label>
-                          <div className="flex flex-wrap gap-2">
-                              {WEEK_DAYS.map((day, idx) => (
-                                  <button key={idx} type="button" onClick={() => toggleWorkDay(idx)} className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${shiftForm.workDays?.includes(idx) ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-500 border-gray-200'}`}>{day}</button>
-                              ))}
+
+                      <div className="space-y-4">
+                          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Hari Aktif Kerja</label>
+                          <div className="flex flex-wrap gap-3">
+                              {WEEK_DAYS.map((day, idx) => {
+                                  const isActive = shiftForm.workDays?.includes(idx);
+                                  return (
+                                      <button 
+                                          key={idx} 
+                                          type="button" 
+                                          onClick={() => toggleWorkDay(idx)} 
+                                          className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all active:scale-95 ${
+                                              isActive 
+                                                  ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-100' 
+                                                  : 'bg-slate-50 text-slate-400 border-slate-100 hover:border-slate-200'
+                                          }`}
+                                      >
+                                          {day}
+                                      </button>
+                                  );
+                              })}
                           </div>
                       </div>
-                      <div>
-                          <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Karyawan Terikat ({shiftForm.assignedUserIds?.length})</label>
-                          <div className="max-h-40 overflow-y-auto border rounded-lg p-2 grid grid-cols-1 sm:grid-cols-2 gap-2 bg-gray-50">
-                              {state.users.filter(u => u.role !== 'admin').map((user, index) => (
-                                  <div key={`${user.id}-${index}`} onClick={() => toggleAssignedUser(user.id)} className={`flex items-center gap-2 p-2 rounded cursor-pointer border ${shiftForm.assignedUserIds?.includes(user.id) ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200 hover:bg-gray-100'}`}>
-                                      <div className={`w-4 h-4 rounded border flex items-center justify-center ${shiftForm.assignedUserIds?.includes(user.id) ? 'bg-green-500 border-green-500' : 'bg-white border-gray-300'}`}>{shiftForm.assignedUserIds?.includes(user.id) && <Check size={10} className="text-white"/>}</div>
-                                      <img src={user.avatar} className="w-6 h-6 rounded-full" alt=""/><span className="text-xs truncate">{user.name}</span>
-                                  </div>
-                              ))}
+
+                      <div className="space-y-4">
+                          <div className="flex items-center justify-between ml-1">
+                              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Karyawan Terikat</label>
+                              <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-3 py-1 rounded-lg uppercase tracking-widest">
+                                  {shiftForm.assignedUserIds?.length || 0} Terpilih
+                              </span>
+                          </div>
+                          <div className="max-h-60 overflow-y-auto border border-slate-100 rounded-[32px] p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50/50 custom-scrollbar">
+                              {state.users.filter(u => u.role !== 'admin').map((user, index) => {
+                                  const isAssigned = shiftForm.assignedUserIds?.includes(user.id);
+                                  return (
+                                      <button 
+                                          key={`${user.id}-${index}`} 
+                                          onClick={() => toggleAssignedUser(user.id)} 
+                                          className={`flex items-center gap-4 p-4 rounded-2xl border transition-all text-left group ${
+                                              isAssigned 
+                                                  ? 'bg-white border-indigo-200 shadow-md' 
+                                                  : 'bg-white/50 border-transparent hover:bg-white hover:border-slate-200'
+                                          }`}
+                                      >
+                                          <div className={`w-6 h-6 rounded-lg border flex items-center justify-center transition-all ${
+                                              isAssigned ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-200 group-hover:border-indigo-300'
+                                          }`}>
+                                              {isAssigned && <Check size={14} />}
+                                          </div>
+                                          <img 
+                                              src={user.avatar} 
+                                              className="w-10 h-10 rounded-xl object-cover shadow-sm" 
+                                              alt=""
+                                              referrerPolicy="no-referrer"
+                                              onError={(e) => {
+                                                  (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random`;
+                                              }}
+                                          />
+                                          <div className="flex-1 min-w-0">
+                                              <p className={`text-xs font-black truncate ${isAssigned ? 'text-slate-900' : 'text-slate-600'}`}>{user.name}</p>
+                                              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest truncate">{user.jobRole || 'Karyawan'}</p>
+                                          </div>
+                                      </button>
+                                  );
+                              })}
                           </div>
                       </div>
                   </div>
-                  <div className="p-5 border-t border-gray-100 flex justify-end gap-3 bg-gray-50 rounded-b-2xl">
-                      <button onClick={() => setIsShiftModalOpen(false)} className="px-4 py-2 text-gray-600 font-bold hover:bg-gray-200 rounded-lg">Batal</button>
+
+                  <div className="p-8 border-t border-slate-50 flex flex-col sm:flex-row justify-end gap-4 bg-slate-50/50">
+                      <button 
+                          onClick={() => setIsShiftModalOpen(false)} 
+                          className="px-8 py-4 text-slate-400 font-black text-xs uppercase tracking-widest hover:bg-slate-100 rounded-2xl transition-all active:scale-95"
+                      >
+                          Batal
+                      </button>
                       <button 
                         onClick={saveShift} 
                         disabled={isSaving}
-                        className="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 shadow-lg shadow-blue-200 flex items-center gap-2 disabled:opacity-50"
+                        className="px-10 py-4 bg-indigo-600 text-white font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-indigo-700 shadow-xl shadow-indigo-100 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
                       >
-                          {isSaving ? <Loader2 size={16} className="animate-spin" /> : null}
-                          {isSaving ? 'Menyimpan...' : 'Simpan Jadwal'}
+                          {isSaving ? (
+                              <>
+                                  <Loader2 size={18} className="animate-spin" />
+                                  Menyimpan...
+                              </>
+                          ) : (
+                              <>
+                                  <Save size={18} />
+                                  Simpan Jadwal
+                              </>
+                          )}
                       </button>
                   </div>
-              </div>
+              </motion.div>
           </div>
       )}
 
       {/* Job Role Modal */}
       {isJobModalOpen && (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-              <div className="bg-white w-full max-w-lg rounded-2xl flex flex-col max-h-[90vh] shadow-2xl animate-in zoom-in-95">
-                  <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-2xl">
-                      <h3 className="text-lg font-bold text-gray-800">{editingJob ? 'Edit Jabatan' : 'Buat Jabatan Baru'}</h3>
-                      <button onClick={() => setIsJobModalOpen(false)}><X className="text-gray-500 hover:text-gray-800"/></button>
-                  </div>
-                  <div className="p-6 overflow-y-auto space-y-4">
-                      <div>
-                          <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Nama Jabatan</label>
-                          <input type="text" value={jobForm.title} onChange={e => setJobForm({...jobForm, title: e.target.value})} className="w-full px-3 py-2 border rounded-lg" placeholder="Contoh: Staff IT"/>
+          <div className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-4 backdrop-blur-md">
+              <motion.div 
+                  initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  className="bg-white w-full max-w-lg rounded-[40px] flex flex-col max-h-[90vh] shadow-2xl overflow-hidden border border-white/20"
+              >
+                  <div className="p-8 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+                      <div className="flex items-center gap-4">
+                          <div className="p-3 bg-emerald-600 text-white rounded-2xl shadow-lg shadow-emerald-100">
+                              <Briefcase size={24}/>
+                          </div>
+                          <div>
+                              <h3 className="text-2xl font-black text-slate-900">{editingJob ? 'Edit Jabatan' : 'Tambah Jabatan'}</h3>
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Konfigurasi peran dan tanggung jawab.</p>
+                          </div>
                       </div>
-                      <div>
-                          <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Level Jabatan</label>
-                          <select value={jobForm.level} onChange={e => setJobForm({...jobForm, level: e.target.value})} className="w-full px-3 py-2 border rounded-lg bg-white">
+                      <button onClick={() => setIsJobModalOpen(false)} className="p-3 hover:bg-slate-100 rounded-2xl transition-all active:scale-90">
+                          <X size={24} className="text-slate-400"/>
+                      </button>
+                  </div>
+
+                  <div className="p-8 overflow-y-auto space-y-8 custom-scrollbar">
+                      <div className="space-y-2">
+                          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Nama Jabatan</label>
+                          <input 
+                              type="text" 
+                              value={jobForm.title} 
+                              onChange={e => setJobForm({...jobForm, title: e.target.value})} 
+                              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-[20px] text-sm font-black text-slate-700 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all placeholder:text-slate-300" 
+                              placeholder="Contoh: Senior Developer"
+                          />
+                      </div>
+                      <div className="space-y-2">
+                          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Level Jabatan</label>
+                          <select 
+                              value={jobForm.level} 
+                              onChange={e => setJobForm({...jobForm, level: e.target.value})} 
+                              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-[20px] text-sm font-black text-slate-700 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all appearance-none cursor-pointer"
+                          >
                               <option value="Staff">Staff / Junior</option>
                               <option value="Senior">Senior / SPV</option>
                               <option value="Manager">Manager / Head</option>
@@ -1769,55 +2111,118 @@ const Settings: React.FC<SettingsProps> = ({ user, appSettings, onUpdateSettings
                           </select>
                       </div>
 
-                      <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
-                          <label className="block text-xs font-bold text-blue-800 uppercase mb-2">Metode Login Khusus Jabatan</label>
+                      <div className="bg-emerald-50/50 p-8 rounded-[32px] border border-emerald-100 space-y-4">
+                          <div className="flex items-center gap-3 mb-2">
+                              <div className="p-2 bg-emerald-600 text-white rounded-lg shadow-md shadow-emerald-100">
+                                  <Fingerprint size={16}/>
+                              </div>
+                              <label className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">Metode Login Khusus Jabatan</label>
+                          </div>
                           <select 
                             value={jobForm.loginMode || 'username'} 
                             onChange={e => setJobForm({...jobForm, loginMode: e.target.value as any})} 
-                            className="w-full px-3 py-2 border border-blue-200 rounded-lg bg-white text-sm font-bold text-blue-900"
+                            className="w-full px-6 py-4 bg-white border border-emerald-100 rounded-xl text-sm font-black text-emerald-900 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all appearance-none cursor-pointer"
                           >
                               <option value="username">Username + Password</option>
                               <option value="employee_id">ID Karyawan + Password</option>
                               <option value="password_only">Hanya Password</option>
                           </select>
-                          <p className="text-[10px] text-blue-600 mt-2 font-medium italic">Berlaku jika Mode Login Global disetel ke "Per Tim / Jabatan".</p>
+                          <p className="text-[9px] text-emerald-600 mt-2 font-bold uppercase tracking-widest italic opacity-70">Berlaku jika Mode Login Global disetel ke "Per Tim / Jabatan".</p>
                       </div>
                       
-                      <div className="border-t border-gray-100 pt-4 mt-2">
-                          <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Tugas & Tanggung Jawab Inti</label>
-                          <div className="flex gap-2 mb-3">
-                              <input 
-                                  type="text" 
-                                  value={newResponsibility} 
-                                  onChange={e => setNewResponsibility(e.target.value)}
-                                  className="flex-1 px-3 py-2 border rounded-lg text-sm"
-                                  placeholder="Tambah tugas..."
-                                  onKeyDown={e => e.key === 'Enter' && addResponsibility()}
-                              />
-                              <button type="button" onClick={addResponsibility} className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"><Plus size={18}/></button>
+                      <div className="space-y-4">
+                          <div className="flex items-center justify-between ml-1">
+                              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Tugas & Tanggung Jawab Inti</label>
+                              <button 
+                                onClick={() => {
+                                    const bulk = window.prompt("Masukkan daftar tugas (pisahkan dengan baris baru):");
+                                    if (bulk) {
+                                        const tasks = bulk.split('\n').map(t => t.trim()).filter(t => t.length > 0);
+                                        setJobForm({ ...jobForm, coreResponsibilities: [...(jobForm.coreResponsibilities || []), ...tasks] });
+                                    }
+                                }}
+                                className="text-[10px] font-black text-blue-600 hover:text-blue-700 uppercase tracking-widest flex items-center gap-1"
+                              >
+                                  <Plus size={12} /> Tambah Sekaligus (Bulk)
+                              </button>
                           </div>
-                          <ul className="space-y-2 max-h-40 overflow-y-auto">
-                              {(jobForm.coreResponsibilities || []).map((resp, i) => (
-                                  <li key={i} className="flex justify-between items-center bg-gray-50 px-3 py-2 rounded-lg text-sm">
-                                      <span>{resp}</span>
-                                      <button type="button" onClick={() => removeResponsibility(i)} className="text-red-500 hover:bg-red-100 p-1 rounded"><X size={14}/></button>
-                                  </li>
+                          <div className="flex gap-3">
+                              <div className="flex-1 relative group">
+                                  <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-slate-300">
+                                      <Plus size={16} />
+                                  </div>
+                                  <input 
+                                      type="text" 
+                                      value={newResponsibility} 
+                                      onChange={e => setNewResponsibility(e.target.value)}
+                                      onKeyDown={e => e.key === 'Enter' && addResponsibility()}
+                                      className="w-full pl-12 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-[20px] text-sm font-black text-slate-700 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all placeholder:text-slate-300"
+                                      placeholder="Ketik tugas baru..."
+                                  />
+                              </div>
+                              <button 
+                                  onClick={addResponsibility}
+                                  className="p-4 bg-slate-900 text-white rounded-[20px] hover:bg-slate-800 transition-all active:scale-95 shadow-lg shadow-slate-200"
+                              >
+                                  <Plus size={20} />
+                              </button>
+                          </div>
+
+                          <div className="space-y-3">
+                              {(jobForm.coreResponsibilities || []).map((resp, idx) => (
+                                  <motion.div 
+                                      initial={{ opacity: 0, x: -10 }}
+                                      animate={{ opacity: 1, x: 0 }}
+                                      key={idx} 
+                                      className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-2xl group hover:border-emerald-200 transition-all"
+                                  >
+                                      <div className="flex items-center gap-3 overflow-hidden">
+                                          <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 group-hover:scale-150 transition-transform"></div>
+                                          <span className="text-xs font-black text-slate-600 truncate">{resp}</span>
+                                      </div>
+                                      <button 
+                                          onClick={() => removeResponsibility(idx)}
+                                          className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                                      >
+                                          <Trash2 size={16} />
+                                      </button>
+                                  </motion.div>
                               ))}
-                          </ul>
+                              {(!jobForm.coreResponsibilities || jobForm.coreResponsibilities.length === 0) && (
+                                  <div className="py-8 text-center border-2 border-dashed border-slate-100 rounded-[32px]">
+                                      <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Belum ada tugas ditambahkan</p>
+                                  </div>
+                              )}
+                          </div>
                       </div>
                   </div>
-                  <div className="p-5 border-t border-gray-100 flex justify-end gap-3 bg-gray-50 rounded-b-2xl">
-                      <button onClick={() => setIsJobModalOpen(false)} className="px-4 py-2 text-gray-600 font-bold hover:bg-gray-200 rounded-lg">Batal</button>
+
+                  <div className="p-8 border-t border-slate-50 flex flex-col sm:flex-row justify-end gap-4 bg-slate-50/50">
                       <button 
-                        onClick={saveJob} 
-                        disabled={isSaving}
-                        className="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 shadow-lg shadow-blue-200 flex items-center gap-2 disabled:opacity-50"
+                          onClick={() => setIsJobModalOpen(false)} 
+                          className="px-8 py-4 text-slate-400 font-black text-xs uppercase tracking-widest hover:bg-slate-100 rounded-2xl transition-all active:scale-95"
                       >
-                          {isSaving ? <Loader2 size={16} className="animate-spin" /> : null}
-                          {isSaving ? 'Menyimpan...' : 'Simpan Jabatan'}
+                          Batal
+                      </button>
+                      <button 
+                          onClick={saveJob} 
+                          disabled={isSaving}
+                          className="px-10 py-4 bg-emerald-600 text-white font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-emerald-700 shadow-xl shadow-emerald-100 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
+                      >
+                          {isSaving ? (
+                              <>
+                                  <Loader2 size={18} className="animate-spin" />
+                                  Menyimpan...
+                              </>
+                          ) : (
+                              <>
+                                  <Save size={18} />
+                                  Simpan Jabatan
+                              </>
+                          )}
                       </button>
                   </div>
-              </div>
+              </motion.div>
           </div>
       )}
       <ConfirmModal 

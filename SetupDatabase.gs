@@ -11,17 +11,26 @@ function setupDatabase() {
   }
   
   const tables = {
-    'users': ['id', 'nama', 'username', 'email', 'id_karyawan', 'peran', 'jabatan', 'id_jabatan', 'id_departemen', 'telepon', 'tgl_bergabung', 'kuota_cuti', 'status_aktif', 'url_avatar', 'tempat_lahir', 'tgl_lahir', 'gender', 'alamat', 'dok_ktp', 'dok_kk', 'dok_ijazah', 'mode_login'],
-    'attendance': ['id', 'id_user', 'tanggal', 'jam_masuk', 'jam_keluar', 'status', 'kerja_online', 'url_foto', 'lat_masuk', 'lng_masuk', 'lat_keluar', 'lng_keluar', 'id_kantor', 'nama_kantor', 'catatan'],
-    'tasks': ['id', 'judul', 'deskripsi', 'kategori', 'id_user_ditugaskan', 'id_peran_ditugaskan', 'id_dept_ditugaskan', 'aktif', 'dibuat_pada', 'dibuat_oleh'],
-    'work_reports': ['id', 'id_user', 'id_tugas', 'tanggal', 'status', 'catatan', 'url_bukti', 'dikirim_pada'],
-    'requests': ['id', 'id_user', 'tipe', 'tgl_mulai', 'tgl_selesai', 'alasan', 'alasan_ai', 'status', 'id_tipe_cuti', 'url_lampiran'],
-    'settings': ['nama_kantor', 'lat_kantor', 'lng_kantor', 'radius_kantor_km', 'toleransi_menit'],
-    'job_roles': ['id', 'judul', 'level', 'tanggung_jawab_utama'],
-    'shifts': ['id', 'nama', 'jam_mulai', 'jam_selesai', 'mulai_istirahat', 'selesai_istirahat', 'mulai_lembur', 'fleksibel', 'hari_kerja', 'id_user_ditugaskan'],
+    'users': ['id', 'id_karyawan', 'nama', 'username', 'peran', 'jabatan', 'id_jabatan', 'id_departemen', 'aktif', 'tanggal_bergabung', 'kuota_cuti', 'password', 'email', 'telepon', 'url_avatar', 'tempat_lahir', 'tanggal_lahir', 'jenis_kelamin', 'alamat', 'dok_ktp', 'dok_kk', 'dok_ijazah', 'mode_login'],
+    'attendance': ['id', 'tanggal', 'id_user', 'jam_masuk', 'jam_keluar', 'status', 'nama_kantor', 'url_foto', 'lat_masuk', 'lng_masuk', 'lat_keluar', 'lng_keluar', 'catatan', 'kerja_online', 'id_kantor', 'location_logs'],
+    'tasks': ['id', 'judul', 'deskripsi', 'kategori', 'id_user_ditugaskan', 'id_peran_ditugaskan', 'id_departemen_ditugaskan', 'aktif', 'dibuat_pada', 'dibuat_oleh'],
+    'work_reports': ['id', 'tanggal', 'id_user', 'id_tugas', 'status', 'catatan', 'url_bukti', 'dikirim_pada'],
+    'requests': ['id', 'id_user', 'tipe', 'tanggal_mulai', 'tanggal_selesai', 'alasan', 'alasan_ai', 'status', 'url_lampiran', 'id_tipe_cuti'],
+    'settings': ['kunci', 'nilai'],
+    'job_roles': ['id', 'judul', 'level', 'tanggung_jawab_inti', 'mode_login'],
+    'shifts': ['id', 'nama', 'jam_masuk', 'jam_selesai', 'mulai_istirahat', 'selesai_istirahat', 'mulai_lembur', 'fleksibel', 'hari_kerja', 'id_user_ditugaskan'],
     'branches': ['id', 'nama', 'lat', 'lng', 'radius'],
-    'leave_types': ['id', 'nama', 'kuota_per_tahun', 'dibayar', 'butuh_lampiran'],
-    'departments': ['id', 'nama', 'id_manajer', 'deskripsi']
+    'leave_types': ['id', 'nama', 'kuota_per_tahun', 'berbayar', 'butuh_file'],
+    'departments': ['id', 'nama', 'id_manajer', 'deskripsi'],
+    'role_permissions': ['peran', 'modul_diizinkan'],
+    'leave_balances': ['id', 'user_id', 'leave_type_id', 'year', 'remaining_balance'],
+    'holidays': ['id', 'date', 'name', 'is_recurring', 'type'],
+    'notifications': ['id', 'user_id', 'title', 'message', 'is_read', 'created_at'],
+    'audit_logs': ['id', 'actor_id', 'action', 'target_table', 'target_id', 'details', 'timestamp', 'ip_address'],
+    'overtime_rules': ['id', 'name', 'multiplier', 'min_hours'],
+    'contracts': ['id', 'user_id', 'start_date', 'end_date', 'status', 'type'],
+    'assets': ['id', 'user_id', 'item_name', 'serial_number', 'handed_over_date', 'condition'],
+    'announcements': ['id', 'title', 'content', 'target_dept', 'created_at', 'is_active']
   };
 
   for (let tableName in tables) {

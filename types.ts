@@ -33,6 +33,7 @@ export interface Department {
   id: string;
   name: string;
   managerId?: string;
+  description?: string;
 }
 
 export interface LeaveType {
@@ -165,10 +166,19 @@ export interface AppSettings {
   leaveTypes?: LeaveType[]; // New: List of leave types
 }
 
-export enum TaskCategory {
-  DAILY = 'Harian',
-  ADDITIONAL = 'Tambahan',
-}
+export type TaskCategory = string;
+
+export const TASK_CATEGORIES = {
+  DAILY: 'Harian',
+  ADDITIONAL: 'Tambahan',
+  DIREKTUR_GM: 'Direktur & GM',
+  MARKETING: 'Marketing',
+  ADMINISTRASI: 'Administrasi',
+  KEUANGAN: 'Keuangan',
+  IT_SUPPORT: 'IT Support',
+  BRANCH_MANAGER: 'Branch Manager',
+  SUPPORT: 'Support'
+};
 
 export enum TaskStatus {
   TODO = 'Belum Selesai',
@@ -209,5 +219,6 @@ export interface AppState {
   workReports: WorkReport[];
   appSettings: AppSettings;
   isLoading: boolean;
+  isSyncing: boolean;
   syncError: string | null;
 }

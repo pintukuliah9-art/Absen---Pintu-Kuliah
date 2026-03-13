@@ -159,29 +159,29 @@ const Requests: React.FC<RequestsProps> = ({ requests, leaveTypes, userQuota, on
   }, [requests]);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pb-20">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-8 pb-20">
       {/* Form Section */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="lg:col-span-5 space-y-6"
+        className="lg:col-span-5 space-y-3 md:space-y-6"
       >
-        <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-                <FileText className="text-blue-600" size={24} />
+        <div className="bg-white p-4 md:p-8 rounded-2xl shadow-sm border border-gray-100">
+            <h2 className="text-lg md:text-2xl font-bold text-gray-800 mb-4 md:mb-6 flex items-center gap-2">
+                <FileText className="text-blue-600" size={18} md:size={24} />
                 Form Pengajuan
             </h2>
             
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
             <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Jenis Pengajuan</label>
-                <div className="flex gap-2 p-1 bg-gray-50 rounded-xl border border-gray-100">
+                <label className="block text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 md:mb-2">Jenis Pengajuan</label>
+                <div className="flex gap-1 p-1 bg-gray-50 rounded-xl border border-gray-100">
                 {Object.values(RequestType).map((t) => (
                     <button
                     key={t}
                     type="button"
                     onClick={() => setType(t)}
-                    className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all ${
+                    className={`flex-1 py-1.5 md:py-2.5 text-[10px] md:text-sm font-bold rounded-lg transition-all active:scale-95 ${
                         type === t ? 'bg-white text-blue-600 shadow-sm border border-gray-100' : 'text-gray-500 hover:text-gray-700'
                     }`}
                     >
@@ -198,13 +198,13 @@ const Requests: React.FC<RequestsProps> = ({ requests, leaveTypes, userQuota, on
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="space-y-2 overflow-hidden"
+                        className="space-y-1.5 md:space-y-2 overflow-hidden"
                     >
-                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider">Kategori Cuti</label>
+                        <label className="block text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-wider">Kategori Cuti</label>
                         <select 
                             value={selectedLeaveTypeId}
                             onChange={(e) => setSelectedLeaveTypeId(e.target.value)}
-                            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50/50"
+                            className="w-full px-3 py-2 md:py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50/50 text-[11px] md:text-sm"
                             required
                         >
                             <option value="">-- Pilih Kategori --</option>
@@ -215,12 +215,12 @@ const Requests: React.FC<RequestsProps> = ({ requests, leaveTypes, userQuota, on
                         {selectedLeaveType && (
                             <div className="flex flex-col gap-1 mt-1">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-xs text-gray-500">Sisa Kuota Anda:</span>
-                                    <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">{userQuota} Hari</span>
+                                    <span className="text-[9px] md:text-[10px] text-gray-500">Sisa Kuota Anda:</span>
+                                    <span className="text-[9px] md:text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">{userQuota} Hari</span>
                                 </div>
                                 {selectedLeaveType.requiresFile && (
-                                    <div className="flex items-center gap-1.5 text-[10px] text-red-500 font-bold uppercase">
-                                        <AlertCircle size={10} /> Wajib lampiran bukti
+                                    <div className="flex items-center gap-1.5 text-[8px] md:text-[9px] text-red-500 font-bold uppercase">
+                                        <AlertCircle size={9} md:size={10} /> Wajib lampiran bukti
                                     </div>
                                 )}
                             </div>
@@ -229,28 +229,28 @@ const Requests: React.FC<RequestsProps> = ({ requests, leaveTypes, userQuota, on
                 )}
             </AnimatePresence>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3 md:gap-4">
                 <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Mulai</label>
+                <label className="block text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 md:mb-2">Mulai</label>
                 <div className="relative">
-                    <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                    <CalendarIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" size={12} md:size={16} />
                     <input 
                         type="date" 
                         required
-                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50/50 text-sm"
+                        className="w-full pl-8 md:pl-10 pr-3 py-2 md:py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50/50 text-[11px] md:text-sm"
                         value={startDate}
                         onChange={(e) => setStartDate(e.target.value)}
                     />
                 </div>
                 </div>
                 <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Selesai</label>
+                <label className="block text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 md:mb-2">Selesai</label>
                 <div className="relative">
-                    <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                    <CalendarIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" size={12} md:size={16} />
                     <input 
                         type="date" 
                         required
-                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50/50 text-sm"
+                        className="w-full pl-8 md:pl-10 pr-3 py-2 md:py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50/50 text-[11px] md:text-sm"
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}
                     />
@@ -259,12 +259,12 @@ const Requests: React.FC<RequestsProps> = ({ requests, leaveTypes, userQuota, on
             </div>
 
             <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Alasan</label>
+                <label className="block text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 md:mb-2">Alasan</label>
                 <div className="relative">
                 <textarea
                     required
-                    rows={4}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50/50 text-sm resize-none"
+                    rows={3}
+                    className="w-full px-3 py-2 md:py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50/50 text-[11px] md:text-sm resize-none"
                     placeholder="Jelaskan alasan pengajuan Anda secara singkat..."
                     value={rawReason}
                     onChange={(e) => {
@@ -276,9 +276,9 @@ const Requests: React.FC<RequestsProps> = ({ requests, leaveTypes, userQuota, on
                     type="button"
                     onClick={handleAIHelp}
                     disabled={isGenerating || !rawReason}
-                    className="absolute bottom-3 right-3 text-[10px] font-bold bg-indigo-600 text-white hover:bg-indigo-700 px-3 py-1.5 rounded-full flex items-center gap-1.5 transition-all shadow-sm disabled:opacity-50 disabled:bg-gray-400"
+                    className="absolute bottom-2 right-2 md:bottom-3 md:right-3 text-[8px] md:text-[10px] font-bold bg-indigo-600 text-white hover:bg-indigo-700 px-2 py-1 md:px-3 md:py-1.5 rounded-full flex items-center gap-1 md:gap-1.5 transition-all shadow-sm disabled:opacity-50 disabled:bg-gray-400 active:scale-95"
                 >
-                    {isGenerating ? <Loader2 size={12} className="animate-spin"/> : <Wand2 size={12} />}
+                    {isGenerating ? <Loader2 size={9} md:size={12} className="animate-spin"/> : <Wand2 size={9} md:size={12} />}
                     Perhalus Alasan
                 </button>
                 </div>
@@ -287,31 +287,31 @@ const Requests: React.FC<RequestsProps> = ({ requests, leaveTypes, userQuota, on
                         <motion.div 
                             initial={{ opacity: 0, y: -10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="mt-3 p-4 bg-indigo-50 rounded-xl border border-indigo-100 relative group"
+                            className="mt-2 p-2.5 md:p-4 bg-indigo-50 rounded-xl border border-indigo-100 relative group"
                         >
-                            <div className="flex justify-between items-start mb-1">
-                            <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest flex items-center gap-1">
-                                <Sparkles size={10} className="text-indigo-500" /> Saran AI
+                            <div className="flex justify-between items-start mb-0.5">
+                            <span className="text-[8px] md:text-[10px] font-bold text-indigo-600 uppercase tracking-widest flex items-center gap-1">
+                                <Sparkles size={9} md:size={10} className="text-indigo-500" /> Saran AI
                             </span>
                             </div>
-                            <p className="text-sm text-indigo-900 leading-relaxed italic">"{refinedReason}"</p>
+                            <p className="text-[11px] md:text-sm text-indigo-900 leading-relaxed italic">"{refinedReason}"</p>
                         </motion.div>
                     )}
                 </AnimatePresence>
             </div>
 
             {/* File Upload */}
-            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Lampiran Bukti</label>
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="bg-gray-50 p-2.5 md:p-4 rounded-xl border border-gray-100">
+                <label className="block text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 md:mb-3">Lampiran Bukti</label>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 md:gap-4">
                     <button 
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className={`px-4 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all ${
+                        className={`w-full sm:w-auto px-3 py-2 rounded-xl text-[11px] md:text-sm font-bold flex items-center justify-center gap-2 transition-all active:scale-95 ${
                             attachment ? 'bg-green-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
                         }`}
                     >
-                        {attachment ? <CheckCircle size={16} /> : <Upload size={16} />}
+                        {attachment ? <CheckCircle size={12} md:size={16} /> : <Upload size={12} md:size={16} />}
                         {attachment ? 'Ganti File' : 'Pilih File'}
                     </button>
                     <input 
@@ -323,11 +323,11 @@ const Requests: React.FC<RequestsProps> = ({ requests, leaveTypes, userQuota, on
                     />
                     <div className="flex-1">
                         {attachment ? (
-                            <p className="text-[10px] text-green-600 font-bold flex items-center gap-1">
-                                <CheckCircle size={10} /> File siap diunggah
+                            <p className="text-[8px] md:text-[10px] text-green-600 font-bold flex items-center gap-1">
+                                <CheckCircle size={9} /> File siap diunggah
                             </p>
                         ) : (
-                            <p className="text-[10px] text-gray-400 leading-tight">
+                            <p className="text-[8px] md:text-[10px] text-gray-400 leading-tight">
                                 Format: JPG, PNG, PDF. <br/>Maksimal ukuran 2MB.
                             </p>
                         )}
@@ -335,7 +335,7 @@ const Requests: React.FC<RequestsProps> = ({ requests, leaveTypes, userQuota, on
                 </div>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-2 md:gap-3">
                 <button
                     type="button"
                     onClick={() => {
@@ -348,16 +348,16 @@ const Requests: React.FC<RequestsProps> = ({ requests, leaveTypes, userQuota, on
                         if(fileInputRef.current) fileInputRef.current.value = '';
                         showToast("Form direset", "info");
                     }}
-                    className="flex-1 bg-gray-100 text-gray-600 font-bold py-4 rounded-xl hover:bg-gray-200 transition-all active:scale-[0.98]"
+                    className="flex-1 bg-gray-100 text-gray-600 font-bold py-3 md:py-4 rounded-xl hover:bg-gray-200 transition-all active:scale-[0.98] text-[11px] md:text-sm"
                 >
                     Reset
                 </button>
                 <button
                     type="submit"
                     disabled={selectedLeaveType?.requiresFile && !attachment}
-                    className="flex-[2] bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-100 disabled:bg-gray-300 disabled:shadow-none disabled:cursor-not-allowed active:scale-[0.98]"
+                    className="flex-[2] bg-blue-600 text-white font-bold py-3 md:py-4 rounded-xl hover:bg-blue-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-100 disabled:bg-gray-300 disabled:shadow-none disabled:cursor-not-allowed active:scale-[0.98] text-[11px] md:text-sm"
                 >
-                    <Send size={18} />
+                    <Send size={14} md:size={18} />
                     Kirim Pengajuan
                 </button>
             </div>
@@ -365,11 +365,11 @@ const Requests: React.FC<RequestsProps> = ({ requests, leaveTypes, userQuota, on
         </div>
 
         {/* Info Card */}
-        <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100 flex gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg h-fit"><Info size={18} className="text-blue-600" /></div>
+        <div className="bg-blue-50 p-2.5 md:p-4 rounded-2xl border border-blue-100 flex gap-2 md:gap-3">
+            <div className="p-1 md:p-2 bg-blue-100 rounded-lg h-fit flex-shrink-0"><Info size={14} md:size={18} className="text-blue-600" /></div>
             <div>
-                <h4 className="text-sm font-bold text-blue-800">Tips Pengajuan</h4>
-                <p className="text-xs text-blue-700 leading-relaxed mt-1">
+                <h4 className="text-[11px] md:text-sm font-bold text-blue-800">Tips Pengajuan</h4>
+                <p className="text-[9px] md:text-xs text-blue-700 leading-relaxed mt-0.5">
                     Gunakan fitur <b>Perhalus Alasan</b> untuk membuat bahasa pengajuan Anda lebih profesional di mata atasan.
                 </p>
             </div>
@@ -377,49 +377,49 @@ const Requests: React.FC<RequestsProps> = ({ requests, leaveTypes, userQuota, on
       </motion.div>
 
       {/* History List Section */}
-      <div className="lg:col-span-7 space-y-6">
-        <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-800">Riwayat Pengajuan</h2>
-            <div className="flex items-center gap-2">
+      <div className="lg:col-span-7 space-y-3 md:space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <h2 className="text-lg md:text-2xl font-bold text-gray-800">Riwayat Pengajuan</h2>
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 sm:pb-0">
                 <button 
                     onClick={handleSyncAll}
                     disabled={isSyncingAll}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${
+                    className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[8px] md:text-[10px] font-bold transition-all active:scale-95 whitespace-nowrap ${
                         requests.some(r => r.syncStatus === 'pending') 
                         ? 'bg-orange-100 text-orange-600 hover:bg-orange-200' 
                         : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                     }`}
                     title="Sinkronkan data pending"
                 >
-                    {isSyncingAll ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+                    {isSyncingAll ? <Loader2 size={9} md:size={12} className="animate-spin" /> : <RefreshCw size={9} md:size={12} />}
                     SINKRON
                 </button>
                 <button 
                     onClick={handleRefresh}
                     disabled={isRefreshing}
-                    className={`p-2 rounded-full bg-gray-100 text-gray-500 hover:bg-blue-50 hover:text-blue-600 transition-all ${isRefreshing ? 'animate-spin' : ''}`}
+                    className={`p-1.5 md:p-2 rounded-full bg-gray-100 text-gray-500 hover:bg-blue-50 hover:text-blue-600 transition-all active:scale-90 flex-shrink-0 ${isRefreshing ? 'animate-spin' : ''}`}
                     title="Refresh Data"
                 >
-                    <RefreshCw size={14} />
+                    <RefreshCw size={10} md:size={14} />
                 </button>
-                <div className="text-xs font-bold text-gray-400 bg-gray-100 px-3 py-1 rounded-full">
+                <div className="text-[8px] md:text-[10px] font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full whitespace-nowrap">
                     Total: {requests.length}
                 </div>
             </div>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-2.5 md:space-y-4">
             {sortedRequests.length === 0 ? (
             <motion.div 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="p-12 text-center bg-white rounded-2xl border border-dashed border-gray-200"
+                className="p-6 md:p-12 text-center bg-white rounded-2xl border border-dashed border-gray-200"
             >
-                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <FileText size={32} className="text-gray-300" />
+                <div className="w-10 h-10 md:w-16 md:h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <FileText size={20} md:size={32} className="text-gray-300" />
                 </div>
-                <h3 className="text-gray-800 font-bold">Belum Ada Pengajuan</h3>
-                <p className="text-gray-500 text-sm mt-1">Semua pengajuan izin atau cuti Anda akan muncul di sini.</p>
+                <h3 className="text-gray-800 font-bold text-xs md:text-base">Belum Ada Pengajuan</h3>
+                <p className="text-gray-500 text-[10px] md:text-xs mt-1">Semua pengajuan izin atau cuti Anda akan muncul di sini.</p>
             </motion.div>
             ) : (
             <AnimatePresence initial={false}>
@@ -429,36 +429,38 @@ const Requests: React.FC<RequestsProps> = ({ requests, leaveTypes, userQuota, on
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: index * 0.05 }}
-                        className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all group relative overflow-hidden"
+                        className="bg-white p-3 md:p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all group relative overflow-hidden"
                     >
-                        <div className="flex justify-between items-start mb-4">
-                            <div className="flex items-center gap-3">
-                                <div className={`p-2.5 rounded-xl ${
+                        <div className="flex flex-col sm:flex-row justify-between items-start gap-3 mb-3">
+                            <div className="flex items-center gap-2.5 w-full sm:w-auto">
+                                <div className={`p-1.5 md:p-2.5 rounded-xl flex-shrink-0 ${
                                     req.type === RequestType.LEAVE ? 'bg-blue-50 text-blue-600' : 
                                     req.type === RequestType.PERMISSION ? 'bg-purple-50 text-purple-600' : 'bg-orange-50 text-orange-600'
                                 }`}>
-                                    <FileText size={20} />
+                                    <FileText size={16} md:size={20} />
                                 </div>
-                                <div>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{req.type}</span>
+                                <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                        <span className="text-[8px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest">{req.type}</span>
                                         {req.attachmentUrl && (
-                                            <span className="bg-blue-50 text-blue-600 text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                                                <Upload size={8} /> DOKUMEN
+                                            <span className="bg-blue-50 text-blue-600 text-[7px] md:text-[9px] font-bold px-1 py-0.5 rounded flex items-center gap-0.5">
+                                                <Upload size={7} md:size={8} /> DOKUMEN
                                             </span>
                                         )}
                                     </div>
-                                    <p className="text-sm text-gray-900 font-bold mt-0.5">{new Date(req.startDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })} - {new Date(req.endDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                                    <p className="text-[11px] md:text-sm text-gray-900 font-bold mt-0.5 truncate">
+                                        {new Date(req.startDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })} - {new Date(req.endDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                    </p>
                                 </div>
                             </div>
-                            <div className="flex flex-col items-end gap-2">
-                                <div className="flex items-center gap-2">
+                            <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-start w-full sm:w-auto gap-1.5">
+                                <div className="flex items-center gap-1.5">
                                     {req.syncStatus === 'pending' && (
-                                        <span className="flex items-center gap-1 text-[9px] font-bold text-orange-500 bg-orange-50 px-2 py-0.5 rounded-full border border-orange-100 animate-pulse">
-                                            <RefreshCw size={8} className="animate-spin" /> PENDING SYNC
+                                        <span className="flex items-center gap-1 text-[7px] md:text-[9px] font-bold text-orange-500 bg-orange-50 px-1.5 py-0.5 rounded-full border border-orange-100 animate-pulse">
+                                            <RefreshCw size={7} md:size={8} className="animate-spin" /> PENDING
                                         </span>
                                     )}
-                                    <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase border ${getStatusColor(req.status)}`}>
+                                    <span className={`flex items-center gap-1 px-2 py-0.5 md:px-3 md:py-1.5 rounded-full text-[8px] md:text-[10px] font-black uppercase border whitespace-nowrap ${getStatusColor(req.status)}`}>
                                         {getStatusIcon(req.status)}
                                         {req.status}
                                     </span>
@@ -466,32 +468,32 @@ const Requests: React.FC<RequestsProps> = ({ requests, leaveTypes, userQuota, on
                                 {req.status === RequestStatus.PENDING && onDelete && (
                                     <button 
                                         onClick={() => setConfirmDeleteId(req.id)}
-                                        className="text-red-400 hover:text-red-600 p-1 transition-colors"
+                                        className="text-red-400 hover:text-red-600 p-1 transition-colors active:scale-90"
                                         title="Batalkan Pengajuan"
                                     >
-                                        <Trash2 size={14} />
+                                        <Trash2 size={12} md:size={16} />
                                     </button>
                                 )}
                             </div>
                         </div>
 
-                        <div className="bg-gray-50/80 p-4 rounded-xl border border-gray-100 relative">
-                            <p className="text-xs text-gray-700 leading-relaxed italic">
+                        <div className="bg-gray-50/80 p-2.5 md:p-4 rounded-xl border border-gray-100 relative">
+                            <p className="text-[10px] md:text-xs text-gray-700 leading-relaxed italic">
                                 "{req.aiEnhancedReason || req.reason}"
                             </p>
                         </div>
 
                         {req.attachmentUrl && (
-                            <div className="mt-4 flex items-center justify-between">
+                            <div className="mt-3 flex items-center justify-between gap-2">
                                 <a 
                                     href={req.attachmentUrl} 
                                     target="_blank" 
                                     rel="noreferrer" 
-                                    className="text-[10px] text-blue-600 font-bold flex items-center gap-1.5 hover:underline bg-blue-50 px-3 py-1.5 rounded-lg"
+                                    className="text-[8px] md:text-[10px] text-blue-600 font-bold flex items-center gap-1 hover:underline bg-blue-50 px-2 py-1 rounded-lg active:scale-95"
                                 >
-                                    <FileText size={12} /> LIHAT LAMPIRAN BUKTI
+                                    <FileText size={9} md:size={12} /> LIHAT LAMPIRAN
                                 </a>
-                                <span className="text-[10px] text-gray-400 font-medium">ID: {(req.id || '').split('-')[1] || req.id}</span>
+                                <span className="text-[8px] md:text-[10px] text-gray-400 font-medium whitespace-nowrap">ID: {(req.id || '').split('-')[1] || req.id}</span>
                             </div>
                         )}
                     </motion.div>

@@ -150,163 +150,258 @@ const AdminMonitor: React.FC<AdminMonitorProps> = ({ history, users }) => {
   };
 
   return (
-    <div className="space-y-6 fade-in pb-10 pt-14 md:pt-0">
+    <div className="space-y-8 fade-in pb-20 pt-16 md:pt-0">
         {/* Header Controls */}
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4 sticky top-14 md:top-0 z-20">
-            <div className="flex items-center justify-between w-full md:w-auto gap-4">
-                <button onClick={prevMonth} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><ChevronLeft size={20} className="text-gray-600"/></button>
-                <div className="text-center min-w-[120px] md:min-w-[150px]">
-                    <h2 className="text-base md:text-lg font-black text-gray-800 tracking-tighter">{currentDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}</h2>
-                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Monitor Performa</p>
+        <header className="bg-white p-4 md:p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-center gap-6 sticky top-14 md:top-0 z-20">
+            <div className="flex items-center justify-between w-full md:w-auto gap-6">
+                <button onClick={prevMonth} className="w-10 h-10 flex items-center justify-center bg-gray-50 hover:bg-gray-100 rounded-xl transition-all active:scale-90 text-gray-600 border border-gray-100 shadow-sm">
+                    <ChevronLeft size={20} />
+                </button>
+                <div className="text-center min-w-[140px] md:min-w-[180px]">
+                    <h2 className="text-lg md:text-xl font-black text-gray-900 tracking-tighter leading-none mb-1">
+                        {currentDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
+                    </h2>
+                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Monitor Performa Tim</p>
                 </div>
-                <button onClick={nextMonth} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><ChevronRight size={20} className="text-gray-600"/></button>
+                <button onClick={nextMonth} className="w-10 h-10 flex items-center justify-center bg-gray-50 hover:bg-gray-100 rounded-xl transition-all active:scale-90 text-gray-600 border border-gray-100 shadow-sm">
+                    <ChevronRight size={20} />
+                </button>
             </div>
-            <div className="relative w-full md:w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+            <div className="relative w-full md:w-72">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                 <input 
-                    type="text" placeholder="Cari karyawan..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium"
+                    type="text" 
+                    placeholder="Cari nama karyawan..." 
+                    value={searchTerm} 
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold text-gray-800 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 transition-all placeholder:text-gray-400"
                 />
             </div>
-        </div>
+        </header>
 
         {/* Employee Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
             {filteredEmployees.map((user, index) => {
                 const stat = employeeStats[user.id] || { present: 0, late: 0, absent: 0, total: 0 };
                 const totalWorkDays = 20;
                 const rate = Math.min(100, Math.round(((stat.present + (stat.late * 0.5)) / totalWorkDays) * 100));
                 
                 return (
-                    <div key={`${user.id}-${index}`} onClick={() => setSelectedEmployee(user)} className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md hover:border-blue-200 transition-all cursor-pointer group relative overflow-hidden">
-                        <div className="p-5">
-                            <div className="flex items-center gap-3 mb-4">
-                                <img 
-                                    src={user.avatar} 
-                                    className="w-12 h-12 rounded-full border-2 border-gray-50 group-hover:scale-105 transition-transform object-cover" 
-                                    alt=""
-                                    onError={(e) => {
-                                        (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random`;
-                                    }}
-                                />
-                                <div>
-                                    <h3 className="font-bold text-gray-800 text-sm">{user.name}</h3>
-                                    <div className="flex items-center gap-2">
-                                        <p className="text-xs text-gray-500">
-                                            {(user.position || '').startsWith('http') ? '' : user.position}
-                                        </p>
-                                        <span className="text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full border border-blue-100">
-                                            {user.leaveQuota || 0} Cuti
-                                        </span>
+                    <div 
+                        key={`${user.id}-${index}`} 
+                        onClick={() => setSelectedEmployee(user)} 
+                        className="bg-white rounded-[40px] border border-gray-100 shadow-sm hover:shadow-2xl hover:shadow-gray-200/50 hover:border-blue-200 transition-all cursor-pointer group relative overflow-hidden flex flex-col h-full"
+                    >
+                        <div className="p-6 flex-1">
+                            <div className="flex items-center gap-4 mb-6">
+                                <div className="relative">
+                                    <img 
+                                        src={user.avatar} 
+                                        className="w-14 h-14 rounded-3xl border-2 border-white shadow-md group-hover:scale-110 transition-transform object-cover" 
+                                        alt=""
+                                        referrerPolicy="no-referrer"
+                                        onError={(e) => {
+                                            (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random`;
+                                        }}
+                                    />
+                                    <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-xl flex items-center justify-center shadow-sm border border-gray-100">
+                                        <div className={`w-3 h-3 rounded-full ${user.isActive ? 'bg-emerald-500' : 'bg-gray-300'}`} />
                                     </div>
                                 </div>
+                                <div className="min-w-0">
+                                    <h3 className="font-black text-gray-900 text-base leading-tight truncate">{user.name}</h3>
+                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest truncate mt-1">
+                                        {user.position || 'Karyawan'}
+                                    </p>
+                                </div>
                             </div>
-                            <div className="grid grid-cols-3 gap-2 mb-4">
-                                <div className="text-center bg-green-50 rounded-lg py-2"><span className="block text-lg font-bold text-green-700 leading-none">{stat.present}</span><span className="text-[10px] text-green-600 uppercase font-medium">Hadir</span></div>
-                                <div className="text-center bg-yellow-50 rounded-lg py-2"><span className="block text-lg font-bold text-yellow-700 leading-none">{stat.late}</span><span className="text-[10px] text-yellow-600 uppercase font-medium">Telat</span></div>
-                                <div className="text-center bg-red-50 rounded-lg py-2"><span className="block text-lg font-bold text-red-700 leading-none">{stat.absent}</span><span className="text-[10px] text-red-600 uppercase font-medium">Alpha</span></div>
+
+                            <div className="grid grid-cols-3 gap-2 mb-6">
+                                <div className="text-center bg-emerald-50 rounded-2xl py-3 border border-emerald-100/50">
+                                    <span className="block text-xl font-black text-emerald-700 leading-none mb-1">{stat.present}</span>
+                                    <span className="text-[8px] text-emerald-600 uppercase font-black tracking-widest">Hadir</span>
+                                </div>
+                                <div className="text-center bg-amber-50 rounded-2xl py-3 border border-amber-100/50">
+                                    <span className="block text-xl font-black text-amber-700 leading-none mb-1">{stat.late}</span>
+                                    <span className="text-[8px] text-amber-600 uppercase font-black tracking-widest">Telat</span>
+                                </div>
+                                <div className="text-center bg-red-50 rounded-2xl py-3 border border-red-100/50">
+                                    <span className="block text-xl font-black text-red-700 leading-none mb-1">{stat.absent}</span>
+                                    <span className="text-[8px] text-red-600 uppercase font-black tracking-widest">Alpha</span>
+                                </div>
                             </div>
-                            <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden"><div className="bg-blue-500 h-full rounded-full transition-all duration-1000" style={{ width: `${rate}%` }}></div></div>
+
+                            <div className="space-y-2">
+                                <div className="flex justify-between items-end">
+                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Persentase Kehadiran</span>
+                                    <span className="text-xs font-black text-blue-600">{rate}%</span>
+                                </div>
+                                <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden border border-gray-50">
+                                    <div 
+                                        className={`h-full rounded-full transition-all duration-1000 ${rate > 80 ? 'bg-emerald-500' : rate > 60 ? 'bg-blue-500' : 'bg-amber-500'}`} 
+                                        style={{ width: `${rate}%` }} 
+                                    />
+                                </div>
+                            </div>
                         </div>
-                        <div className="bg-gray-50 px-5 py-2 text-center text-xs font-medium text-gray-500 border-t border-gray-100 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">Lihat Detail Kalender</div>
+                        <div className="bg-gray-50 px-6 py-3 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest border-t border-gray-100 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                            Lihat Detail Kalender
+                        </div>
                     </div>
                 );
             })}
         </div>
 
+
         {/* Detail Modal */}
         {selectedEmployee && (
-            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                <div className="bg-white w-full max-w-4xl rounded-2xl flex flex-col max-h-[90vh] animate-in zoom-in-95 shadow-2xl">
-                    <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-2xl">
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4 overflow-hidden">
+                <div 
+                    onClick={() => setSelectedEmployee(null)}
+                    className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                />
+                <div className="bg-white w-full h-full sm:h-auto sm:max-w-5xl sm:rounded-[40px] flex flex-col max-h-full sm:max-h-[90vh] relative z-10 shadow-2xl animate-in zoom-in-95 overflow-hidden">
+                    <div className="p-6 md:p-8 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 sticky top-0 z-20">
                         <div className="flex items-center gap-4">
-                            <img 
-                                src={selectedEmployee.avatar} 
-                                className="w-12 h-12 rounded-full border-2 border-white shadow-sm object-cover" 
-                                alt=""
-                                onError={(e) => {
-                                    (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedEmployee.name)}&background=random`;
-                                }}
-                            />
+                            <div className="relative">
+                                <img 
+                                    src={selectedEmployee.avatar} 
+                                    className="w-14 h-14 rounded-3xl border-2 border-white shadow-md object-cover" 
+                                    alt=""
+                                    referrerPolicy="no-referrer"
+                                    onError={(e) => {
+                                        (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedEmployee.name)}&background=random`;
+                                    }}
+                                />
+                                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-xl flex items-center justify-center shadow-sm border border-gray-100">
+                                    <div className={`w-3 h-3 rounded-full ${selectedEmployee.isActive ? 'bg-emerald-500' : 'bg-gray-300'}`} />
+                                </div>
+                            </div>
                             <div>
-                                <h3 className="text-xl font-bold text-gray-800">{selectedEmployee.name}</h3>
-                                <p className="text-sm text-gray-500">
-                                    {(selectedEmployee.position || '').startsWith('http') ? '' : selectedEmployee.position}
+                                <h3 className="text-xl font-black text-gray-900 tracking-tighter leading-none mb-1">{selectedEmployee.name}</h3>
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                    {selectedEmployee.position || 'Karyawan'}
                                 </p>
                             </div>
                         </div>
-                        <button onClick={() => setSelectedEmployee(null)} className="p-2 hover:bg-gray-200 rounded-full text-gray-500 transition-colors"><X size={24} /></button>
+                        <button onClick={() => setSelectedEmployee(null)} className="w-12 h-12 flex items-center justify-center bg-white rounded-2xl text-gray-400 hover:text-gray-900 transition-all shadow-sm border border-gray-100">
+                            <X size={24} />
+                        </button>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-6">
-                        <div className="flex items-center justify-center gap-4 mb-6">
-                             <h4 className="text-lg font-bold text-gray-800 bg-white px-4 py-1 rounded-full shadow-sm border border-gray-100">
-                                {currentDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
-                             </h4>
+                    <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-10">
+                        <div className="flex items-center justify-center gap-4">
+                             <div className="bg-blue-600 px-6 py-2.5 rounded-2xl shadow-xl shadow-blue-200 border border-blue-500">
+                                <h4 className="text-sm font-black text-white uppercase tracking-widest">
+                                    {currentDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
+                                </h4>
+                             </div>
                         </div>
 
                         {/* Calendar View */}
-                        <div className="mb-2">
-                            <h4 className="font-bold text-gray-700 mb-4 flex items-center gap-2"><Calendar size={18} className="text-blue-500"/> Kalender Absensi</h4>
-                            {renderCalendar()}
-                        </div>
+                        <section>
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                                    <Calendar size={20} />
+                                </div>
+                                <h4 className="font-black text-gray-900 text-lg tracking-tight uppercase tracking-widest text-xs">Kalender Absensi</h4>
+                            </div>
+                            <div className="bg-white rounded-[32px] border border-gray-100 p-4 md:p-6 shadow-sm">
+                                {renderCalendar()}
+                            </div>
+                        </section>
                         
                         {/* List Detail View with Timeline */}
-                        <div className="mt-8">
-                             <h4 className="font-bold text-gray-700 mb-4 flex items-center gap-2"><Navigation size={18} className="text-blue-500"/> Jejak Perjalanan (Location Logs)</h4>
-                             <div className="space-y-4">
+                        <section>
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                                    <Navigation size={20} />
+                                </div>
+                                <h4 className="font-black text-gray-900 text-lg tracking-tight uppercase tracking-widest text-xs">Jejak Perjalanan & Detail Harian</h4>
+                            </div>
+                            <div className="grid grid-cols-1 gap-4">
                                  {monthRecords
                                     .filter(r => r.userId === selectedEmployee.id)
                                     .sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())
                                     .map(rec => (
-                                        <div key={rec.id} className="border border-gray-100 rounded-xl p-4 bg-gray-50/50">
-                                            <div className="flex justify-between items-center mb-2 border-b border-gray-200 pb-2">
-                                                <div className="flex items-center gap-3">
-                                                    <span className="font-bold text-gray-800">{new Date(rec.date).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
-                                                    {rec.photoUrl && (
-                                                        <div className="relative group/img w-8 h-8">
-                                                            <img 
-                                                                src={rec.photoUrl} 
-                                                                alt="Selfie" 
-                                                                className="w-8 h-8 rounded-lg object-cover border border-gray-200 cursor-pointer hover:ring-2 hover:ring-blue-500/50 transition-all" 
-                                                                onClick={() => setSelectedImage(rec.photoUrl!)}
-                                                                referrerPolicy="no-referrer"
-                                                            />
-                                                            <div className="absolute inset-0 bg-black/20 rounded-lg opacity-0 group-hover/img:opacity-100 flex items-center justify-center pointer-events-none transition-opacity">
-                                                                <Eye size={10} className="text-white" />
-                                                            </div>
+                                        <div key={rec.id} className="bg-white border border-gray-100 rounded-[32px] p-6 shadow-sm hover:shadow-md transition-all">
+                                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 border-b border-gray-50 pb-6">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-12 h-12 rounded-2xl bg-gray-50 flex flex-col items-center justify-center border border-gray-100">
+                                                        <span className="text-[10px] font-black text-gray-400 uppercase leading-none mb-1">
+                                                            {new Date(rec.date).toLocaleDateString('id-ID', { weekday: 'short' })}
+                                                        </span>
+                                                        <span className="text-lg font-black text-gray-900 leading-none">
+                                                            {new Date(rec.date).getDate()}
+                                                        </span>
+                                                    </div>
+                                                    <div>
+                                                        <span className="font-black text-gray-900 text-base block leading-none mb-1">
+                                                            {new Date(rec.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                                        </span>
+                                                        <span className={`inline-flex px-2 py-0.5 text-[8px] font-black uppercase tracking-widest rounded-lg ${rec.status === 'Hadir' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-amber-50 text-amber-600 border border-amber-100'}`}>
+                                                            {rec.status}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                {rec.photoUrl && (
+                                                    <div className="relative group/img w-16 h-16 shrink-0">
+                                                        <img 
+                                                            src={rec.photoUrl} 
+                                                            alt="Selfie" 
+                                                            className="w-16 h-16 rounded-2xl object-cover border-2 border-white shadow-md cursor-pointer hover:scale-105 transition-all" 
+                                                            onClick={() => setSelectedImage(rec.photoUrl!)}
+                                                            referrerPolicy="no-referrer"
+                                                            onError={(e) => {
+                                                                (e.target as HTMLImageElement).src = 'https://picsum.photos/seed/broken/100/100';
+                                                            }}
+                                                        />
+                                                        <div className="absolute inset-0 bg-black/20 rounded-2xl opacity-0 group-hover/img:opacity-100 flex items-center justify-center pointer-events-none transition-opacity">
+                                                            <Eye size={16} className="text-white" />
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                                <div className="space-y-4">
+                                                    <h5 className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                                        <Clock size={12} /> Waktu Kerja
+                                                    </h5>
+                                                    <div className="grid grid-cols-2 gap-3">
+                                                        <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                                                            <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest block mb-1">Check In</span>
+                                                            <span className="text-sm font-black text-gray-900 font-mono">{rec.checkInTime || '--:--'}</span>
+                                                        </div>
+                                                        <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                                                            <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest block mb-1">Check Out</span>
+                                                            <span className="text-sm font-black text-gray-900 font-mono">{rec.checkOutTime || '--:--'}</span>
+                                                        </div>
+                                                    </div>
+                                                    {rec.officeName && (
+                                                        <div className="flex items-center gap-2 text-[10px] font-black text-blue-600 bg-blue-50 px-4 py-2 rounded-xl border border-blue-100 uppercase tracking-widest">
+                                                            <MapPin size={12} /> {rec.officeName}
                                                         </div>
                                                     )}
                                                 </div>
-                                                <span className={`px-2 py-0.5 text-xs font-bold rounded ${rec.status === 'Hadir' ? 'bg-green-100 text-green-700' : 'bg-gray-100'}`}>{rec.status}</span>
-                                            </div>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <div>
-                                                    <p className="text-xs text-gray-500 uppercase font-bold mb-2">Check In/Out</p>
-                                                    <div className="flex flex-col gap-1 text-sm font-mono text-gray-700">
-                                                        <span>IN: {rec.checkInTime || '-'}</span>
-                                                        <span>OUT: {rec.checkOutTime || '-'}</span>
-                                                        {rec.officeName && (
-                                                            <span className="text-[10px] text-blue-600 font-sans flex items-center gap-1 mt-1">
-                                                                <MapPin size={10} /> {rec.officeName}
-                                                            </span>
-                                                        )}
+                                                <div className="space-y-4">
+                                                    <h5 className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                                        <Navigation size={12} /> Timeline Lokasi
+                                                    </h5>
+                                                    <div className="bg-gray-50 rounded-2xl border border-gray-100 p-2">
+                                                        {renderLocationTimeline(rec)}
                                                     </div>
-                                                </div>
-                                                <div>
-                                                    <p className="text-xs text-gray-500 uppercase font-bold mb-2">Timeline Lokasi</p>
-                                                    {renderLocationTimeline(rec)}
                                                 </div>
                                             </div>
                                         </div>
                                     ))
                                  }
-                             </div>
-                        </div>
+                            </div>
+                        </section>
                     </div>
                 </div>
             </div>
         )}
+
 
         <ImageModal 
             isOpen={!!selectedImage} 

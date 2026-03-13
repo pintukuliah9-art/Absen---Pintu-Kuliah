@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useStore } from '../services/store';
-import { Task, TaskCategory } from '../types';
+import { Task, TASK_CATEGORIES } from '../types';
 import { Plus, Edit2, Trash2, CheckCircle, XCircle, Users, Briefcase, Building, Info, Search, Filter, ClipboardList, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import ConfirmModal from './ConfirmModal';
@@ -15,7 +15,7 @@ const AdminTasks: React.FC = () => {
     const [formData, setFormData] = useState<Partial<Task>>({
         title: '',
         description: '',
-        category: TaskCategory.DAILY,
+        category: TASK_CATEGORIES.DAILY,
         assignedUserIds: [],
         assignedRoleIds: [],
         assignedDepartmentIds: [],
@@ -27,7 +27,7 @@ const AdminTasks: React.FC = () => {
         setFormData({
             title: '',
             description: '',
-            category: TaskCategory.DAILY,
+            category: TASK_CATEGORIES.DAILY,
             assignedUserIds: [],
             assignedRoleIds: [],
             assignedDepartmentIds: [],
@@ -63,11 +63,11 @@ const AdminTasks: React.FC = () => {
     };
 
     const [searchTerm, setSearchTerm] = useState('');
-    const [filterCategory, setFilterCategory] = useState<'all' | TaskCategory>('all');
+    const [filterCategory, setFilterCategory] = useState<string>('all');
 
     const filteredTasks = tasks.filter(task => {
-        const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                             task.description.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSearch = (task.title || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+                             (task.description || '').toLowerCase().includes(searchTerm.toLowerCase());
         const matchesCategory = filterCategory === 'all' || task.category === filterCategory;
         return matchesSearch && matchesCategory;
     });
@@ -105,67 +105,69 @@ const AdminTasks: React.FC = () => {
     };
 
     return (
-        <div className="space-y-8 fade-in pb-20">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
-                <div>
-                    <h2 className="text-3xl font-black text-gray-900 tracking-tighter">Kelola Tugas</h2>
-                    <p className="text-gray-500 text-sm font-medium">Buat dan tugaskan pekerjaan harian atau tambahan ke karyawan.</p>
+        <div className="space-y-8 fade-in pb-20 pt-16 md:pt-0">
+            <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div className="w-full">
+                    <h2 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tighter">Kelola Tugas</h2>
+                    <p className="text-gray-500 text-xs md:text-sm font-medium mt-1">Buat dan tugaskan pekerjaan harian atau tambahan ke tim Anda.</p>
                 </div>
                 <button 
                     onClick={openAddModal}
-                    className="w-full md:w-auto bg-blue-600 text-white px-8 py-4 rounded-2xl font-black text-sm hover:bg-blue-700 transition-all active:scale-95 shadow-xl shadow-blue-100 flex items-center justify-center gap-2"
+                    className="w-full sm:w-auto bg-blue-600 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-blue-700 transition-all active:scale-95 shadow-xl shadow-blue-200 flex items-center justify-center gap-2 group"
                 >
-                    <Plus size={20} /> Tambah Tugas Baru
+                    <Plus size={18} className="group-hover:rotate-90 transition-transform" /> Tambah Tugas Baru
                 </button>
-            </div>
+            </header>
 
             {/* Quick Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm">
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Tugas</p>
-                    <h3 className="text-3xl font-black text-gray-900">{tasks.length}</h3>
-                </div>
-                <div className="bg-emerald-50 p-6 rounded-[32px] border border-emerald-100 shadow-sm">
-                    <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Tugas Harian</p>
-                    <h3 className="text-3xl font-black text-emerald-700">{tasks.filter(t => t.category === TaskCategory.DAILY).length}</h3>
-                </div>
-                <div className="bg-blue-50 p-6 rounded-[32px] border border-blue-100 shadow-sm">
-                    <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1">Tugas Tambahan</p>
-                    <h3 className="text-3xl font-black text-blue-700">{tasks.filter(t => t.category === TaskCategory.ADDITIONAL).length}</h3>
-                </div>
-                <div className="bg-gray-50 p-6 rounded-[32px] border border-gray-100 shadow-sm">
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Nonaktif</p>
-                    <h3 className="text-3xl font-black text-gray-400">{tasks.filter(t => !t.isActive).length}</h3>
-                </div>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                {[
+                    { label: 'Total Tugas', value: tasks.length, color: 'gray', icon: ClipboardList },
+                    { label: 'Tugas Harian', value: tasks.filter(t => t.category === TASK_CATEGORIES.DAILY).length, color: 'emerald', icon: CheckCircle },
+                    { label: 'Tugas Tambahan', value: tasks.filter(t => t.category === TASK_CATEGORIES.ADDITIONAL).length, color: 'blue', icon: Plus },
+                    { label: 'Nonaktif', value: tasks.filter(t => !t.isActive).length, color: 'red', icon: XCircle },
+                ].map((stat, i) => (
+                    <div key={i} className={`bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-4 group hover:border-${stat.color}-200 transition-all`}>
+                        <div className={`w-12 h-12 rounded-2xl bg-${stat.color}-50 flex items-center justify-center text-${stat.color}-600 group-hover:scale-110 transition-transform`}>
+                            <stat.icon size={24} />
+                        </div>
+                        <div>
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5">{stat.label}</p>
+                            <h3 className="text-2xl font-black text-gray-900">{stat.value}</h3>
+                        </div>
+                    </div>
+                ))}
             </div>
 
             {/* Filters & Search */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="md:col-span-2 bg-white p-3 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
-                    <Search size={18} className="text-gray-400 ml-2" />
+            <div className="bg-white p-4 md:p-6 rounded-3xl border border-gray-100 shadow-sm space-y-4 md:space-y-0 md:flex md:items-center md:gap-4 sticky top-14 md:top-0 z-20">
+                <div className="flex-1 flex items-center gap-4 bg-gray-50 px-4 py-3 rounded-2xl border border-gray-100 focus-within:border-blue-400 focus-within:ring-4 focus-within:ring-blue-50 transition-all">
+                    <Search size={20} className="text-gray-400" />
                     <input 
                         type="text" 
                         placeholder="Cari judul atau deskripsi tugas..." 
-                        className="flex-1 bg-transparent outline-none text-sm font-medium"
+                        className="flex-1 bg-transparent outline-none text-sm font-bold text-gray-800 placeholder:text-gray-400"
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
                     />
                 </div>
-                <div className="bg-white p-3 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3">
-                    <Filter size={18} className="text-gray-400 ml-2" />
+                <div className="flex items-center gap-3 bg-gray-50 px-4 py-3 rounded-2xl border border-gray-100 focus-within:border-blue-400 focus-within:ring-4 focus-within:ring-blue-50 transition-all">
+                    <Filter size={18} className="text-gray-400" />
                     <select 
                         value={filterCategory}
-                        onChange={e => setFilterCategory(e.target.value as any)}
-                        className="flex-1 bg-transparent outline-none text-sm font-bold"
+                        onChange={e => setFilterCategory(e.target.value)}
+                        className="bg-transparent outline-none text-[10px] font-black uppercase tracking-widest text-gray-700 min-w-[140px] appearance-none cursor-pointer"
                     >
                         <option value="all">Semua Kategori</option>
-                        <option value={TaskCategory.DAILY}>Tugas Harian</option>
-                        <option value={TaskCategory.ADDITIONAL}>Tugas Tambahan</option>
+                        {Object.entries(TASK_CATEGORIES).map(([key, value]) => (
+                            <option key={key} value={value}>{value}</option>
+                        ))}
                     </select>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+
                 {filteredTasks.length === 0 ? (
                     <div className="col-span-full py-20 text-center bg-white rounded-[40px] border border-dashed border-gray-200">
                         <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -190,7 +192,7 @@ const AdminTasks: React.FC = () => {
             {/* Modal */}
             <AnimatePresence>
                 {isModalOpen && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4 overflow-hidden">
                         <motion.div 
                             initial={{ opacity: 0 }} 
                             animate={{ opacity: 1 }} 
@@ -202,21 +204,21 @@ const AdminTasks: React.FC = () => {
                             initial={{ opacity: 0, scale: 0.9, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                            className="bg-white w-full max-w-2xl rounded-[40px] shadow-2xl relative z-10 overflow-hidden flex flex-col max-h-[90vh]"
+                            className="bg-white w-full h-full sm:h-auto sm:max-w-2xl sm:rounded-[40px] shadow-2xl relative z-10 overflow-hidden flex flex-col max-h-full sm:max-h-[90vh]"
                         >
-                            <div className="p-8 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                            <div className="p-8 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 sticky top-0 z-20">
                                 <div>
                                     <h3 className="text-2xl font-black text-gray-900 tracking-tighter">
-                                        {editingTask ? 'Edit Tugas' : 'Tambah Tugas Baru'}
+                                        {editingTask ? 'Edit Tugas' : 'Tambah Tugas'}
                                     </h3>
-                                    <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">Konfigurasi Penugasan Kerja</p>
+                                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-1">Konfigurasi Penugasan Kerja</p>
                                 </div>
-                                <button onClick={() => setIsModalOpen(false)} className="p-3 hover:bg-white rounded-2xl transition-all text-gray-400 hover:text-gray-900 shadow-sm border border-transparent hover:border-gray-100">
+                                <button onClick={() => setIsModalOpen(false)} className="w-12 h-12 flex items-center justify-center bg-white rounded-2xl transition-all text-gray-400 hover:text-gray-900 shadow-sm border border-gray-100">
                                     <XCircle size={24} />
                                 </button>
                             </div>
 
-                            <form onSubmit={handleSubmit} className="p-8 space-y-6 overflow-y-auto">
+                            <form onSubmit={handleSubmit} className="p-8 space-y-8 overflow-y-auto flex-1">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="md:col-span-2">
                                         <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Judul Tugas</label>
@@ -234,7 +236,7 @@ const AdminTasks: React.FC = () => {
                                         <textarea 
                                             value={formData.description}
                                             onChange={e => setFormData({...formData, description: e.target.value})}
-                                            className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 outline-none transition-all min-h-[100px]"
+                                            className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 outline-none transition-all min-h-[100px] resize-none"
                                             placeholder="Jelaskan detail tugas ini..."
                                         />
                                     </div>
@@ -242,14 +244,15 @@ const AdminTasks: React.FC = () => {
                                         <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Kategori</label>
                                         <select 
                                             value={formData.category}
-                                            onChange={e => setFormData({...formData, category: e.target.value as TaskCategory})}
-                                            className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 outline-none transition-all"
+                                            onChange={e => setFormData({...formData, category: e.target.value})}
+                                            className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 outline-none transition-all appearance-none bg-white"
                                         >
-                                            <option value={TaskCategory.DAILY}>Tugas Harian</option>
-                                            <option value={TaskCategory.ADDITIONAL}>Tugas Tambahan</option>
+                                            {Object.entries(TASK_CATEGORIES).map(([key, value]) => (
+                                                <option key={key} value={value}>{value}</option>
+                                            ))}
                                         </select>
                                     </div>
-                                    <div className="flex items-center gap-3 pt-6">
+                                    <div className="flex items-center gap-4 bg-gray-50 p-4 rounded-2xl border border-gray-100">
                                         <button 
                                             type="button"
                                             onClick={() => setFormData({...formData, isActive: !formData.isActive})}
@@ -257,23 +260,27 @@ const AdminTasks: React.FC = () => {
                                         >
                                             <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${formData.isActive ? 'left-7' : 'left-1'}`} />
                                         </button>
-                                        <span className="text-sm font-black text-gray-700">Status Aktif</span>
+                                        <span className="text-xs font-black text-gray-700 uppercase tracking-widest">Status Aktif</span>
                                     </div>
                                 </div>
 
-                                <div className="space-y-4">
-                                    <h4 className="text-xs font-black text-gray-900 uppercase tracking-widest border-b border-gray-100 pb-2">Penugasan (Pilih Salah Satu atau Kombinasi)</h4>
+                                <div className="space-y-6 pt-6 border-t border-gray-100">
+                                    <h4 className="text-xs font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
+                                        <Users size={16} className="text-blue-600" /> Penugasan Tim
+                                    </h4>
                                     
                                     {/* By Department */}
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-gray-400 flex items-center gap-2 uppercase tracking-widest"><Building size={12}/> Berdasarkan Departemen</label>
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] font-black text-gray-400 flex items-center gap-2 uppercase tracking-widest">
+                                            <Building size={12}/> Berdasarkan Departemen
+                                        </label>
                                         <div className="flex flex-wrap gap-2">
                                             {(appSettings.departments || []).map(dept => (
                                                 <button 
                                                     key={dept.id}
                                                     type="button"
                                                     onClick={() => toggleAssignment('department', dept.id)}
-                                                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${formData.assignedDepartmentIds?.includes(dept.id) ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-100' : 'bg-white text-gray-500 border-gray-100 hover:border-blue-200'}`}
+                                                    className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${formData.assignedDepartmentIds?.includes(dept.id) ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-100' : 'bg-white text-gray-500 border-gray-200 hover:border-blue-400 hover:text-blue-600'}`}
                                                 >
                                                     {dept.name}
                                                 </button>
@@ -282,15 +289,17 @@ const AdminTasks: React.FC = () => {
                                     </div>
 
                                     {/* By Role */}
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-gray-400 flex items-center gap-2 uppercase tracking-widest"><Briefcase size={12}/> Berdasarkan Jabatan</label>
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] font-black text-gray-400 flex items-center gap-2 uppercase tracking-widest">
+                                            <Briefcase size={12}/> Berdasarkan Jabatan
+                                        </label>
                                         <div className="flex flex-wrap gap-2">
                                             {appSettings.jobRoles.map(role => (
                                                 <button 
                                                     key={role.id}
                                                     type="button"
                                                     onClick={() => toggleAssignment('role', role.id)}
-                                                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${formData.assignedRoleIds?.includes(role.id) ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-100' : 'bg-white text-gray-500 border-gray-100 hover:border-indigo-200'}`}
+                                                    className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${formData.assignedRoleIds?.includes(role.id) ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-100' : 'bg-white text-gray-500 border-gray-200 hover:border-indigo-400 hover:text-indigo-600'}`}
                                                 >
                                                     {role.title}
                                                 </button>
@@ -299,15 +308,17 @@ const AdminTasks: React.FC = () => {
                                     </div>
 
                                     {/* By User */}
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-gray-400 flex items-center gap-2 uppercase tracking-widest"><Users size={12}/> Karyawan Spesifik</label>
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] font-black text-gray-400 flex items-center gap-2 uppercase tracking-widest">
+                                            <Users size={12}/> Karyawan Spesifik
+                                        </label>
                                         <div className="flex flex-wrap gap-2">
                                             {users.filter(u => u.isActive).map(u => (
                                                 <button 
                                                     key={u.id}
                                                     type="button"
                                                     onClick={() => toggleAssignment('user', u.id)}
-                                                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${formData.assignedUserIds?.includes(u.id) ? 'bg-emerald-600 text-white border-emerald-600 shadow-lg shadow-emerald-100' : 'bg-white text-gray-500 border-gray-100 hover:border-emerald-200'}`}
+                                                    className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${formData.assignedUserIds?.includes(u.id) ? 'bg-emerald-600 text-white border-emerald-600 shadow-lg shadow-emerald-100' : 'bg-white text-gray-500 border-gray-200 hover:border-emerald-400 hover:text-emerald-600'}`}
                                                 >
                                                     {u.name}
                                                 </button>
@@ -315,27 +326,30 @@ const AdminTasks: React.FC = () => {
                                         </div>
                                     </div>
                                 </div>
-
-                                <div className="pt-4 flex gap-3">
-                                    <button 
-                                        type="button"
-                                        onClick={() => setIsModalOpen(false)}
-                                        className="flex-1 px-8 py-4 bg-gray-100 text-gray-600 rounded-2xl font-black text-sm hover:bg-gray-200 transition-all active:scale-95"
-                                    >
-                                        Batal
-                                    </button>
-                                    <button 
-                                        type="submit"
-                                        className="flex-[2] px-8 py-4 bg-blue-600 text-white rounded-2xl font-black text-sm hover:bg-blue-700 transition-all active:scale-95 shadow-xl shadow-blue-100"
-                                    >
-                                        {editingTask ? 'Simpan Perubahan' : 'Buat Tugas'}
-                                    </button>
-                                </div>
                             </form>
+
+                            <div className="p-8 border-t border-gray-100 flex flex-col sm:flex-row gap-3 bg-white sticky bottom-0 z-20">
+                                <button 
+                                    type="button"
+                                    onClick={() => setIsModalOpen(false)}
+                                    className="w-full sm:w-auto px-8 py-4 bg-gray-100 text-gray-500 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-gray-200 transition-all active:scale-95"
+                                >
+                                    Batal
+                                </button>
+                                <button 
+                                    onClick={() => document.getElementById('userForm')?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }))}
+                                    type="submit"
+                                    form="userForm"
+                                    className="w-full sm:w-auto flex-1 px-8 py-4 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-blue-700 transition-all active:scale-95 shadow-xl shadow-blue-200"
+                                >
+                                    {editingTask ? 'Simpan Perubahan' : 'Buat Tugas'}
+                                </button>
+                            </div>
                         </motion.div>
                     </div>
                 )}
             </AnimatePresence>
+
             <ConfirmModal 
                 isOpen={!!confirmDeleteId}
                 onClose={() => setConfirmDeleteId(null)}
@@ -353,27 +367,29 @@ const AdminTasks: React.FC = () => {
 };
 
 const TaskCard: React.FC<{ task: Task, onEdit: (t: Task) => void, onDelete: (id: string) => void, assignedCount: number }> = ({ task, onEdit, onDelete, assignedCount }) => {
+    const isDaily = task.category === TASK_CATEGORIES.DAILY;
+    
     return (
         <motion.div 
             layout
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className={`p-6 rounded-[32px] border transition-all group relative overflow-hidden flex flex-col h-full ${task.isActive ? 'bg-white border-gray-100 hover:shadow-xl hover:shadow-gray-100' : 'bg-gray-50 border-gray-200 opacity-60 grayscale'}`}
+            className={`p-6 rounded-[40px] border transition-all group relative overflow-hidden flex flex-col h-full ${task.isActive ? 'bg-white border-gray-100 hover:shadow-2xl hover:shadow-gray-200/50 hover:-translate-y-1' : 'bg-gray-50 border-gray-200 opacity-60 grayscale'}`}
         >
-            <div className="flex justify-between items-start mb-4 relative z-10">
-                <div className={`p-3 rounded-2xl ${task.category === TaskCategory.DAILY ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'}`}>
-                    {task.category === TaskCategory.DAILY ? <CheckCircle size={24} /> : <Plus size={24} />}
+            <div className="flex justify-between items-start mb-6 relative z-10">
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${isDaily ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'}`}>
+                    {isDaily ? <CheckCircle size={28} /> : <Plus size={28} />}
                 </div>
                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
                     <button 
                         onClick={() => onEdit(task)}
-                        className="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+                        className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all border border-transparent hover:border-blue-100"
                     >
                         <Edit2 size={16} />
                     </button>
                     <button 
                         onClick={() => onDelete(task.id)}
-                        className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                        className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all border border-transparent hover:border-red-100"
                     >
                         <Trash2 size={16} />
                     </button>
@@ -381,48 +397,50 @@ const TaskCard: React.FC<{ task: Task, onEdit: (t: Task) => void, onDelete: (id:
             </div>
 
             <div className="flex-1 relative z-10">
-                <div className="flex items-center gap-2 mb-1">
-                    <span className={`text-[10px] font-black uppercase tracking-widest ${task.category === TaskCategory.DAILY ? 'text-emerald-600' : 'text-blue-600'}`}>
-                        {task.category === TaskCategory.DAILY ? 'Harian' : 'Tambahan'}
+                <div className="flex items-center gap-2 mb-2">
+                    <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg ${isDaily ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'}`}>
+                        {task.category}
                     </span>
-                    {!task.isActive && <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-200 px-2 py-0.5 rounded-full">Nonaktif</span>}
+                    {!task.isActive && <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-200 px-2 py-1 rounded-lg">Nonaktif</span>}
                 </div>
-                <h4 className="font-black text-gray-900 text-lg leading-tight mb-2 group-hover:text-blue-600 transition-all">{task.title}</h4>
-                <p className="text-xs text-gray-500 font-medium line-clamp-3 mb-6 leading-relaxed">{task.description || 'Tidak ada deskripsi.'}</p>
+                <h4 className="font-black text-gray-900 text-xl leading-tight mb-2 group-hover:text-blue-600 transition-all tracking-tight">{task.title}</h4>
+                <p className="text-xs text-gray-500 font-bold line-clamp-3 mb-8 leading-relaxed">{task.description || 'Tidak ada deskripsi detail untuk tugas ini.'}</p>
             </div>
 
-            <div className="pt-6 border-t border-gray-50 flex items-center justify-between relative z-10">
-                <div className="flex items-center gap-2">
-                    <div className="flex -space-x-2">
+            <div className="pt-6 border-t border-gray-50 flex items-center justify-between relative z-10 mt-auto">
+                <div className="flex items-center gap-3">
+                    <div className="flex -space-x-2.5">
                         {[...Array(Math.min(3, assignedCount))].map((_, i) => (
-                            <div key={i} className="w-6 h-6 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center overflow-hidden">
-                                <Users size={12} className="text-gray-400" />
+                            <div key={i} className="w-8 h-8 rounded-xl border-2 border-white bg-gray-100 flex items-center justify-center overflow-hidden shadow-sm">
+                                <Users size={14} className="text-gray-400" />
                             </div>
                         ))}
                         {assignedCount > 3 && (
-                            <div className="w-6 h-6 rounded-full border-2 border-white bg-gray-50 flex items-center justify-center text-[8px] font-black text-gray-400">
+                            <div className="w-8 h-8 rounded-xl border-2 border-white bg-blue-600 flex items-center justify-center text-[10px] font-black text-white shadow-sm">
                                 +{assignedCount - 3}
                             </div>
                         )}
                     </div>
-                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                        {assignedCount} Penerima
-                    </span>
+                    <div className="flex flex-col">
+                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Penerima</span>
+                        <span className="text-xs font-black text-gray-900 leading-none">{assignedCount} Orang</span>
+                    </div>
                 </div>
-                <div className="flex flex-wrap gap-1 justify-end">
+                <div className="flex gap-1.5">
                     {task.assignedDepartmentIds.length > 0 && (
-                        <div title="Dept" className="p-1 bg-gray-50 text-gray-400 rounded-lg"><Building size={12}/></div>
+                        <div title="Dept" className="w-8 h-8 flex items-center justify-center bg-gray-50 text-gray-400 rounded-xl border border-gray-100"><Building size={14}/></div>
                     )}
                     {task.assignedRoleIds.length > 0 && (
-                        <div title="Jabatan" className="p-1 bg-gray-50 text-gray-400 rounded-lg"><Briefcase size={12}/></div>
+                        <div title="Jabatan" className="w-8 h-8 flex items-center justify-center bg-gray-50 text-gray-400 rounded-xl border border-gray-100"><Briefcase size={14}/></div>
                     )}
                     {task.assignedUserIds.length > 0 && (
-                        <div title="Karyawan" className="p-1 bg-gray-50 text-gray-400 rounded-lg"><Users size={12}/></div>
+                        <div title="Karyawan" className="w-8 h-8 flex items-center justify-center bg-gray-50 text-gray-400 rounded-xl border border-gray-100"><Users size={14}/></div>
                     )}
                 </div>
             </div>
         </motion.div>
     );
 };
+
 
 export default AdminTasks;

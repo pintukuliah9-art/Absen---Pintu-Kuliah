@@ -93,6 +93,7 @@ const INITIAL_STATE: AppState = {
   workReports: [],
   appSettings: DEFAULT_SETTINGS,
   isLoading: false,
+  isSyncing: false,
   syncError: null
 };
 
@@ -100,15 +101,15 @@ const INITIAL_STATE: AppState = {
 const SEED_USERS: User[] = [
     {
         id: 'u-super',
-        name: 'Super Administrator',
+        name: 'Pintu Kuliah Admin',
         role: 'superadmin',
-        avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop',
-        position: 'System Owner',
+        avatar: 'https://ui-avatars.com/api/?name=Pintu+Kuliah&background=0F172A&color=fff&size=256&bold=true',
+        position: 'System Administrator',
         leaveQuota: 99,
         isActive: true,
-        email: 'super@pintukuliah.com',
+        email: 'admin@pintukuliah.com',
         username: 'superadmin',
-        employeeId: 'SUPER-001'
+        employeeId: 'PK-001'
     },
     MOCK_ADMIN, 
     MOCK_USER, 
@@ -163,20 +164,29 @@ export const useStoreInternal = () => {
   // Refactored Fetch Logic
   const fetchData = useCallback(async (isBackground = false) => {
       const now = Date.now();
-      // Throttle: Don't fetch more than once every 5 seconds, even in background
-      if (isBackground && now - lastFetchRef.current < 5000) {
+      // Throttle: Don't fetch more than once every 10 seconds, even in background
+      if (isBackground && now - lastFetchRef.current < 10000) {
           return;
       }
+      
+      const currentState = stateRef.current;
+      if (currentState.isSyncing && isBackground) return; // Don't double sync in background
+
       lastFetchRef.current = now;
 
-      if (!isBackground) {
+      // Only show loading if we don't have any users yet (first time load)
+      const hasData = currentState.users.length > 0;
+
+      if (!isBackground && !hasData) {
           setState(prev => ({ ...prev, isLoading: true, syncError: null }));
+      } else if (isBackground) {
+          setState(prev => ({ ...prev, isSyncing: true }));
       }
 
       try {
-          // 1. Try Local Storage first (only on initial load)
+          // 1. Try Local Storage first (only on initial load and if we don't have data in memory)
           let parsedLocal: Partial<AppState> = {};
-          if (!isBackground) {
+          if (!isBackground && !hasData) {
               const localData = localStorage.getItem(STORAGE_KEY);
               if (localData) {
                   try {
@@ -191,14 +201,21 @@ export const useStoreInternal = () => {
                       if (parsedLocal.workReports) parsedLocal.workReports = deduplicate(parsedLocal.workReports);
 
                       if (parsedLocal.appSettings?.apiUrl) {
-                          console.log(`[Store] Setting API URL from local storage: ${parsedLocal.appSettings.apiUrl}`);
-                          api.setApiUrl(parsedLocal.appSettings.apiUrl);
+                          const oldUrl = "https://script.google.com/macros/s/AKfycbx8jLzwdh_yMebXBuGlg1JWdYwwZgcH8icP9A93Yimjy_9jx3gb24V3OrcIWPJWcrPP/exec";
+                          if (parsedLocal.appSettings.apiUrl === oldUrl) {
+                              console.log("[Store] Clearing old API URL from local storage");
+                              parsedLocal.appSettings.apiUrl = "";
+                          } else {
+                              console.log(`[Store] Setting API URL from local storage: ${parsedLocal.appSettings.apiUrl}`);
+                              api.setApiUrl(parsedLocal.appSettings.apiUrl);
+                          }
                       }
                       
                       setState(prev => ({ 
                           ...prev, 
                           ...parsedLocal, 
                           users: deduplicate([...SEED_USERS, ...(parsedLocal.users || [])]),
+                          // Keep isLoading true if we are still fetching from API
                           isLoading: true 
                       }));
                   } catch (e) {
@@ -221,20 +238,31 @@ export const useStoreInternal = () => {
               // Merge API Data
               setState(prev => {
                   if (apiData.appSettings?.apiUrl) {
-                      console.log(`[Store] Setting API URL from API data: ${apiData.appSettings.apiUrl}`);
-                      api.setApiUrl(apiData.appSettings.apiUrl);
+                      const oldUrl = "https://script.google.com/macros/s/AKfycbx8jLzwdh_yMebXBuGlg1JWdYwwZgcH8icP9A93Yimjy_9jx3gb24V3OrcIWPJWcrPP/exec";
+                      if (apiData.appSettings.apiUrl === oldUrl) {
+                          apiData.appSettings.apiUrl = "";
+                      } else {
+                          console.log(`[Store] Setting API URL from API data: ${apiData.appSettings.apiUrl}`);
+                          api.setApiUrl(apiData.appSettings.apiUrl);
+                      }
                   }
                   
                   // Preserve local pending data so they don't disappear on background sync
                   const localPendingAttendance = prev.attendanceHistory.filter(r => r.syncStatus === 'pending');
                   const localPendingRequests = prev.requests.filter(r => r.syncStatus === 'pending');
 
+                  // Robust merge: Only overwrite if API data is present
                   const mergedState = {
                       ...prev,
-                      ...parsedLocal, // Only relevant on initial load
-                      ...apiData,
-                      currentUser: prev.currentUser || parsedLocal.currentUser || null,
+                      users: apiData.users || prev.users,
+                      attendanceHistory: apiData.attendanceHistory || prev.attendanceHistory,
+                      requests: apiData.requests || prev.requests,
+                      tasks: apiData.tasks || prev.tasks,
+                      workReports: apiData.workReports || prev.workReports,
+                      appSettings: apiData.appSettings ? { ...prev.appSettings, ...apiData.appSettings } : prev.appSettings,
+                      currentUser: prev.currentUser || (apiData.users ? apiData.users.find(u => u.id === prev.currentUser?.id) : null) || null,
                       isLoading: false,
+                      isSyncing: false,
                       syncError: null
                   };
 
@@ -309,52 +337,49 @@ export const useStoreInternal = () => {
 
           } catch (apiErr: any) {
               console.error("API Sync Failed:", apiErr);
-              if (!isBackground) {
-                  const errorMessage = apiErr.message || "Gagal terhubung ke server backend.";
-                  setState(prev => ({
-                      ...prev,
-                      ...parsedLocal,
-                      users: prev.users.length > 0 ? prev.users : SEED_USERS,
-                      isLoading: false,
-                      syncError: errorMessage
-                  }));
-              }
+              const errorMessage = apiErr.message || "Gagal terhubung ke server backend.";
+              setState(prev => ({
+                  ...prev,
+                  ...parsedLocal,
+                  users: prev.users.length > 0 ? prev.users : SEED_USERS,
+                  isLoading: false,
+                  isSyncing: false,
+                  syncError: isBackground ? prev.syncError : errorMessage
+              }));
           }
 
       } catch (err) {
           console.error("Critical Load Error:", err);
-          if (!isBackground) {
-             // Fallback logic...
-             setState(prev => ({
-                ...prev, 
-                users: prev.users.length > 0 ? prev.users : SEED_USERS,
-                isLoading: false, 
-                syncError: "Mode Offline: Error kritis saat memuat data." 
-            }));
-          }
+          setState(prev => ({ 
+              ...prev, 
+              users: prev.users.length > 0 ? prev.users : SEED_USERS,
+              isLoading: false, 
+              isSyncing: false,
+              syncError: "Mode Offline: Error kritis saat memuat data." 
+          }));
       }
-  }, []);
+  }, [deduplicate]);
 
   // Initial Load
   useEffect(() => {
     fetchData(false);
   }, [fetchData]);
 
-  // Background Sync (Every 30s)
+  // Background Sync (Every 60s)
   useEffect(() => {
       const interval = setInterval(() => {
           if (document.visibilityState === 'visible' && navigator.onLine) {
               fetchData(true);
           }
-      }, 30000);
+      }, 60000);
       return () => clearInterval(interval);
   }, [fetchData]);
 
-  // Sync on Focus (Throttle to 30s)
+  // Sync on Focus (Throttle to 60s)
   useEffect(() => {
       const onFocus = () => {
           const now = Date.now();
-          if (navigator.onLine && now - lastFetchRef.current > 30000) {
+          if (navigator.onLine && now - lastFetchRef.current > 60000) {
               fetchData(true);
           }
       };
@@ -382,6 +407,8 @@ export const useStoreInternal = () => {
                       ...prev,
                       attendanceHistory: prev.attendanceHistory.map(r => r.id === record.id ? { ...r, syncStatus: 'synced' } : r)
                   }));
+                  // Add a small delay between items to avoid rate limits
+                  await new Promise(resolve => setTimeout(resolve, 1000));
               } catch (e) {
                   console.error(`Failed to sync record ${record.id}`, e);
               }
@@ -397,6 +424,8 @@ export const useStoreInternal = () => {
                       ...prev,
                       requests: prev.requests.map(r => r.id === req.id ? { ...r, syncStatus: 'synced' } : r)
                   }));
+                  // Add a small delay between items to avoid rate limits
+                  await new Promise(resolve => setTimeout(resolve, 1000));
               } catch (e) {
                   console.error(`Failed to sync request ${req.id}`, e);
               }

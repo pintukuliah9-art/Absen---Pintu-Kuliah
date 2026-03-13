@@ -1,267 +1,393 @@
 /**
- * PINTU KULIAH BACKEND - VERSI 4.0.0
- * 
- * Fitur:
- * 1. Format ID Karyawan: user-<timestamp>
- * 2. Penanganan Sheet Fleksibel (Indonesia/Inggris)
- * 3. Sinkronisasi Pengaturan & Data Master
+ * PINTU KULIAH BACKEND - VERSI 5.0.5 (ANTI-GAGAL)
+ * Target Spreadsheet: 1PesDkprztQlrs6KX-KIx531dJzI1Elxva-NKkBuNxA8
  */
 
-// --- FUNGSI GLOBAL ---
+var SPREADSHEET_ID = "1PesDkprztQlrs6KX-KIx531dJzI1Elxva-NKkBuNxA8";
+
+function getSS() {
+  var ss = null;
+  try {
+    ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  } catch (e) {
+    console.error("Gagal membuka spreadsheet by ID: " + e.toString());
+    ss = SpreadsheetApp.getActiveSpreadsheet();
+  }
+  if (!ss) throw new Error("Spreadsheet tidak ditemukan. Pastikan SPREADSHEET_ID benar dan script memiliki izin akses.");
+  return ss;
+}
+
+// --- 1. FUNGSI SETUP (JALANKAN INI) ---
+
+function setupDatabaseLengkap() {
+  var ss = getSS();
+  
+  var skema = [
+    {
+      nama: "Dashboard",
+      warna: "#16A085",
+      kolom: ["Indikator", "Nilai", "Keterangan"]
+    },
+    {
+      nama: "Karyawan",
+      warna: "#2C3E50",
+      kolom: ["id", "id_karyawan", "nama", "username", "peran", "jabatan", "id_departemen", "aktif", "tanggal_bergabung", "kuota_cuti", "password", "email", "telepon", "url_avatar", "jenis_kelamin", "alamat", "mode_login"],
+      dropdown: {
+        "peran": ["Admin", "Manajer", "Karyawan"],
+        "aktif": ["TRUE", "FALSE"],
+        "jenis_kelamin": ["Laki-laki", "Perempuan"],
+        "mode_login": ["Password", "Wajah", "Keduanya"]
+      }
+    },
+    {
+      nama: "Absensi",
+      warna: "#27AE60",
+      kolom: ["id", "tanggal", "id_user", "jam_masuk", "jam_keluar", "status", "nama_kantor", "url_foto", "lat_masuk", "lng_masuk", "catatan", "kerja_online"],
+      dropdown: {
+        "status": ["Hadir", "Terlambat", "Izin", "Sakit", "Alpa"],
+        "kerja_online": ["Ya", "Tidak"]
+      }
+    },
+    {
+      nama: "Pengajuan",
+      warna: "#E67E22",
+      kolom: ["id", "id_user", "tipe", "tanggal_mulai", "tanggal_selesai", "alasan", "status", "url_lampiran"],
+      dropdown: {
+        "tipe": ["Cuti", "Izin", "Sakit", "Lembur", "Dinas"],
+        "status": ["Pending", "Disetujui", "Ditolak"]
+      }
+    },
+    {
+      nama: "Tugas",
+      warna: "#2980B9",
+      kolom: ["id", "judul", "deskripsi", "kategori", "id_user_ditugaskan", "id_peran_ditugaskan", "id_dept_ditugaskan", "aktif", "dibuat_pada", "dibuat_oleh"],
+      dropdown: { "aktif": ["Ya", "Tidak"] }
+    },
+    {
+      nama: "LaporanKerja",
+      warna: "#8E44AD",
+      kolom: ["id", "tanggal", "id_user", "id_tugas", "status", "catatan", "url_bukti", "dikirim_pada"],
+      dropdown: { "status": ["Selesai", "Proses", "Tertunda"] }
+    },
+    {
+      nama: "Pengaturan",
+      warna: "#7F8C8D",
+      kolom: ["kunci", "nilai"]
+    },
+    {
+      nama: "LokasiKantor",
+      warna: "#C0392B",
+      kolom: ["id", "nama", "lat", "lng", "radius"]
+    },
+    {
+      nama: "Jabatan",
+      warna: "#1ABC9C",
+      kolom: ["id", "judul", "level", "tanggung_jawab_utama", "mode_login"]
+    },
+    {
+      nama: "Shift",
+      warna: "#F1C40F",
+      kolom: ["id", "nama", "jam_mulai", "jam_selesai", "mulai_istirahat", "selesai_istirahat", "mulai_lembur", "fleksibel", "hari_kerja", "id_user_ditugaskan"]
+    },
+    {
+      nama: "TipeCuti",
+      warna: "#E74C3C",
+      kolom: ["id", "nama", "kuota_per_tahun", "dibayar", "butuh_lampiran"]
+    },
+    {
+      nama: "Departemen",
+      warna: "#34495E",
+      kolom: ["id", "nama", "id_manajer", "deskripsi"]
+    },
+    {
+      nama: "IzinPeran",
+      warna: "#95A5A6",
+      kolom: ["peran", "modul_diizinkan"]
+    }
+  ];
+
+  skema.forEach(function(s) {
+    var sheet = ss.getSheetByName(s.nama) || ss.insertSheet(s.nama);
+    sheet.clear(); 
+    
+    // Set Header
+    sheet.getRange(1, 1, 1, s.kolom.length).setValues([s.kolom]);
+    
+    // Styling Header
+    var headerRange = sheet.getRange(1, 1, 1, s.kolom.length);
+    headerRange.setBackground(s.warna)
+               .setFontColor("#FFFFFF")
+               .setFontWeight("bold")
+               .setHorizontalAlignment("center")
+               .setVerticalAlignment("middle");
+    
+    // Tampilan (Freeze & Gridlines)
+    sheet.setFrozenRows(1);
+    
+    // --- PROTEKSI ANTI-ERROR UNTUK GRIDLINES ---
+    try {
+      if (typeof sheet.setHideGridlines === 'function') {
+        sheet.setHideGridlines(true); 
+      }
+    } catch (e) {
+      console.warn("Gridlines tidak bisa disembunyikan otomatis, silakan lakukan manual di View > Show > Gridlines");
+    }
+    // --------------------------------------------
+    
+    sheet.setRowHeight(1, 35);
+    
+    // Dropdown Otomatis
+    if (s.dropdown) {
+      for (var colName in s.dropdown) {
+        var colIdx = s.kolom.indexOf(colName) + 1;
+        if (colIdx > 0) {
+          var rule = SpreadsheetApp.newDataValidation()
+            .requireValueInList(s.dropdown[colName])
+            .setAllowInvalid(false)
+            .build();
+          sheet.getRange(2, colIdx, 1000, 1).setDataValidation(rule);
+        }
+      }
+    }
+    
+    // Auto Resize Kolom
+    for (var i = 1; i <= s.kolom.length; i++) {
+      sheet.autoResizeColumn(i);
+      sheet.setColumnWidth(i, sheet.getColumnWidth(i) + 20);
+    }
+  });
+
+  // Formula Dashboard Otomatis
+  var dash = ss.getSheetByName("Dashboard");
+  var dataDash = [
+    ["Total Karyawan", "=COUNTA(Karyawan!A2:A)", "Orang Terdaftar"],
+    ["Hadir Hari Ini", "=COUNTIF(Absensi!B2:B; TODAY())", "Total Absensi Masuk"],
+    ["Pengajuan Pending", "=COUNTIF(Pengajuan!G2:G; \"Pending\")", "Butuh Persetujuan"],
+    ["Tugas Aktif", "=COUNTIF(Tugas!F2:F; \"Ya\")", "Tugas Belum Selesai"]
+  ];
+  dash.getRange(2, 1, dataDash.length, 3).setValues(dataDash);
+  dash.getRange("B2:B5").setFontWeight("bold").setFontSize(14).setFontColor("#2C3E50");
+
+  SpreadsheetApp.getUi().alert("✅ Database Berhasil Dibuat! Jika garis kisi masih ada, silakan sembunyikan manual di menu View > Show > Gridlines.");
+}
+
+// --- 2. API HANDLER ---
+
+function responseJSON(data) {
+  return ContentService.createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+}
 
 function doGet(e) {
-  return ContentService.createTextOutput(JSON.stringify({
-    status: 'success', 
-    version: '4.0.0',
-    message: 'Pintu Kuliah API v4.0.0 Online'
-  })).setMimeType(ContentService.MimeType.JSON);
+  return responseJSON({ status: 'success', message: 'API Pintu Kuliah Online v5.0.5' });
 }
 
 function doPost(e) {
   var lock = LockService.getScriptLock();
-  lock.tryLock(30000);
+  var success = lock.tryLock(30000);
+  if (!success) return responseJSON({ status: 'error', message: 'Lock timeout' });
+  
   try {
-    if (!e.postData || !e.postData.contents) throw new Error("Data tidak diterima");
-    var data = JSON.parse(e.postData.contents);
-    var action = data.action;
-    var payload = data.payload || {};
+    if (!e || !e.postData || !e.postData.contents) throw new Error("No data received");
+    var request = JSON.parse(e.postData.contents);
+    var action = request.action;
+    var payload = request.payload || {};
+    
     var result = {};
-
     switch(action) {
-      case 'getAllData': result = handleGetAllData(); break;
-      case 'syncUser': result = handleUpsert("Karyawan", payload); break;
-      case 'syncAttendance': result = handleUpsert("Absensi", payload); break;
-      case 'syncRequest': result = handleUpsert("Pengajuan", payload); break;
-      case 'syncTask': result = handleUpsert("Tugas", payload); break;
-      case 'syncWorkReport': result = handleUpsert("LaporanKerja", payload); break;
-      case 'syncSettings': result = handleSyncSettings(payload); break;
-      case 'deleteUser': result = handleDelete("Karyawan", payload.id); break;
-      case 'ping': result = { message: "pong" }; break;
+      case 'getAllData': result = ambilSemuaData(); break;
+      case 'syncUser': result = simpanData("Karyawan", payload); break;
+      case 'syncAttendance': result = simpanData("Absensi", payload); break;
+      case 'syncRequest': result = simpanData("Pengajuan", payload); break;
+      case 'syncTask': result = simpanData("Tugas", payload); break;
+      case 'syncWorkReport': result = simpanData("LaporanKerja", payload); break;
+      case 'syncSettings': result = simpanPengaturan(payload); break;
+      case 'syncJobRole': result = simpanData("Jabatan", payload); break;
+      case 'syncShift': result = simpanData("Shift", payload); break;
+      case 'syncLeaveType': result = simpanData("TipeCuti", payload); break;
+      case 'syncDepartment': result = simpanData("Departemen", payload); break;
+      case 'syncOffice': result = simpanData("LokasiKantor", payload); break;
+      case 'syncRolePermission': result = simpanData("IzinPeran", payload); break;
+      case 'deleteUser': result = hapusData("Karyawan", payload.id); break;
+      case 'deleteTask': result = hapusData("Tugas", payload.id); break;
+      case 'deleteRequest': result = hapusData("Pengajuan", payload.id); break;
+      case 'deleteJobRole': result = hapusData("Jabatan", payload.id); break;
+      case 'deleteShift': result = hapusData("Shift", payload.id); break;
+      case 'deleteOffice': result = hapusData("LokasiKantor", payload.id); break;
       default: throw new Error("Aksi tidak dikenal: " + action);
     }
-
-    var response = { status: 'success', version: '4.0.0' };
-    for (var key in result) { response[key] = result[key]; }
-    return ContentService.createTextOutput(JSON.stringify(response)).setMimeType(ContentService.MimeType.JSON);
-  } catch (error) {
-    return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: error.toString() })).setMimeType(ContentService.MimeType.JSON);
+    
+    // Flatten response for frontend compatibility
+    var response = { status: 'success' };
+    if (result && typeof result === 'object') {
+      for (var key in result) {
+        if (result.hasOwnProperty(key)) {
+          response[key] = result[key];
+        }
+      }
+    }
+    
+    return responseJSON(response);
+      
+  } catch (err) {
+    return responseJSON({ status: 'error', message: err.toString() });
   } finally {
     lock.releaseLock();
   }
 }
 
-/**
- * FUNGSI PERBAIKAN: Jalankan ini sekali di editor GAS untuk melengkapi ID dengan format user-<timestamp>
- */
-function repairKaryawanIds() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName("users") || ss.getSheetByName("Karyawan");
-  if (!sheet) return "Sheet users/Karyawan tidak ditemukan.";
-  
-  var lastRow = sheet.getLastRow();
-  if (lastRow <= 1) return "Tidak ada data untuk diperbaiki.";
-  
-  var data = sheet.getDataRange().getValues();
-  var idIdx = 0; // Kolom 'id' (wajib kolom pertama)
-  
-  var changed = false;
-  var baseTimestamp = Date.now();
-  
-  for (var i = 1; i < data.length; i++) {
-    // Lengkapi ID Internal dengan format user-<timestamp>
-    if (!data[i][idIdx] || String(data[i][idIdx]).trim() === "") {
-      // Tambahkan i agar timestamp unik jika diproses dalam waktu yang sangat cepat
-      data[i][idIdx] = "user-" + (baseTimestamp + i);
-      changed = true;
-    }
-  }
-  
-  if (changed) {
-    sheet.getDataRange().setValues(data);
-    return "Berhasil: Semua kolom ID di sheet Karyawan telah dilengkapi dengan format user-<timestamp>.";
-  }
-  return "Info: Semua ID sudah lengkap, tidak ada perubahan.";
-}
-
-// --- FUNGSI DATABASE CORE ---
-
-function handleGetAllData() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var tables = [
-    {k: 'users', n: ['users', 'Karyawan']}, 
-    {k: 'attendance', n: ['attendance', 'Absensi']},
-    {k: 'requests', n: ['requests', 'Pengajuan']}, 
-    {k: 'tasks', n: ['tasks', 'Tugas']},
-    {k: 'work_reports', n: ['work_reports', 'LaporanKerja']}, 
-    {k: 'settings', n: ['settings', 'Pengaturan']},
-    {k: 'offices', n: ['branches', 'LokasiKantor', 'offices']}, 
-    {k: 'shifts', n: ['shifts', 'Shift']},
-    {k: 'job_roles', n: ['job_roles', 'Jabatan']}, 
-    {k: 'leave_types', n: ['leave_types', 'JenisCuti']}
-  ];
-  var result = {};
-  tables.forEach(function(t) {
-    var sheet = null;
-    var names = Array.isArray(t.n) ? t.n : [t.n];
-    for (var i = 0; i < names.length; i++) {
-      sheet = ss.getSheetByName(names[i]);
-      if (sheet) break;
-    }
-    
-    if (!sheet || sheet.getLastRow() <= 1) { result[t.k] = []; return; }
-    var data = sheet.getDataRange().getValues();
-    var headers = data[0];
-    result[t.k] = data.slice(1).map(function(row) {
-      var obj = {};
-      headers.forEach(function(h, i) { if(h) obj[h] = row[i]; });
-      return obj;
-    });
-  });
-  return result;
-}
-
-function getSheetFlexible(name) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+function ambilSemuaData() {
+  var ss = getSS();
   var mapping = {
-    "Karyawan": ["users", "Karyawan"],
-    "Absensi": ["attendance", "Absensi"],
-    "Pengajuan": ["requests", "Pengajuan"],
-    "Tugas": ["tasks", "Tugas"],
-    "LaporanKerja": ["work_reports", "LaporanKerja"],
-    "Pengaturan": ["settings", "Pengaturan"],
-    "LokasiKantor": ["branches", "LokasiKantor", "offices"],
-    "Shift": ["shifts", "Shift"],
-    "Jabatan": ["job_roles", "Jabatan"],
-    "JenisCuti": ["leave_types", "JenisCuti"]
+    "Karyawan": "users",
+    "Absensi": "attendance",
+    "Pengajuan": "requests",
+    "Tugas": "tasks",
+    "LaporanKerja": "work_reports",
+    "Pengaturan": "settings",
+    "LokasiKantor": "offices",
+    "Jabatan": "job_roles",
+    "Shift": "shifts",
+    "TipeCuti": "leave_types",
+    "Departemen": "departments",
+    "IzinPeran": "role_permissions"
   };
   
-  var names = mapping[name] || [name];
-  for (var i = 0; i < names.length; i++) {
-    var sheet = ss.getSheetByName(names[i]);
-    if (sheet) return sheet;
-  }
-  return null;
-}
-
-function handleUpsert(sheetName, data) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = getSheetFlexible(sheetName);
-  if (!sheet) { setupDatabase(); sheet = ss.getSheetByName(sheetName); }
-  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-  var allData = sheet.getDataRange().getValues();
-  
-  // Generate ID jika kosong
-  if (!data.id) {
-    if (sheetName === "Karyawan" || sheetName === "users") {
-      data.id = "user-" + Date.now();
+  var hasil = {};
+  for (var sheetName in mapping) {
+    var key = mapping[sheetName];
+    var sheet = ss.getSheetByName(sheetName);
+    if (sheet) {
+      var data = sheet.getDataRange().getValues();
+      if (data.length > 1) {
+        var headers = data[0];
+        hasil[key] = data.slice(1).map(function(row) {
+          var obj = {};
+          headers.forEach(function(h, i) { 
+            if (h) {
+              var val = row[i];
+              // Auto-parse JSON strings if they look like arrays or objects
+              if (typeof val === 'string' && ((val.startsWith('[') && val.endsWith(']')) || (val.startsWith('{') && val.endsWith('}')))) {
+                try { val = JSON.parse(val); } catch(e) {}
+              }
+              obj[h] = val;
+            }
+          });
+          return obj;
+        });
+      } else {
+        hasil[key] = [];
+      }
     } else {
-      data.id = "ID-" + Math.random().toString(36).substr(2, 9).toUpperCase();
+      hasil[key] = [];
     }
   }
-  
-  var rowIndex = -1;
-  for (var i = 1; i < allData.length; i++) {
-    if (String(allData[i][0]) === String(data.id)) { rowIndex = i + 1; break; }
-  }
-  
-  var rowData = headers.map(function(h, colIdx) {
-    var camelKey = h.replace(/_([a-z])/g, function(g) { return g[1].toUpperCase(); });
-    var val = (data[h] !== undefined) ? data[h] : data[camelKey];
-    if (val === undefined && rowIndex > 0) return allData[rowIndex - 1][colIdx];
-    return (typeof val === 'object') ? JSON.stringify(val) : (val || "");
-  });
-  
-  if (rowIndex > 0) sheet.getRange(rowIndex, 1, 1, rowData.length).setValues([rowData]);
-  else sheet.appendRow(rowData);
-  return { message: "Success", id: data.id };
+  return hasil;
 }
 
-function handleDelete(sheetName, id) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = getSheetFlexible(sheetName);
-  if (!sheet) return { status: "error", message: "Sheet not found" };
-  var data = sheet.getDataRange().getValues();
-  for (var i = 1; i < data.length; i++) {
-    if (String(data[i][0]) === String(id)) { sheet.deleteRow(i + 1); return { message: "Deleted" }; }
-  }
-  return { status: "error", message: "Not found" };
-}
-
-function handleSyncSettings(payload) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = getSheetFlexible("Pengaturan");
-  if (sheet) {
-    var keys = ['api_url', 'office_name', 'office_lat', 'office_lng', 'office_radius_km', 'grace_period_minutes', 'role_mode'];
-    keys.forEach(function(k) {
-      if (payload[k] !== undefined) {
-        var data = sheet.getDataRange().getValues();
-        var found = false;
-        for (var i = 1; i < data.length; i++) {
-          if (data[i][0] === k) { sheet.getRange(i + 1, 2).setValue(payload[k]); found = true; break; }
-        }
-        if (!found) sheet.appendRow([k, payload[k]]);
-      }
-    });
-  }
-  
-  // Sync Arrays
-  if (payload.offices && Array.isArray(payload.offices)) syncArrayToSheet("LokasiKantor", payload.offices);
-  if (payload.shifts && Array.isArray(payload.shifts)) syncArrayToSheet("Shift", payload.shifts);
-  if (payload.jobRoles && Array.isArray(payload.jobRoles)) syncArrayToSheet("Jabatan", payload.jobRoles);
-
-  return { message: "Settings Synced" };
-}
-
-function syncArrayToSheet(sheetName, items) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(sheetName);
-  if (!sheet) { setupDatabase(); sheet = ss.getSheetByName(sheetName); }
+function simpanData(namaSheet, data) {
+  var ss = getSS();
+  var sheet = ss.getSheetByName(namaSheet);
+  if (!sheet) throw new Error("Sheet tidak ditemukan: " + namaSheet);
   
   var lastCol = sheet.getLastColumn();
-  if (lastCol === 0) { setupDatabase(); lastCol = sheet.getLastColumn(); }
+  if (lastCol === 0) throw new Error("Sheet " + namaSheet + " kosong (tidak ada header). Jalankan setupDatabaseLengkap.");
   
   var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
   
-  // Clear existing data (except headers)
-  if (sheet.getLastRow() > 1) {
-    sheet.getRange(2, 1, sheet.getLastRow() - 1, lastCol).clearContent();
+  var rows = sheet.getDataRange().getValues();
+  var rowIndex = -1;
+  if (rows.length > 1) {
+    for (var i = 1; i < rows.length; i++) {
+      if (rows[i][0] == data.id) { rowIndex = i + 1; break; }
+    }
   }
   
-  if (items.length === 0) return;
-  
-  var rows = items.map(function(item) {
-    return headers.map(function(h) {
-      var camelKey = h.replace(/_([a-z])/g, function(g) { return g[1].toUpperCase(); });
-      var val = (item[h] !== undefined) ? item[h] : item[camelKey];
-      return (typeof val === 'object') ? JSON.stringify(val) : (val || "");
-    });
+  var rowData = headers.map(function(h) { 
+    var val = data[h];
+    if (val === undefined || val === null) return "";
+    if (typeof val === 'object') return JSON.stringify(val);
+    return val;
   });
   
-  sheet.getRange(2, 1, rows.length, rows[0].length).setValues(rows);
+  if (rowIndex > 0) {
+    sheet.getRange(rowIndex, 1, 1, rowData.length).setValues([rowData]);
+  } else {
+    sheet.appendRow(rowData);
+  }
+  return { message: "Data disimpan", id: data.id };
 }
 
-function setupDatabase() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var schema = [
-    { n: 'Karyawan', c: ['id', 'id_karyawan', 'nama', 'username', 'peran', 'jabatan', 'id_jabatan', 'id_departemen', 'aktif', 'tanggal_bergabung', 'kuota_cuti', 'password', 'email', 'telepon', 'url_avatar', 'tempat_lahir', 'tanggal_lahir', 'jenis_kelamin', 'alamat', 'dok_ktp', 'dok_kk', 'dok_ijazah'] },
-    { n: 'Absensi', c: ['id', 'tanggal', 'id_user', 'jam_masuk', 'jam_keluar', 'status', 'nama_kantor', 'url_foto', 'lat_masuk', 'lng_masuk', 'lat_keluar', 'lng_keluar', 'catatan', 'kerja_online', 'id_kantor', 'location_logs'] },
-    { n: 'Pengajuan', c: ['id', 'id_user', 'tipe', 'tanggal_mulai', 'tanggal_selesai', 'alasan', 'alasan_ai', 'status', 'url_lampiran', 'id_tipe_cuti'] },
-    { n: 'Tugas', c: ['id', 'judul', 'deskripsi', 'kategori', 'id_user_ditugaskan', 'id_peran_ditugaskan', 'id_departemen_ditugaskan', 'aktif', 'dibuat_pada', 'dibuat_oleh'] },
-    { n: 'LaporanKerja', c: ['id', 'tanggal', 'id_user', 'id_tugas', 'status', 'catatan', 'url_bukti', 'dikirim_pada'] },
-    { n: 'Pengaturan', c: ['kunci', 'nilai'] },
-    { n: 'LokasiKantor', c: ['id', 'nama', 'lat', 'lng', 'radius'] },
-    { n: 'Shift', c: ['id', 'nama', 'jam_masuk', 'jam_selesai', 'mulai_istirahat', 'selesai_istirahat', 'mulai_lembur', 'fleksibel', 'hari_kerja', 'id_user_ditugaskan'] },
-    { n: 'Jabatan', c: ['id', 'judul', 'level', 'tanggung_jawab_inti', 'mode_login'] },
-    { n: 'JenisCuti', c: ['id', 'nama', 'kuota_per_tahun', 'berbayar', 'butuh_file'] }
-  ];
-  schema.forEach(function(s) {
-    var sheet = ss.getSheetByName(s.n) || ss.insertSheet(s.n);
-    var headers = sheet.getLastColumn() > 0 ? sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0] : [];
-    s.c.forEach(function(col) {
-      if (headers.indexOf(col) === -1) {
-        sheet.getRange(1, sheet.getLastColumn() + 1).setValue(col).setBackground('#1A73E8').setFontColor('#FFFFFF').setFontWeight('bold');
+function hapusData(namaSheet, id) {
+  var ss = getSS();
+  var sheet = ss.getSheetByName(namaSheet);
+  if (!sheet) throw new Error("Sheet tidak ditemukan: " + namaSheet);
+  
+  var data = sheet.getDataRange().getValues();
+  for (var i = 1; i < data.length; i++) {
+    if (data[i][0] == id) {
+      sheet.deleteRow(i + 1);
+      return { message: "Data dihapus", id: id };
+    }
+  }
+  return { message: "Data tidak ditemukan", id: id };
+}
+
+function simpanPengaturan(payload) {
+  var ss = getSS();
+  var sheet = ss.getSheetByName("Pengaturan");
+  
+  // Mapping from payload key to Sheet Name for complex settings
+  var sheetMapping = {
+    "offices": "LokasiKantor",
+    "shifts": "Shift",
+    "jobRoles": "Jabatan",
+    "departments": "Departemen",
+    "leaveTypes": "TipeCuti",
+    "role_permissions": "IzinPeran"
+  };
+
+  for (var kunci in payload) {
+    var value = payload[kunci];
+    
+    if (sheetMapping[kunci] && Array.isArray(value)) {
+      var targetSheetName = sheetMapping[kunci];
+      var targetSheet = ss.getSheetByName(targetSheetName);
+      if (targetSheet) {
+        var lastRow = targetSheet.getLastRow();
+        if (lastRow > 1) {
+          targetSheet.deleteRows(2, lastRow - 1);
+        }
+        
+        var lastCol = targetSheet.getLastColumn();
+        if (lastCol > 0) {
+          var headers = targetSheet.getRange(1, 1, 1, lastCol).getValues()[0];
+          value.forEach(function(item) {
+            var rowData = headers.map(function(h) {
+              var val = item[h];
+              if (val === undefined || val === null) return "";
+              if (typeof val === 'object') return JSON.stringify(val);
+              return val;
+            });
+            targetSheet.appendRow(rowData);
+          });
+        }
       }
-    });
-    sheet.setFrozenRows(1);
-  });
+    } else {
+      // Normal key-value setting
+      var data = sheet.getDataRange().getValues();
+      var found = false;
+      var stringValue = (typeof value === 'object') ? JSON.stringify(value) : value;
+      
+      for (var i = 1; i < data.length; i++) {
+        if (data[i][0] == kunci) {
+          sheet.getRange(i + 1, 2).setValue(stringValue);
+          found = true;
+          break;
+        }
+      }
+      if (!found) sheet.appendRow([kunci, stringValue]);
+    }
+  }
+  return { message: "Pengaturan diperbarui" };
 }

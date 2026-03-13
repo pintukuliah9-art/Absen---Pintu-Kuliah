@@ -268,7 +268,15 @@ const AdminReports: React.FC<AdminReportsProps> = ({ history, users }) => {
                                           </td>
                                           <td className="px-4 py-4">
                                               <div className="flex items-center gap-2 min-w-[140px]">
-                                                  <img src={user?.avatar} alt="" className="w-7 h-7 rounded-full border border-gray-100 object-cover" />
+                                                  <img 
+                                                      src={user?.avatar} 
+                                                      alt="" 
+                                                      className="w-7 h-7 rounded-full border border-gray-100 object-cover" 
+                                                      referrerPolicy="no-referrer"
+                                                      onError={(e) => {
+                                                          (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=random`;
+                                                      }}
+                                                  />
                                                   <span className="truncate font-bold text-gray-700">{user?.name || 'Unknown'}</span>
                                               </div>
                                           </td>
@@ -287,6 +295,9 @@ const AdminReports: React.FC<AdminReportsProps> = ({ history, users }) => {
                                                           className="w-10 h-10 rounded-lg object-cover border border-gray-200 cursor-pointer hover:ring-2 hover:ring-blue-500/50 transition-all" 
                                                           onClick={() => setSelectedImage(record.photoUrl!)}
                                                           referrerPolicy="no-referrer"
+                                                          onError={(e) => {
+                                                              (e.target as HTMLImageElement).src = 'https://picsum.photos/seed/broken/100/100';
+                                                          }}
                                                       />
                                                       <div className="absolute inset-0 bg-black/20 rounded-lg opacity-0 group-hover/img:opacity-100 flex items-center justify-center pointer-events-none transition-opacity">
                                                           <Eye size={12} className="text-white" />

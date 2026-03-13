@@ -10,10 +10,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 async function startServer() {
+  console.log("[Server] Initializing...");
   const app = express();
   const PORT = 3000;
   
   console.log(`[Server] Starting in ${process.env.NODE_ENV || 'development'} mode`);
+  console.log(`[Server] Port: ${PORT}`);
+  console.log(`[Server] GAS_API_URL: ${process.env.GAS_API_URL ? 'Configured' : 'Using Fallback'}`);
 
   // Request Logger
   app.use((req, res, next) => {
@@ -31,7 +34,7 @@ async function startServer() {
   }));
   
   // Explicit OPTIONS handler for preflight
-  app.options('*path', cors());
+  app.options('*all', cors());
   
   // JSON Parse Error Handler
   app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -53,14 +56,9 @@ async function startServer() {
   });
 
   // Proxy to Google Apps Script
-  app.all("/api/proxy", async (req, res) => {
-    console.log(`[Proxy] Received request: ${req.method} ${req.url}`);
+  app.post("/api/proxy", async (req, res) => {
+    console.log(`[Proxy] Incoming request for action: ${req.body?.action}`);
     
-    if (req.method !== 'POST') {
-       console.warn(`[Proxy] Blocked ${req.method} request to /api/proxy`);
-       return res.status(405).json({ status: 'error', message: 'Method Not Allowed. Use POST.' });
-    }
-
     try {
       if (!req.body) {
          console.error("[Proxy Error] Missing request body");
@@ -68,15 +66,16 @@ async function startServer() {
       }
 
       const { action, payload, apiUrl } = req.body;
-      // Fallback to the known working URL if nothing else is provided
-      const targetUrl = apiUrl || process.env.GAS_API_URL || "https://script.google.com/macros/s/AKfycbwJUYeZwv7tFhxv7z7QLtrQ3XWlM1AeaSajK8Lbg7Mqiy9ngN_LnzzXds4q-kVB063M/exec";
+      
+      // Sanitize and validate target URL
+      let targetUrl = (apiUrl || process.env.GAS_API_URL || "https://script.google.com/macros/s/AKfycbyBGXKUFi7okwEX5T7wueF798lgvXGXCjVUOshZAF47piQJdiI5u3r4LP0uFtR2eWpq/exec").trim();
 
-      if (!targetUrl) {
-        console.error("[Proxy Error] No target URL provided");
-        return res.status(500).json({ status: 'error', message: "GAS_API_URL environment variable is not set and no API URL provided in request." });
+      if (!targetUrl || !targetUrl.startsWith('http')) {
+        console.error("[Proxy Error] Invalid target URL:", targetUrl);
+        return res.status(400).json({ status: 'error', message: "Invalid API URL configuration. Please check GAS_API_URL." });
       }
 
-      console.log(`[Proxy] Action: ${action} -> ${targetUrl}`);
+      console.log(`[Proxy] Forwarding ${action} to: ${targetUrl}`);
       
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
@@ -121,8 +120,14 @@ async function startServer() {
                    helpfulMessage = "Google is asking for login. Please ensure the Google Apps Script is deployed with 'Who has access: Anyone' (NOT 'Anyone with a Google account').";
                } else if (title.includes("Error") || title.includes("Not Found")) {
                    helpfulMessage = `Google returned an error page: "${title}". Check if the Script URL is correct and the script is deployed as a Web App.`;
+               } else if (title.includes("Script Error")) {
+                   helpfulMessage = "Google Apps Script execution error. Check your script logs or ensure all required permissions are granted.";
+               } else if (title.includes("Authorization Required")) {
+                   helpfulMessage = "Script needs authorization. Open the script editor and run any function to trigger the authorization prompt.";
                }
                
+               console.error(`[Proxy Error] Detailed HTML Error: ${helpfulMessage}`);
+               console.error(`[Proxy Error] Full HTML Response (first 1000 chars): ${trimmedText.substring(0, 1000)}`);
                throw new Error(helpfulMessage);
           }
 
@@ -161,6 +166,12 @@ async function startServer() {
     }
   });
 
+  // Fallback for any other /api/* routes to prevent SPA fallback from returning HTML
+  app.all("/api/*", (req, res) => {
+    console.warn(`[Server] Unhandled API route: ${req.method} ${req.url}`);
+    res.status(404).json({ status: 'error', message: `API route not found: ${req.url}` });
+  });
+
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
@@ -171,7 +182,7 @@ async function startServer() {
   } else {
     // Serve static files in production
     app.use(express.static(path.join(__dirname, "dist")));
-    app.get("*path", (req, res) => {
+    app.get("*all", (req, res) => {
       res.sendFile(path.join(__dirname, "dist", "index.html"));
     });
   }

@@ -1,8 +1,8 @@
-
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, MapPin, RefreshCw, AlertTriangle, CheckCircle, LogOut, Eye, Timer, Navigation, XCircle, Clock, Calendar, Briefcase, ChevronRight, Loader2, Search, Crosshair, Check } from 'lucide-react';
+import { Camera, MapPin, RefreshCw, AlertTriangle, CheckCircle, LogOut, Eye, Timer, Navigation, XCircle, Clock, Calendar, Briefcase, ChevronRight, Loader2, Search, Crosshair, Check, Sparkles, ArrowRight, ShieldCheck } from 'lucide-react';
 import { AttendanceRecord, AttendanceStatus, User, AppSettings, OfficeLocation } from '../types';
 import { useToast } from './Toast';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface AttendanceProps {
   user: User;
@@ -42,7 +42,6 @@ const Attendance: React.FC<AttendanceProps> = ({ user, settings, onCheckIn, onCh
       if (timeStr.includes('T')) {
           try {
               const date = new Date(timeStr);
-              // If it's the 1899 date from Google Sheets, we just want the time
               return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
           } catch (e) {
               return timeStr;
@@ -60,11 +59,6 @@ const Attendance: React.FC<AttendanceProps> = ({ user, settings, onCheckIn, onCh
     if (todayRecord) {
         if (!todayRecord.checkOutTime) {
             setMode('OUT');
-        } else {
-            // Already checked out, but we handle this in the render logic mostly
-            // If we want to show success state immediately:
-            // setStep('success'); 
-            // BUT, better to let the 'Render Success State' block handle it naturally
         }
     } else {
         setMode('IN');
@@ -88,8 +82,8 @@ const Attendance: React.FC<AttendanceProps> = ({ user, settings, onCheckIn, onCh
 
         // User Marker
         const userIcon = L.divIcon({
-            className: 'bg-blue-600 w-4 h-4 rounded-full border-2 border-white shadow-lg pulse-ring',
-            iconSize: [16, 16]
+            className: 'bg-blue-600 w-5 h-5 rounded-full border-4 border-white shadow-2xl pulse-ring',
+            iconSize: [20, 20]
         });
         userMarkerRef.current = L.marker([location.lat, location.lng], { icon: userIcon }).addTo(map)
             .bindPopup("Lokasi Anda").openPopup();
@@ -104,7 +98,8 @@ const Attendance: React.FC<AttendanceProps> = ({ user, settings, onCheckIn, onCh
             const circle = L.circle([office.lat, office.lng], {
                 color: isSelected ? '#10B981' : '#3B82F6',
                 fillColor: isSelected ? '#10B981' : '#3B82F6',
-                fillOpacity: 0.2,
+                fillOpacity: 0.15,
+                weight: 2,
                 radius: office.radius * 1000 // km to meters
             }).addTo(map);
             
@@ -116,7 +111,7 @@ const Attendance: React.FC<AttendanceProps> = ({ user, settings, onCheckIn, onCh
             circle.bindTooltip(office.name, { 
                 permanent: false, 
                 direction: 'top',
-                className: 'font-bold text-[10px]'
+                className: 'font-black text-[10px] uppercase tracking-widest bg-white rounded-lg border-none shadow-xl px-3 py-1.5'
             });
         });
 
@@ -180,7 +175,6 @@ const Attendance: React.FC<AttendanceProps> = ({ user, settings, onCheckIn, onCh
   const [isFlashing, setIsFlashing] = useState(false);
   const [challengeCountdown, setChallengeCountdown] = useState(3);
 
-  // Liveness Challenges
   const CHALLENGES = [
       "Angkat Jempol (Thumbs Up) 👍",
       "Pose Dua Jari (Peace) ✌️",
@@ -192,16 +186,14 @@ const Attendance: React.FC<AttendanceProps> = ({ user, settings, onCheckIn, onCh
 
   const startProcess = () => {
     const now = new Date();
-    const dayIndex = now.getDay(); // 0-6
+    const dayIndex = now.getDay();
 
-    // 1. Validate Shift Existence
     if (!userShift) {
         setStep('error');
         setErrorMsg("Anda belum memiliki jadwal kerja yang ditetapkan. Hubungi Admin.");
         return;
     }
 
-    // 2. Validate Work Day
     if (!userShift.workDays.includes(dayIndex)) {
         setStep('error');
         setErrorMsg("Hari ini bukan jadwal kerja Anda.");
@@ -209,8 +201,6 @@ const Attendance: React.FC<AttendanceProps> = ({ user, settings, onCheckIn, onCh
     }
 
     setStep('locating');
-    
-    // Select Random Challenge
     setLivenessChallenge(CHALLENGES[Math.floor(Math.random() * CHALLENGES.length)]);
 
     navigator.geolocation.getCurrentPosition(
@@ -218,7 +208,6 @@ const Attendance: React.FC<AttendanceProps> = ({ user, settings, onCheckIn, onCh
         const { latitude, longitude, accuracy } = pos.coords;
         setLocation({ lat: latitude, lng: longitude, accuracy });
 
-        // Update map view and marker if they already exist
         if (mapInstanceRef.current) {
             mapInstanceRef.current.setView([latitude, longitude], 16);
         }
@@ -226,22 +215,24 @@ const Attendance: React.FC<AttendanceProps> = ({ user, settings, onCheckIn, onCh
             userMarkerRef.current.setLatLng([latitude, longitude]);
         }
 
-    // 3. Validate Location (If not flexible/online)
     if (!userShift.isFlexible) {
-        // Relaxed Accuracy Threshold: 300m (Stable for indoor/cloudy conditions)
-        const ACCURACY_THRESHOLD = 300; 
+        const ACCURACY_THRESHOLD = 800; // More lenient threshold
+        const IDEAL_ACCURACY = 100;
         
         if (accuracy > ACCURACY_THRESHOLD) {
             setStep('error');
-            setErrorMsg(`Akurasi GPS rendah (${Math.round(accuracy)}m). Batas maksimal adalah ${ACCURACY_THRESHOLD}m. Pastikan Anda di dekat jendela atau nyalakan Wi-Fi.`);
+            setErrorMsg(`Akurasi GPS rendah (${Math.round(accuracy)}m). Batas maksimal adalah ${ACCURACY_THRESHOLD}m. Pastikan Anda di area terbuka atau nyalakan Wi-Fi.`);
             return;
+        }
+
+        if (accuracy > IDEAL_ACCURACY) {
+            showToast(`Akurasi GPS sedang (${Math.round(accuracy)}m). Hasil presensi mungkin kurang presisi.`, "info");
         }
 
             const offices = settings.offices && settings.offices.length > 0 
                 ? settings.offices 
                 : [{ id: 'default', name: settings.officeName, lat: settings.officeLat, lng: settings.officeLng, radius: settings.officeRadius }];
 
-            // Find the closest office
             let closest: OfficeLocation | null = null;
             let minDistance = Infinity;
             
@@ -253,7 +244,6 @@ const Attendance: React.FC<AttendanceProps> = ({ user, settings, onCheckIn, onCh
                 }
             });
 
-            // Auto-detect if very close to one (within its radius)
             const nearbyOffice = offices.find(office => {
                 const dist = calculateDistance(latitude, longitude, office.lat, office.lng);
                 return dist <= office.radius;
@@ -262,22 +252,30 @@ const Attendance: React.FC<AttendanceProps> = ({ user, settings, onCheckIn, onCh
             if (nearbyOffice) {
                 setSelectedOffice(nearbyOffice);
             } else if (offices.length === 1 && closest) {
-                // If only one office and out of range, show error
                 const dist = calculateDistance(latitude, longitude, closest.lat, closest.lng);
                 if (dist > closest.radius) {
-                    setTimeout(() => {
-                        setStep('error');
-                        setErrorMsg(`Anda berada di luar jangkauan kantor ${closest!.name}. Jarak Anda: ${dist.toFixed(2)}km (Maks: ${closest!.radius}km).`);
-                    }, 1500);
-                    return;
+                    // Don't error immediately, let them see the map and choose if multiple offices exist
+                    setSelectedOffice(closest);
+                } else {
+                    setSelectedOffice(closest);
                 }
+            } else if (closest) {
                 setSelectedOffice(closest);
-            } else {
-                // Multiple offices and not in range of any, user must select
-                // We don't set error yet, let them see the list and distances
-                if (closest) {
-                    setSelectedOffice(null); // Force selection
-                }
+            }
+        } else {
+            // Flexible/Remote mode: Auto-select nearest if available, but don't enforce
+            const offices = settings.offices || [];
+            if (offices.length > 0) {
+                let closest: OfficeLocation | null = null;
+                let minDistance = Infinity;
+                offices.forEach(o => {
+                    const d = calculateDistance(latitude, longitude, o.lat, o.lng);
+                    if (d < minDistance) {
+                        minDistance = d;
+                        closest = o;
+                    }
+                });
+                setSelectedOffice(closest);
             }
         }
       },
@@ -291,7 +289,6 @@ const Attendance: React.FC<AttendanceProps> = ({ user, settings, onCheckIn, onCh
 
   const openCamera = async () => {
     try {
-      // Use more specific constraints for better compatibility
       const constraints = {
         video: {
           facingMode: 'user',
@@ -305,7 +302,6 @@ const Attendance: React.FC<AttendanceProps> = ({ user, settings, onCheckIn, onCh
       setStream(mediaStream);
       setStep('camera');
       
-      // Start countdown for liveness
       setChallengeCountdown(3);
       const timer = setInterval(() => {
           setChallengeCountdown(prev => {
@@ -330,7 +326,6 @@ const Attendance: React.FC<AttendanceProps> = ({ user, settings, onCheckIn, onCh
     }
   };
 
-  // Cleanup stream when step changes or component unmounts
   useEffect(() => {
     return () => {
       if (stream) {
@@ -339,11 +334,9 @@ const Attendance: React.FC<AttendanceProps> = ({ user, settings, onCheckIn, onCh
     };
   }, [stream]);
 
-  // Ensure video element gets the stream when it mounts
   useEffect(() => {
     let mounted = true;
     if (step === 'camera' && videoRef.current && stream) {
-      // Some browsers need a small delay or explicit play() call
       videoRef.current.srcObject = stream;
       videoRef.current.onloadedmetadata = () => {
         if (mounted && videoRef.current) {
@@ -356,7 +349,6 @@ const Attendance: React.FC<AttendanceProps> = ({ user, settings, onCheckIn, onCh
 
   const takePhoto = () => {
     if (videoRef.current && canvasRef.current && userShift) {
-      // Flash effect
       setIsFlashing(true);
       setTimeout(() => setIsFlashing(false), 150);
 
@@ -374,7 +366,6 @@ const Attendance: React.FC<AttendanceProps> = ({ user, settings, onCheckIn, onCh
             const shiftStart = new Date();
             shiftStart.setHours(startH, startM, 0);
             
-            // Allow configured grace period (default 15 mins if not set)
             const graceMinutes = settings.gracePeriodMinutes ?? 15;
             const lateThreshold = new Date(shiftStart.getTime() + graceMinutes * 60000);
             const isLate = now > lateThreshold;
@@ -413,182 +404,200 @@ const Attendance: React.FC<AttendanceProps> = ({ user, settings, onCheckIn, onCh
     setSelectedOffice(null);
     setSearchQuery('');
     setSearchResults([]);
-    mapInstanceRef.current = null; // Reset map instance
+    mapInstanceRef.current = null;
   };
 
   // Render Success State (Already Checked Out)
   if (todayRecord && todayRecord.checkOutTime && step !== 'camera' && step !== 'success') {
       const duration = todayRecord.checkInTime ? calculateDuration(todayRecord.checkInTime, todayRecord.checkOutTime) : null;
       return (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 fade-in">
-            <div className="bg-white p-8 rounded-3xl max-w-sm w-full text-center border border-gray-100 shadow-xl relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-2 bg-green-500"></div>
-                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <CheckCircle className="text-green-600" size={40} />
+        <div className="flex flex-col items-center justify-center min-h-[50vh] p-2 md:p-8">
+            <motion.div 
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                className="bg-white p-5 md:p-12 rounded-[24px] md:rounded-[50px] max-w-md w-full text-center border border-slate-100 shadow-2xl shadow-slate-200 relative overflow-hidden"
+            >
+                <div className="absolute top-0 left-0 w-full h-1.5 bg-emerald-500"></div>
+                <div className="w-16 h-16 md:w-24 md:h-24 bg-emerald-50 rounded-[1.5rem] md:rounded-[2.5rem] flex items-center justify-center mx-auto mb-4 md:mb-8 shadow-xl shadow-emerald-100">
+                    <CheckCircle className="text-emerald-600 w-8 h-8 md:w-12 md:h-12" />
                 </div>
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">Absensi Selesai</h2>
-                <p className="text-gray-500 text-sm mb-6">Terima kasih atas kerja keras Anda hari ini!</p>
+                <h2 className="text-xl md:text-3xl font-black text-slate-900 mb-1 md:mb-3 tracking-tight">Absensi Selesai</h2>
+                <p className="text-slate-400 text-[8px] md:text-[10px] font-bold uppercase tracking-widest mb-6 md:mb-10">Terima kasih atas dedikasi Anda!</p>
                 
-                <div className="bg-gray-50 p-5 rounded-2xl mb-4 text-left border border-gray-100">
-                    <div className="flex justify-between mb-3 pb-3 border-b border-gray-200">
-                        <span className="text-sm text-gray-500 flex items-center gap-2"><MapPin size={14}/> Masuk</span>
-                        <span className="font-bold text-gray-800 font-mono">{todayRecord.checkInTime}</span>
+                <div className="bg-slate-50 p-4 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] mb-4 md:mb-8 text-left border border-slate-100 shadow-inner">
+                    <div className="flex justify-between mb-3 pb-3 border-b border-slate-200">
+                        <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 md:gap-3"><MapPin size={12} className="text-blue-500"/> Masuk</span>
+                        <span className="font-black text-slate-900 text-sm md:text-lg">{todayRecord.checkInTime}</span>
                     </div>
-                    <div className="flex justify-between mb-3 pb-3 border-b border-gray-200">
-                        <span className="text-sm text-gray-500 flex items-center gap-2"><LogOut size={14}/> Pulang</span>
-                        <span className="font-bold text-gray-800 font-mono">{todayRecord.checkOutTime}</span>
+                    <div className="flex justify-between mb-3 pb-3 border-b border-slate-200">
+                        <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 md:gap-3"><LogOut size={12} className="text-orange-500"/> Pulang</span>
+                        <span className="font-black text-slate-900 text-sm md:text-lg">{todayRecord.checkOutTime}</span>
                     </div>
                     {duration && (
                         <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-500 flex items-center gap-2"><Timer size={14}/> Durasi</span>
-                            <span className="font-bold text-blue-600">{duration}</span>
+                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 md:gap-3"><Timer size={12} className="text-purple-500"/> Durasi</span>
+                            <span className="font-black text-blue-600 text-sm md:text-lg">{duration}</span>
                         </div>
                     )}
                 </div>
                 
-                {/* Sync Status Badge */}
                 <div className="flex justify-center">
                     {todayRecord.syncStatus === 'pending' ? (
-                        <span className="bg-yellow-50 text-yellow-700 text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5 font-bold border border-yellow-100">
-                            <RefreshCw size={12} className="animate-spin"/> Menunggu Sinkronisasi
+                        <span className="bg-amber-50 text-amber-700 text-[8px] px-4 py-2 rounded-xl flex items-center gap-2 font-black uppercase tracking-widest border border-amber-100 shadow-sm">
+                            <RefreshCw size={10} className="animate-spin"/> Sinkronisasi...
                         </span>
                     ) : (
-                        <span className="bg-green-50 text-green-700 text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5 font-bold border border-green-100">
-                            <CheckCircle size={12}/> Terkirim ke Server
+                        <span className="bg-emerald-50 text-emerald-700 text-[8px] px-4 py-2 rounded-xl flex items-center gap-2 font-black uppercase tracking-widest border border-emerald-100 shadow-sm">
+                            <ShieldCheck size={10}/> Terverifikasi
                         </span>
                     )}
                 </div>
-            </div>
+            </motion.div>
         </div>
       );
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-4 fade-in">
+    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-4 md:p-8">
+      <AnimatePresence mode="wait">
       {step === 'idle' && (
-        <div className="bg-white p-8 rounded-3xl shadow-xl border border-gray-100 max-w-sm w-full relative overflow-hidden">
+        <motion.div 
+            key="idle"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="bg-white p-5 md:p-12 rounded-[24px] md:rounded-[60px] shadow-2xl shadow-slate-200 border border-slate-100 max-w-md w-full relative overflow-hidden"
+        >
            {/* Real-time Clock Header */}
-           <div className="absolute top-0 left-0 w-full bg-gray-50 py-2 border-b border-gray-100 flex justify-center items-center gap-2 text-gray-500 text-xs font-mono">
-                <Clock size={12} />
+           <div className="absolute top-0 left-0 w-full bg-slate-900 py-2 border-b border-slate-800 flex justify-center items-center gap-2 text-white/60 text-[8px] font-black uppercase tracking-[0.3em]">
+                <Clock size={10} className="text-blue-400" />
                 {currentTime.toLocaleTimeString('id-ID')}
            </div>
-
-           <div className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg mt-8 ${mode === 'IN' ? 'bg-blue-50 text-blue-600' : 'bg-orange-50 text-orange-600'}`}>
-              {mode === 'IN' ? <MapPin size={48} /> : <LogOut size={48} />}
+ 
+           <div className={`w-20 h-20 md:w-32 md:h-32 rounded-[1.5rem] md:rounded-[3rem] flex items-center justify-center mx-auto mb-4 md:mb-8 shadow-2xl mt-8 md:mt-12 transition-all duration-500 ${mode === 'IN' ? 'bg-blue-50 text-blue-600 shadow-blue-100' : 'bg-orange-50 text-orange-600 shadow-orange-100'}`}>
+              {mode === 'IN' ? <MapPin size={36} className="md:w-14 md:h-14" /> : <LogOut size={36} className="md:w-14 md:h-14" />}
            </div>
            
-           <h2 className="text-2xl font-bold text-gray-800 mb-2">
-               {mode === 'IN' ? 'Absensi Masuk' : 'Absensi Pulang'}
+           <h2 className="text-xl md:text-4xl font-black text-slate-900 mb-1 md:mb-3 tracking-tighter">
+               {mode === 'IN' ? 'Check-In' : 'Check-Out'}
            </h2>
-           <p className="text-gray-500 text-sm mb-6">Pastikan Anda berada di lokasi yang sesuai.</p>
+           <p className="text-slate-400 text-[8px] md:text-[10px] font-black uppercase tracking-[0.2em] mb-6 md:mb-10">Konfirmasi kehadiran harian</p>
            
            {userShift ? (
-               <div className="text-sm text-gray-500 mb-8 bg-gray-50 p-4 rounded-2xl border border-gray-100 text-left">
-                   <div className="flex items-center justify-between mb-2">
-                       <span className="text-gray-400 text-xs uppercase font-bold flex items-center gap-1"><Calendar size={10}/> Shift</span>
-                       <span className="font-bold text-gray-800">{userShift.name}</span>
+               <div className="text-[10px] text-slate-500 mb-6 md:mb-10 bg-slate-50 p-4 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] border border-slate-100 text-left shadow-inner">
+                   <div className="flex items-center justify-between mb-2 md:mb-4 pb-2 md:pb-4 border-b border-slate-200/50">
+                       <span className="text-slate-400 text-[8px] md:text-[10px] uppercase font-black tracking-widest flex items-center gap-2 md:gap-3"><Calendar size={10} className="text-blue-500 md:w-3.5 md:h-3.5"/> Jadwal</span>
+                       <span className="font-black text-slate-900 text-[9px] md:text-xs">{userShift.name}</span>
                    </div>
-                   <div className="flex items-center justify-between mb-2">
-                       <span className="text-gray-400 text-xs uppercase font-bold flex items-center gap-1"><Clock size={10}/> Jam</span>
-                       <span className="font-bold text-gray-800">{formatTimeDisplay(userShift.startTime)} - {formatTimeDisplay(userShift.endTime)}</span>
+                   <div className="flex items-center justify-between mb-2 md:mb-4 pb-2 md:pb-4 border-b border-slate-200/50">
+                       <span className="text-slate-400 text-[8px] md:text-[10px] uppercase font-black tracking-widest flex items-center gap-2 md:gap-3"><Clock size={10} className="text-orange-500 md:w-3.5 md:h-3.5"/> Waktu</span>
+                       <span className="font-black text-slate-900 text-[9px] md:text-xs">{formatTimeDisplay(userShift.startTime)} - {formatTimeDisplay(userShift.endTime)}</span>
                    </div>
                    <div className="flex items-center justify-between">
-                       <span className="text-gray-400 text-xs uppercase font-bold flex items-center gap-1"><MapPin size={10}/> Tipe</span>
-                       <span className={`text-xs font-bold px-2 py-0.5 rounded ${userShift.isFlexible ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                       <span className="text-slate-400 text-[8px] md:text-[10px] uppercase font-black tracking-widest flex items-center gap-2 md:gap-3"><Sparkles size={10} className="text-purple-500 md:w-3.5 md:h-3.5"/> Metode</span>
+                       <span className={`text-[8px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-widest shadow-sm ${userShift.isFlexible ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
                            {userShift.isFlexible ? 'Remote' : 'WFO'}
                        </span>
                    </div>
                </div>
            ) : (
-               <p className="text-red-500 mb-4 text-sm bg-red-50 p-3 rounded-lg flex items-center justify-center gap-2">
-                   <AlertTriangle size={16} /> Tidak ada jadwal aktif.
-               </p>
+               <div className="mb-6 p-4 bg-rose-50 rounded-[1rem] border border-rose-100 flex items-center justify-center gap-2 text-rose-600">
+                   <AlertTriangle size={16} />
+                   <span className="text-[8px] font-black uppercase tracking-widest">Jadwal Tidak Ditemukan</span>
+               </div>
            )}
            
-           <button 
+           <motion.button 
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={startProcess}
             disabled={!userShift}
-            className={`w-full text-white font-bold py-4 px-6 rounded-xl shadow-lg transition-all transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-3 ${mode === 'IN' ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-200' : 'bg-orange-500 hover:bg-orange-600 shadow-orange-200'} disabled:bg-gray-300 disabled:cursor-not-allowed disabled:shadow-none`}
+            className={`w-full text-white font-black py-3.5 md:py-6 px-6 rounded-[1rem] md:rounded-[2rem] shadow-2xl transition-all flex items-center justify-center gap-2 md:gap-4 uppercase text-[9px] md:text-xs tracking-[0.3em] ${mode === 'IN' ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-200' : 'bg-orange-600 hover:bg-orange-700 shadow-orange-200'} disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none disabled:cursor-not-allowed`}
            >
-             <Camera size={20} />
-             {mode === 'IN' ? 'Ambil Foto Masuk' : 'Ambil Foto Pulang'}
-           </button>
-        </div>
+              <Camera size={16} className="md:w-5 md:h-5" />
+              {mode === 'IN' ? 'Mulai Presensi' : 'Selesaikan Kerja'}
+           </motion.button>
+        </motion.div>
       )}
 
       {step === 'locating' && (
-        <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 max-w-md w-full flex flex-col overflow-hidden max-h-[90vh] min-h-[500px] animate-in zoom-in-95 duration-300">
+        <motion.div 
+            key="locating"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="bg-white rounded-[24px] md:rounded-[50px] shadow-2xl border border-slate-100 max-w-xl w-full flex flex-col overflow-hidden h-[75vh] md:h-auto md:max-h-[90vh] md:min-h-[600px]"
+        >
             {/* Map Section */}
-            <div className="relative h-[40vh] min-h-[250px] w-full border-b border-gray-100">
+            <div className="relative h-[30vh] sm:h-[45vh] min-h-[180px] w-full border-b border-slate-100">
                 <div ref={mapContainerRef} className="absolute inset-0 z-0"></div>
                 
-                {/* Search Bar Overlay - Still on map but with high z-index */}
-                <div className="absolute top-4 left-4 right-4 z-[1000] pointer-events-none">
+                {/* Search Bar Overlay */}
+                <div className="absolute top-3 left-3 right-3 z-[1000] pointer-events-none">
                     <form onSubmit={handleSearchLocation} className="relative pointer-events-auto">
-                        <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-white/50 flex items-center p-1.5">
-                            <div className="p-2 text-slate-400"><Search size={18} /></div>
+                        <div className="bg-white/90 backdrop-blur-xl rounded-full shadow-2xl border border-white/50 flex items-center p-1">
+                            <div className="p-2 text-slate-400"><Search size={14} /></div>
                             <input 
                                 type="text" 
                                 placeholder="Cari lokasi..." 
-                                className="flex-1 bg-transparent border-none outline-none text-xs font-bold px-2"
+                                className="flex-1 bg-transparent border-none outline-none text-[9px] font-black uppercase tracking-widest px-1"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
                         </div>
                     </form>
                 </div>
-
+ 
                 {/* Accuracy Badge */}
                 {location && (
-                    <div className="absolute bottom-4 right-4 z-[1000] flex flex-col items-end gap-2">
+                    <div className="absolute bottom-3 right-3 z-[1000] flex flex-col items-end gap-2">
                         <button 
                             onClick={startProcess}
-                            className="bg-white/90 backdrop-blur-md p-2 rounded-full shadow-lg border border-white/50 text-blue-600 hover:text-blue-700 transition-colors active:scale-90"
-                            title="Refresh Lokasi"
+                            className="bg-white/90 backdrop-blur-xl p-2 rounded-full shadow-2xl border border-white/50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all active:scale-90"
                         >
-                            <RefreshCw size={16} />
+                            <RefreshCw size={14} />
                         </button>
-                        <div className="bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full shadow-lg border border-white/50 flex items-center gap-2">
-                            <div className={`w-2 h-2 rounded-full ${location.accuracy < 100 ? 'bg-emerald-500' : 'bg-amber-500'}`}></div>
-                            <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">±{location.accuracy.toFixed(0)}m</span>
+                        <div className="bg-slate-900/90 backdrop-blur-xl px-2.5 py-1 rounded-full shadow-2xl border border-white/10 flex items-center gap-1.5">
+                            <div className={`w-1 h-1 rounded-full ${location.accuracy < 100 ? 'bg-emerald-400' : 'bg-amber-400'} animate-pulse`}></div>
+                            <span className="text-[8px] font-black text-white uppercase tracking-widest">±{location.accuracy.toFixed(0)}m</span>
                         </div>
                     </div>
                 )}
             </div>
             
-            {/* Info Section - Below Map, No Z-Index issues */}
-            <div className="p-6 bg-gray-50 flex-1 flex flex-col">
+            {/* Info Section */}
+            <div className="p-3 md:p-10 bg-slate-50 flex-1 flex flex-col overflow-hidden">
                 {!location ? (
-                    <div className="flex flex-col items-center justify-center flex-1 gap-4 py-8">
+                    <div className="flex flex-col items-center justify-center flex-1 gap-4 py-6">
                         <div className="relative">
-                            <RefreshCw className="animate-spin text-blue-600" size={48} />
-                            <div className="absolute inset-0 flex items-center justify-center">
-                                <MapPin size={16} className="text-blue-400" />
+                            <div className="absolute inset-0 bg-blue-500/20 rounded-full animate-ping"></div>
+                            <div className="relative w-16 h-16 bg-white rounded-[1.5rem] shadow-2xl flex items-center justify-center border border-blue-50">
+                                <RefreshCw className="animate-spin text-blue-600" size={24} />
                             </div>
                         </div>
                         <div className="text-center">
-                            <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest">Mencari Lokasi</h4>
-                            <p className="text-[10px] font-bold text-slate-500 mt-1">Pastikan GPS Anda aktif...</p>
+                            <h4 className="text-[10px] font-black text-slate-900 uppercase tracking-[0.3em]">Sinkronisasi GPS</h4>
+                            <p className="text-[8px] font-bold text-slate-400 mt-1 uppercase tracking-widest">Mencari koordinat...</p>
                         </div>
                     </div>
                 ) : (
-                    <div className="space-y-4 flex-1 flex flex-col">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <div className="p-2 bg-blue-100 text-blue-600 rounded-xl"><MapPin size={16} /></div>
+                    <div className="space-y-3 md:space-y-6 flex-1 flex flex-col overflow-hidden">
+                        <div className="flex items-center justify-between flex-shrink-0">
+                            <div className="flex items-center gap-2 md:gap-4">
+                                <div className="p-2 bg-blue-100 text-blue-600 rounded-lg shadow-lg shadow-blue-50"><MapPin size={14} /></div>
                                 <div>
-                                    <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest">Status Lokasi</h4>
-                                    <p className="text-[10px] font-bold text-slate-500">Berhasil Terdeteksi</p>
+                                    <h4 className="text-[9px] md:text-xs font-black text-slate-900 uppercase tracking-widest">Lokasi</h4>
+                                    <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Terdeteksi</p>
                                 </div>
                             </div>
-                            <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${selectedOffice ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}`}>
-                                {selectedOffice ? 'Siap Lanjut' : 'Pilih Kantor'}
+                            <div className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest shadow-sm ${selectedOffice ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}`}>
+                                {selectedOffice ? 'Siap' : 'Pilih Kantor'}
                             </div>
                         </div>
-
-                        {/* Office Picker - Horizontal Scroll */}
-                        <div className="space-y-2">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Daftar Kantor Terdekat:</p>
+ 
+                        {/* Office Picker */}
+                        <div className="space-y-2 flex-shrink-0">
+                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest ml-1">Kantor Terdekat:</p>
                             <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
                                 {(settings.offices && settings.offices.length > 0 ? settings.offices : [{ id: 'default', name: settings.officeName, lat: settings.officeLat, lng: settings.officeLng, radius: settings.officeRadius }]).map(office => {
                                     const dist = location ? calculateDistance(location.lat, location.lng, office.lat, office.lng) : 0;
@@ -598,195 +607,239 @@ const Attendance: React.FC<AttendanceProps> = ({ user, settings, onCheckIn, onCh
                                         <button
                                             key={office.id}
                                             onClick={() => setSelectedOffice(office)}
-                                            className={`shrink-0 px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all flex flex-col items-start gap-1 min-w-[140px] ${
+                                            className={`shrink-0 px-4 py-3 rounded-[1rem] md:rounded-[2rem] text-[8px] font-black uppercase tracking-widest border transition-all flex flex-col items-start gap-1 min-w-[140px] active:scale-95 ${
                                                 selectedOffice?.id === office.id 
-                                                    ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg shadow-emerald-100' 
-                                                    : 'bg-white border-gray-200 text-slate-500 hover:border-slate-300 shadow-sm'
+                                                    ? 'bg-slate-900 border-slate-900 text-white shadow-2xl shadow-slate-300' 
+                                                    : 'bg-white border-slate-100 text-slate-500 hover:border-slate-300 shadow-sm'
                                             }`}
                                         >
-                                            <div className="flex items-center gap-2">
-                                                <Briefcase size={12} />
-                                                <span className="truncate max-w-[100px]">{office.name}</span>
+                                            <div className="flex items-center gap-2 w-full">
+                                                <Briefcase size={10} className={selectedOffice?.id === office.id ? 'text-blue-400' : 'text-slate-300'} />
+                                                <span className="truncate flex-1 text-left">{office.name}</span>
                                             </div>
-                                            <div className="flex items-center gap-1 opacity-80">
-                                                <MapPin size={10} />
+                                            <div className="flex items-center gap-1.5 opacity-80 text-[7px]">
+                                                <Navigation size={8} />
                                                 <span>{dist.toFixed(2)} km</span>
-                                                {inRange && <Check size={10} className="text-emerald-400" />}
+                                                {inRange && <CheckCircle size={8} className="text-emerald-400" />}
                                             </div>
                                         </button>
                                     );
                                 })}
                             </div>
                         </div>
-
-                        {selectedOffice ? (
-                            <div className="bg-slate-900 text-white p-5 rounded-[2rem] flex items-center justify-between shadow-2xl animate-in slide-in-from-bottom-4">
-                                <div className="flex items-center gap-4">
-                                    <div className="p-3 bg-white/10 rounded-2xl"><Briefcase size={20} /></div>
-                                    <div>
-                                        <p className="text-[10px] font-black text-white/50 uppercase tracking-widest">Kantor Terpilih</p>
-                                        <p className="text-sm font-bold">{selectedOffice.name}</p>
-                                        {location && (
-                                            <p className={`text-[9px] font-bold ${calculateDistance(location.lat, location.lng, selectedOffice.lat, selectedOffice.lng) <= selectedOffice.radius ? 'text-emerald-400' : 'text-rose-400'}`}>
-                                                Jarak: {calculateDistance(location.lat, location.lng, selectedOffice.lat, selectedOffice.lng).toFixed(2)} km 
-                                                ({calculateDistance(location.lat, location.lng, selectedOffice.lat, selectedOffice.lng) <= selectedOffice.radius ? 'Dalam Jangkauan' : 'Luar Jangkauan'})
+ 
+                        <div className="flex-1 flex flex-col overflow-y-auto no-scrollbar">
+                            {selectedOffice || userShift?.isFlexible ? (
+                                <motion.div 
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="bg-white p-4 md:p-8 rounded-[1.5rem] flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xl shadow-slate-200 border border-slate-100"
+                                >
+                                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                                        <div className="p-2.5 bg-blue-50 text-blue-600 rounded-lg flex-shrink-0 shadow-inner">
+                                            {userShift?.isFlexible ? <Navigation size={16} /> : <Briefcase size={16} />}
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">
+                                                {userShift?.isFlexible ? 'Mode Kerja' : 'Kantor'}
                                             </p>
-                                        )}
+                                            <p className="text-xs font-black text-slate-900 truncate">
+                                                {userShift?.isFlexible ? 'Remote / Fleksibel' : (selectedOffice?.name || 'Pilih Lokasi')}
+                                            </p>
+                                            {location && selectedOffice && (
+                                                <div className="flex items-center gap-1.5 mt-0.5">
+                                                    <div className={`w-1 h-1 rounded-full ${calculateDistance(location.lat, location.lng, selectedOffice.lat, selectedOffice.lng) <= selectedOffice.radius ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
+                                                    <p className={`text-[8px] font-black uppercase tracking-widest ${calculateDistance(location.lat, location.lng, selectedOffice.lat, selectedOffice.lng) <= selectedOffice.radius ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                                        {calculateDistance(location.lat, location.lng, selectedOffice.lat, selectedOffice.lng).toFixed(2)} km • {calculateDistance(location.lat, location.lng, selectedOffice.lat, selectedOffice.lng) <= selectedOffice.radius ? 'Ok' : 'Luar'}
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <button 
+                                        onClick={() => {
+                                            if (location && selectedOffice && !userShift?.isFlexible) {
+                                                const dist = calculateDistance(location.lat, location.lng, selectedOffice.lat, selectedOffice.lng);
+                                                if (dist > selectedOffice.radius) {
+                                                    showToast(`Anda berada di luar jangkauan ${selectedOffice.name}`, "error");
+                                                    return;
+                                                }
+                                            }
+                                            openCamera();
+                                        }}
+                                        className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-[1rem] text-[9px] font-black uppercase tracking-[0.3em] transition-all active:scale-95 shadow-2xl shadow-blue-200 flex items-center justify-center gap-2"
+                                    >
+                                        Lanjut <ArrowRight size={14} />
+                                    </button>
+                                </motion.div>
+                            ) : (
+                                <div className="p-4 bg-amber-50 border border-amber-100 rounded-[1.5rem] flex items-start gap-3 shadow-inner">
+                                    <div className="p-2 bg-white rounded-lg shadow-sm"><AlertTriangle size={16} className="text-amber-600" /></div>
+                                    <div>
+                                        <p className="text-[9px] font-black text-amber-800 uppercase tracking-widest mb-1">Pilih Kantor</p>
+                                        <p className="text-[8px] font-bold text-amber-700 leading-relaxed uppercase tracking-widest opacity-80">
+                                            Pilih salah satu kantor di atas untuk verifikasi posisi Anda.
+                                        </p>
                                     </div>
                                 </div>
-                                <button 
-                                    onClick={() => {
-                                        if (location) {
-                                            const dist = calculateDistance(location.lat, location.lng, selectedOffice.lat, selectedOffice.lng);
-                                            if (dist > selectedOffice.radius) {
-                                                showToast(`Anda berada di luar jangkauan kantor ${selectedOffice.name}. Jarak: ${dist.toFixed(2)}km`, "error");
-                                                return;
-                                            }
-                                        }
-                                        openCamera();
-                                    }}
-                                    className="bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-emerald-900/20"
-                                >
-                                    Lanjut
-                                </button>
-                            </div>
-                        ) : (
-                            <div className="p-5 bg-amber-50 border border-amber-100 rounded-[2rem] flex items-start gap-4">
-                                <AlertTriangle size={20} className="text-amber-600 shrink-0 mt-1" />
-                                <div>
-                                    <p className="text-xs font-bold text-amber-800 uppercase tracking-wider mb-1">Pilih Lokasi Kantor</p>
-                                    <p className="text-[10px] font-bold text-amber-700 leading-relaxed">
-                                        Silakan pilih salah satu kantor di atas atau klik lingkaran hijau di peta untuk melanjutkan absensi.
-                                    </p>
-                                </div>
-                            </div>
-                        )}
-
-                        <div className="mt-auto pt-4">
-                            <button onClick={reset} className="w-full py-3 text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] hover:text-slate-600 transition-colors">
-                                Batalkan Proses
+                            )}
+                        </div>
+ 
+                        <div className="flex-shrink-0 pt-1">
+                            <button onClick={reset} className="w-full py-1.5 text-slate-400 text-[8px] font-black uppercase tracking-[0.3em] hover:text-slate-900 transition-colors active:scale-95">
+                                Batal
                             </button>
                         </div>
                     </div>
                 )}
             </div>
-        </div>
+        </motion.div>
       )}
 
       {step === 'camera' && (
-        <div className="relative w-full max-w-md bg-black rounded-3xl overflow-hidden shadow-2xl border-4 border-white">
-            <video ref={videoRef} autoPlay playsInline className="w-full h-[60vh] object-cover transform scale-x-[-1]" />
+        <motion.div 
+            key="camera"
+            initial={{ opacity: 0, scale: 1.1 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="relative w-full max-w-xl bg-slate-900 rounded-[30px] md:rounded-[60px] overflow-hidden shadow-2xl border-[4px] md:border-[8px] border-white h-[75vh] md:h-auto"
+        >
+            <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover transform scale-x-[-1]" />
             <canvas ref={canvasRef} width={640} height={480} className="hidden" />
             
             {/* Flash Overlay */}
-            {isFlashing && (
-                <div className="absolute inset-0 bg-white z-50 animate-out fade-out duration-150"></div>
-            )}
-
+            <AnimatePresence>
+                {isFlashing && (
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="absolute inset-0 bg-white z-50"
+                    ></motion.div>
+                )}
+            </AnimatePresence>
+ 
             {/* Header Overlay */}
-            <div className="absolute top-0 left-0 right-0 p-4 bg-gradient-to-b from-black/60 to-transparent text-white flex justify-between items-start z-20">
-                <button onClick={reset} className="p-2 bg-white/20 backdrop-blur-md rounded-full hover:bg-white/30 transition-colors">
-                    <XCircle size={24} />
+            <div className="absolute top-0 left-0 right-0 p-4 md:p-10 bg-gradient-to-b from-black/80 to-transparent text-white flex justify-between items-start z-20">
+                <button onClick={reset} className="p-2 md:p-3 bg-white/10 backdrop-blur-xl rounded-full hover:bg-white/20 transition-all active:scale-90 border border-white/10">
+                    <XCircle size={20} className="md:w-6 md:h-6" />
                 </button>
-                <div className="bg-red-500/80 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-2">
-                    <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                    <span className="text-xs font-bold uppercase">Live Camera</span>
+                <div className="bg-rose-600/90 backdrop-blur-xl px-3 py-1 md:px-5 md:py-2 rounded-full flex items-center gap-2 md:gap-3 border border-rose-500/50 shadow-2xl">
+                    <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>
+                    <span className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.2em]">Live Verification</span>
                 </div>
             </div>
-
+ 
             {/* Liveness Challenge Overlay */}
-            <div className="absolute top-20 left-4 right-4 bg-white/10 backdrop-blur-md text-white p-5 rounded-2xl border border-white/20 text-center animate-in slide-in-from-top-4 z-10 shadow-2xl">
-                <div className="flex flex-col items-center gap-2">
-                    <div className="bg-yellow-400 text-black text-[10px] px-2 py-0.5 rounded-full font-black uppercase tracking-widest animate-pulse">
+            <div className="absolute top-16 md:top-32 left-4 right-4 md:left-10 md:right-10 bg-white/10 backdrop-blur-xl text-white p-4 md:p-10 rounded-[1.5rem] md:rounded-[2.5rem] border border-white/20 text-center animate-in slide-in-from-top-10 z-10 shadow-2xl">
+                <div className="flex flex-col items-center gap-2 md:gap-4">
+                    <div className="bg-amber-400 text-slate-900 text-[8px] md:text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-[0.2em] animate-pulse shadow-xl">
                         Verifikasi Keaslian
                     </div>
                     {challengeCountdown > 0 ? (
                         <div className="flex flex-col items-center">
-                            <p className="text-xs text-gray-200 mb-1">Siap-siap dalam...</p>
-                            <span className="text-4xl font-black text-white">{challengeCountdown}</span>
+                            <p className="text-[8px] md:text-[10px] font-black text-white/60 uppercase tracking-widest mb-1">Bersiap dalam...</p>
+                            <span className="text-4xl md:text-6xl font-black text-white tracking-tighter">{challengeCountdown}</span>
                         </div>
                     ) : (
-                        <>
-                            <p className="text-xs text-gray-200 font-medium">Lakukan gerakan berikut sebelum mengambil foto:</p>
-                            <p className="text-2xl font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] bg-black/20 px-4 py-2 rounded-xl border border-white/10">
+                        <motion.div 
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            className="flex flex-col items-center w-full"
+                        >
+                            <p className="text-[8px] md:text-[10px] font-black text-white/60 uppercase tracking-widest mb-2">Lakukan gerakan berikut:</p>
+                            <p className="text-lg md:text-3xl font-black text-white drop-shadow-2xl bg-slate-900/40 px-4 py-3 rounded-[1rem] border border-white/10 w-full">
                                 {livenessChallenge}
                             </p>
-                        </>
+                        </motion.div>
                     )}
                 </div>
             </div>
 
             {/* Controls */}
-            <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/80 to-transparent flex flex-col items-center gap-6 z-20">
-                <button 
+            <div className="absolute bottom-0 left-0 right-0 p-6 md:p-16 bg-gradient-to-t from-black/90 to-transparent flex flex-col items-center gap-4 md:gap-8 z-20">
+                <motion.button 
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                     onClick={takePhoto}
                     disabled={challengeCountdown > 0}
-                    className={`w-20 h-20 bg-white rounded-full border-4 border-gray-200 shadow-2xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all group ${challengeCountdown > 0 ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
+                    className={`w-16 h-16 md:w-24 md:h-24 bg-white rounded-full border-4 md:border-8 border-slate-200 shadow-2xl flex items-center justify-center transition-all group ${challengeCountdown > 0 ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
                 >
-                    <div className="w-16 h-16 bg-white border-4 border-blue-500 rounded-full group-hover:bg-blue-50 transition-colors"></div>
-                </button>
+                    <div className="w-10 h-10 md:w-16 md:h-16 bg-white border-2 md:border-4 border-blue-600 rounded-full group-hover:bg-blue-50 transition-colors shadow-inner"></div>
+                </motion.button>
                 <button 
                     onClick={reset}
-                    className="text-white/70 hover:text-white text-[10px] font-black uppercase tracking-widest transition-colors"
+                    className="text-white/50 hover:text-white text-[8px] md:text-[10px] font-black uppercase tracking-[0.3em] transition-colors active:scale-95"
                 >
                     Batalkan & Kembali
                 </button>
             </div>
-        </div>
+        </motion.div>
       )}
 
       {step === 'error' && (
-        <div className="bg-white p-8 rounded-3xl max-w-sm w-full shadow-xl border border-red-100 text-center">
-            <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                <AlertTriangle className="text-red-500" size={40} />
+        <motion.div 
+            key="error"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white p-6 md:p-12 rounded-[24px] md:rounded-[50px] max-w-md w-full shadow-2xl border border-rose-100 text-center"
+        >
+            <div className="w-16 h-16 md:w-24 md:h-24 bg-rose-50 rounded-[1.5rem] flex items-center justify-center mx-auto mb-6 shadow-xl shadow-rose-100">
+                <AlertTriangle className="text-rose-500" size={32} />
             </div>
-            <h3 className="text-xl font-bold text-gray-800 mb-2">Gagal Absensi</h3>
-            <p className="text-gray-500 mb-6 text-sm leading-relaxed">{errorMsg}</p>
+            <h3 className="text-xl md:text-3xl font-black text-slate-900 mb-2 tracking-tight">Gagal Presensi</h3>
+            <p className="text-slate-400 mb-6 text-xs font-bold uppercase tracking-widest leading-relaxed">{errorMsg}</p>
             
             {errorMsg.includes('Akurasi') && (
-                <div className="mb-6 p-4 bg-blue-50 rounded-2xl text-left border border-blue-100">
-                    <p className="text-[10px] font-black text-blue-700 uppercase tracking-widest mb-2">Tips Akurasi Tinggi:</p>
-                    <ul className="text-[10px] font-bold text-blue-600 space-y-1.5">
+                <div className="mb-6 p-5 md:p-8 bg-blue-50 rounded-[1.5rem] md:rounded-[2.5rem] text-left border border-blue-100 shadow-inner">
+                    <p className="text-[8px] md:text-[10px] font-black text-blue-700 uppercase tracking-[0.2em] mb-3">Tips Akurasi Tinggi:</p>
+                    <ul className="text-[8px] md:text-[10px] font-bold text-blue-600 space-y-2 uppercase tracking-widest opacity-80">
                         <li className="flex items-center gap-2">
-                            <div className="w-1 h-1 bg-blue-400 rounded-full"></div>
-                            Nyalakan Wi-Fi (Meskipun tidak terhubung)
+                            <div className="w-1.5 h-1.5 bg-blue-400 rounded-full"></div>
+                            Nyalakan Wi-Fi Perangkat
                         </li>
                         <li className="flex items-center gap-2">
-                            <div className="w-1 h-1 bg-blue-400 rounded-full"></div>
-                            Mendekat ke jendela atau area terbuka
+                            <div className="w-1.5 h-1.5 bg-blue-400 rounded-full"></div>
+                            Cari Area Terbuka / Jendela
                         </li>
                         <li className="flex items-center gap-2">
-                            <div className="w-1 h-1 bg-blue-400 rounded-full"></div>
-                            Buka Google Maps sebentar untuk kalibrasi
+                            <div className="w-1.5 h-1.5 bg-blue-400 rounded-full"></div>
+                            Kalibrasi via Google Maps
                         </li>
                     </ul>
                 </div>
             )}
-
+ 
             <div className="space-y-3">
-                <button onClick={startProcess} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-200 transition-colors flex items-center justify-center gap-2">
+                <button onClick={startProcess} className="w-full bg-blue-600 text-white font-black py-4 rounded-[1.5rem] hover:bg-blue-700 shadow-2xl shadow-blue-200 transition-all flex items-center justify-center gap-3 uppercase text-[10px] tracking-[0.3em] active:scale-95">
                     <RefreshCw size={16} /> Coba Lagi
                 </button>
-                <button onClick={reset} className="w-full bg-gray-100 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors">
+                <button onClick={reset} className="w-full bg-slate-100 text-slate-500 font-black py-4 rounded-[1.5rem] hover:bg-slate-200 transition-all uppercase text-[10px] tracking-[0.3em] active:scale-95">
                     Kembali
                 </button>
             </div>
-        </div>
+        </motion.div>
       )}
 
       {step === 'success' && (
-        <div className="bg-white p-8 rounded-3xl max-w-sm w-full shadow-xl border border-green-100 text-center animate-in zoom-in-95">
-            <div className="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6 relative">
-                <div className="absolute inset-0 bg-green-400 rounded-full opacity-20 animate-ping"></div>
-                <CheckCircle className="text-green-600 relative z-10" size={48} />
+        <motion.div 
+            key="success"
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="bg-white p-6 md:p-12 rounded-[24px] md:rounded-[60px] max-w-md w-full shadow-2xl border border-emerald-100 text-center relative overflow-hidden"
+        >
+            <div className="absolute top-0 left-0 w-full h-1.5 bg-emerald-500"></div>
+            <div className="w-16 h-16 md:w-24 md:h-24 bg-emerald-50 rounded-[1.5rem] md:rounded-[2.5rem] flex items-center justify-center mx-auto mb-6 relative shadow-xl shadow-emerald-100">
+                <div className="absolute inset-0 bg-emerald-400 rounded-[1.5rem] md:rounded-[2.5rem] opacity-20 animate-ping"></div>
+                <CheckCircle className="text-emerald-600 relative z-10 md:w-14 md:h-14" size={36} />
             </div>
-            <h3 className="text-2xl font-bold text-gray-800 mb-2">Berhasil!</h3>
-            <p className="text-gray-500 mb-8 text-sm">Data absensi Anda telah tersimpan.</p>
-            <button onClick={reset} className="w-full bg-green-600 text-white font-bold py-3 rounded-xl hover:bg-green-700 shadow-lg shadow-green-200 transition-colors">
-                Kembali ke Dashboard
+            <h3 className="text-xl md:text-4xl font-black text-slate-900 mb-2 tracking-tighter">Berhasil!</h3>
+            <p className="text-slate-400 mb-8 text-[10px] font-bold uppercase tracking-widest">Data kehadiran Anda telah tercatat.</p>
+            <button onClick={reset} className="w-full bg-slate-900 text-white font-black py-4 md:py-5 rounded-[1.5rem] md:rounded-[2rem] hover:bg-black shadow-2xl shadow-slate-200 transition-all uppercase text-[10px] md:text-xs tracking-[0.3em] active:scale-95">
+                Ke Dashboard
             </button>
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </div>
   );
 };

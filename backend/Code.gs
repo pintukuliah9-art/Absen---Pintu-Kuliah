@@ -78,19 +78,52 @@ function doPost(e) {
 
 function getAllData() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  return {
-    users: getTableData(ss, 'users'),
-    jobRoles: getTableData(ss, 'job_roles'),
-    shifts: getTableData(ss, 'shifts'),
-    attendance: getTableData(ss, 'attendance'),
-    requests: getTableData(ss, 'requests'),
-    settings: getSettings(ss),
-    departments: getTableData(ss, 'departments'),
-    leaveTypes: getTableData(ss, 'leave_types'),
-    tasks: getTableData(ss, 'tasks'),
-    workReports: getTableData(ss, 'work_reports'),
-    offices: getTableData(ss, 'branches')
-  };
+  const tables = [
+    {k: 'users', n: 'Karyawan'},
+    {k: 'jobRoles', n: 'Jabatan'},
+    {k: 'shifts', n: 'Shift'},
+    {k: 'attendance', n: 'Absensi'},
+    {k: 'requests', n: 'Pengajuan'},
+    {k: 'settings', n: 'Pengaturan'},
+    {k: 'departments', n: 'Departemen'},
+    {k: 'leaveTypes', n: 'JenisCuti'},
+    {k: 'tasks', n: 'Tugas'},
+    {k: 'workReports', n: 'LaporanKerja'},
+    {k: 'offices', n: 'LokasiKantor'}
+  ];
+  
+  let result = {};
+  tables.forEach(t => {
+    let sheet = ss.getSheetByName(t.n);
+    if (!sheet) return;
+    
+    let data = sheet.getDataRange().getValues();
+    if (data.length < 2) {
+      result[t.k] = [];
+      return;
+    }
+    
+    let headers = data[0];
+    result[t.k] = data.slice(1).map(row => {
+      let obj = {};
+      headers.forEach((h, i) => obj[h] = row[i]);
+      
+      // Special handling for Jabatan (Job Roles) to reconstruct coreResponsibilities array
+      if (t.k === 'jobRoles') {
+        let responsibilities = [];
+        for (let j = 1; j <= 20; j++) {
+          let key = 'tugas_' + j;
+          if (obj[key]) responsibilities.push(obj[key]);
+          delete obj[key];
+        }
+        obj.tanggung_jawab_utama = JSON.stringify(responsibilities);
+      }
+      
+      return obj;
+    });
+  });
+  
+  return result;
 }
 
 function syncAttendance(record) {
