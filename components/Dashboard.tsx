@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { User, AttendanceRecord, AttendanceStatus, AppSettings, LocationLog, TaskStatus, TaskCategory } from '../types';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { Clock, MapPin, Sparkles, CheckCircle, XCircle, CloudSun, Flame, Briefcase, RefreshCw, Crosshair, Calendar, Coffee, LogOut, AlertTriangle, ArrowRight, Sun, Moon, Cloud, Activity, CheckSquare, ClipboardList, History, Settings as SettingsIcon, ChevronRight, Target } from 'lucide-react';
+import { Clock, MapPin, Sparkles, CheckCircle, XCircle, CloudSun, Flame, Briefcase, RefreshCw, Crosshair, Calendar, Coffee, LogOut, AlertTriangle, ArrowRight, Sun, Moon, Cloud, Activity, CheckSquare, ClipboardList, History, Settings as SettingsIcon, ChevronRight } from 'lucide-react';
 import { analyzePerformance } from '../services/geminiService';
 import { useStore } from '../services/store';
 import { motion } from 'motion/react';
@@ -12,10 +12,9 @@ interface DashboardProps {
   settings: AppSettings;
   onUpdateLocationLog?: (recordId: string, log: LocationLog) => void;
   onNavigateToReports?: () => void;
-  onNavigateToHistory?: () => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ user, history, settings, onUpdateLocationLog, onNavigateToReports, onNavigateToHistory }) => {
+const Dashboard: React.FC<DashboardProps> = ({ user, history, settings, onUpdateLocationLog, onNavigateToReports }) => {
   const { state, fetchData } = useStore();
   const { tasks, workReports } = state;
   const [currentTime, setCurrentTime] = useState(new Date());

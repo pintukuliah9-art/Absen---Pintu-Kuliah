@@ -10,13 +10,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 async function startServer() {
-  console.log("[Server] Initializing...");
   const app = express();
   const PORT = 3000;
   
   console.log(`[Server] Starting in ${process.env.NODE_ENV || 'development'} mode`);
-  console.log(`[Server] Port: ${PORT}`);
-  console.log(`[Server] GAS_API_URL: ${process.env.GAS_API_URL ? 'Configured' : 'Using Fallback'}`);
 
   // Request Logger
   app.use((req, res, next) => {
@@ -34,7 +31,7 @@ async function startServer() {
   }));
   
   // Explicit OPTIONS handler for preflight
-  app.options("*all", cors());
+  app.options('*all', cors());
   
   // JSON Parse Error Handler
   app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -56,9 +53,14 @@ async function startServer() {
   });
 
   // Proxy to Google Apps Script
-  app.post("/api/proxy", async (req, res) => {
-    console.log(`[Proxy] Incoming request for action: ${req.body?.action}`);
+  app.all("/api/proxy", async (req, res) => {
+    console.log(`[Proxy] Received request: ${req.method} ${req.url}`);
     
+    if (req.method !== 'POST') {
+       console.warn(`[Proxy] Blocked ${req.method} request to /api/proxy`);
+       return res.status(405).json({ status: 'error', message: 'Method Not Allowed. Use POST.' });
+    }
+
     try {
       if (!req.body) {
          console.error("[Proxy Error] Missing request body");
@@ -68,14 +70,19 @@ async function startServer() {
       const { action, payload, apiUrl } = req.body;
       
       // Sanitize and validate target URL
-      let targetUrl = (apiUrl || process.env.GAS_API_URL || "https://script.google.com/macros/s/AKfycbyBGXKUFi7okwEX5T7wueF798lgvXGXCjVUOshZAF47piQJdiI5u3r4LP0uFtR2eWpq/exec").trim();
+      let targetUrl = (apiUrl || process.env.GAS_API_URL || "https://script.google.com/macros/s/AKfycbwZrxNV9pd5XtL_f_Vbkx1PCArkEg1y5LtnZVmxU2H4ATKqcPsMWymsRHF1kF3dyPfT/exec").trim();
 
-      if (!targetUrl || !targetUrl.startsWith('http')) {
+      if (!targetUrl.startsWith('http')) {
         console.error("[Proxy Error] Invalid target URL:", targetUrl);
-        return res.status(400).json({ status: 'error', message: "Invalid API URL configuration. Please check GAS_API_URL." });
+        return res.status(400).json({ status: 'error', message: "Invalid API URL configuration." });
       }
 
-      console.log(`[Proxy] Forwarding ${action} to: ${targetUrl}`);
+      if (!targetUrl) {
+        console.error("[Proxy Error] No target URL provided");
+        return res.status(500).json({ status: 'error', message: "GAS_API_URL environment variable is not set and no API URL provided in request." });
+      }
+
+      console.log(`[Proxy] Action: ${action} -> ${targetUrl}`);
       
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
@@ -164,12 +171,6 @@ async function startServer() {
         details: error.stack
       });
     }
-  });
-
-  // Fallback for any other /api/* routes to prevent SPA fallback from returning HTML
-  app.all("/api/*all", (req, res) => {
-    console.warn(`[Server] Unhandled API route: ${req.method} ${req.url}`);
-    res.status(404).json({ status: 'error', message: `API route not found: ${req.url}` });
   });
 
   // Vite middleware for development

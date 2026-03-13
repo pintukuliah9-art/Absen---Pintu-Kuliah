@@ -22,39 +22,28 @@ const AdminTasks: React.FC = () => {
         isActive: true
     });
 
-    const [modalTab, setModalTab] = useState<'info' | 'assignment'>('info');
-    const [userSearch, setUserSearch] = useState('');
-
     const openAddModal = () => {
         setEditingTask(null);
         setFormData({
             title: '',
             description: '',
             category: TASK_CATEGORIES.DAILY,
-            priority: 'Medium',
             assignedUserIds: [],
             assignedRoleIds: [],
             assignedDepartmentIds: [],
             isActive: true
         });
-        setModalTab('info');
-        setUserSearch('');
         setIsModalOpen(true);
     };
 
     const openEditModal = (task: Task) => {
         setEditingTask(task);
         setFormData({ ...task });
-        setModalTab('info');
-        setUserSearch('');
         setIsModalOpen(true);
     };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        
-        if (!formData.title) return;
-
         const now = new Date().toISOString();
         
         if (editingTask) {
@@ -229,174 +218,114 @@ const AdminTasks: React.FC = () => {
                                 </button>
                             </div>
 
-                            {/* Modal Tabs */}
-                            <div className="flex border-b border-gray-100 bg-white sticky top-[89px] z-20">
-                                <button 
-                                    onClick={() => setModalTab('info')}
-                                    className={`flex-1 py-4 text-[10px] font-black uppercase tracking-widest transition-all border-b-2 ${modalTab === 'info' ? 'border-blue-600 text-blue-600 bg-blue-50/30' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
-                                >
-                                    1. Detail Tugas
-                                </button>
-                                <button 
-                                    onClick={() => setModalTab('assignment')}
-                                    className={`flex-1 py-4 text-[10px] font-black uppercase tracking-widest transition-all border-b-2 ${modalTab === 'assignment' ? 'border-blue-600 text-blue-600 bg-blue-50/30' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
-                                >
-                                    2. Penerima Tugas
-                                </button>
-                            </div>
+                            <form onSubmit={handleSubmit} className="p-8 space-y-8 overflow-y-auto flex-1">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="md:col-span-2">
+                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Judul Tugas</label>
+                                        <input 
+                                            required
+                                            type="text" 
+                                            value={formData.title}
+                                            onChange={e => setFormData({...formData, title: e.target.value})}
+                                            className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 outline-none transition-all"
+                                            placeholder="Contoh: Laporan Penjualan Harian"
+                                        />
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Deskripsi (Opsional)</label>
+                                        <textarea 
+                                            value={formData.description}
+                                            onChange={e => setFormData({...formData, description: e.target.value})}
+                                            className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 outline-none transition-all min-h-[100px] resize-none"
+                                            placeholder="Jelaskan detail tugas ini..."
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Kategori</label>
+                                        <select 
+                                            value={formData.category}
+                                            onChange={e => setFormData({...formData, category: e.target.value})}
+                                            className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 outline-none transition-all appearance-none bg-white"
+                                        >
+                                            {Object.entries(TASK_CATEGORIES).map(([key, value]) => (
+                                                <option key={key} value={value}>{value}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="flex items-center gap-4 bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                                        <button 
+                                            type="button"
+                                            onClick={() => setFormData({...formData, isActive: !formData.isActive})}
+                                            className={`w-12 h-6 rounded-full transition-all relative ${formData.isActive ? 'bg-emerald-500' : 'bg-gray-300'}`}
+                                        >
+                                            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${formData.isActive ? 'left-7' : 'left-1'}`} />
+                                        </button>
+                                        <span className="text-xs font-black text-gray-700 uppercase tracking-widest">Status Aktif</span>
+                                    </div>
+                                </div>
 
-                            <form id="taskForm" onSubmit={handleSubmit} className="p-8 space-y-8 overflow-y-auto flex-1">
-                                {modalTab === 'info' ? (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in slide-in-from-left-4 duration-300">
-                                        <div className="md:col-span-2">
-                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Judul Tugas</label>
-                                            <input 
-                                                required
-                                                type="text" 
-                                                value={formData.title}
-                                                onChange={e => setFormData({...formData, title: e.target.value})}
-                                                className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 outline-none transition-all"
-                                                placeholder="Contoh: Laporan Penjualan Harian"
-                                            />
-                                        </div>
-                                        <div className="md:col-span-2">
-                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Deskripsi (Opsional)</label>
-                                            <textarea 
-                                                value={formData.description}
-                                                onChange={e => setFormData({...formData, description: e.target.value})}
-                                                className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 outline-none transition-all min-h-[120px] resize-none"
-                                                placeholder="Jelaskan detail tugas ini..."
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Kategori</label>
-                                            <select 
-                                                value={formData.category}
-                                                onChange={e => setFormData({...formData, category: e.target.value})}
-                                                className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 outline-none transition-all appearance-none bg-white"
-                                            >
-                                                {Object.entries(TASK_CATEGORIES).map(([key, value]) => (
-                                                    <option key={key} value={value}>{value}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Prioritas</label>
-                                            <div className="flex gap-2">
-                                                {(['Low', 'Medium', 'High'] as const).map(p => (
-                                                    <button
-                                                        key={p}
-                                                        type="button"
-                                                        onClick={() => setFormData({...formData, priority: p})}
-                                                        className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${formData.priority === p ? (
-                                                            p === 'High' ? 'bg-red-500 text-white border-red-500' :
-                                                            p === 'Medium' ? 'bg-amber-500 text-white border-amber-500' :
-                                                            'bg-blue-500 text-white border-blue-500'
-                                                        ) : 'bg-white text-gray-400 border-gray-100 hover:border-gray-200'}`}
-                                                    >
-                                                        {p}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-4 bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                                            <button 
-                                                type="button"
-                                                onClick={() => setFormData({...formData, isActive: !formData.isActive})}
-                                                className={`w-12 h-6 rounded-full transition-all relative ${formData.isActive ? 'bg-emerald-500' : 'bg-gray-300'}`}
-                                            >
-                                                <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${formData.isActive ? 'left-7' : 'left-1'}`} />
-                                            </button>
-                                            <span className="text-xs font-black text-gray-700 uppercase tracking-widest">Status Aktif</span>
+                                <div className="space-y-6 pt-6 border-t border-gray-100">
+                                    <h4 className="text-xs font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
+                                        <Users size={16} className="text-blue-600" /> Penugasan Tim
+                                    </h4>
+                                    
+                                    {/* By Department */}
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] font-black text-gray-400 flex items-center gap-2 uppercase tracking-widest">
+                                            <Building size={12}/> Berdasarkan Departemen
+                                        </label>
+                                        <div className="flex flex-wrap gap-2">
+                                            {(appSettings.departments || []).map(dept => (
+                                                <button 
+                                                    key={dept.id}
+                                                    type="button"
+                                                    onClick={() => toggleAssignment('department', dept.id)}
+                                                    className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${formData.assignedDepartmentIds?.includes(dept.id) ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-100' : 'bg-white text-gray-500 border-gray-200 hover:border-blue-400 hover:text-blue-600'}`}
+                                                >
+                                                    {dept.name}
+                                                </button>
+                                            ))}
                                         </div>
                                     </div>
-                                ) : (
-                                    <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
-                                        <div className="bg-blue-50 p-6 rounded-3xl border border-blue-100 flex items-start gap-4">
-                                            <div className="w-10 h-10 rounded-2xl bg-blue-100 flex items-center justify-center text-blue-600 flex-shrink-0">
-                                                <Info size={20} />
-                                            </div>
-                                            <div>
-                                                <p className="text-sm font-black text-blue-900 tracking-tight">Info Penugasan</p>
-                                                <p className="text-[10px] font-bold text-blue-700/70 leading-relaxed">
-                                                    Anda dapat menugaskan tugas ini ke seluruh departemen, jabatan tertentu, atau karyawan spesifik secara bersamaan.
-                                                </p>
-                                            </div>
-                                        </div>
 
-                                        <div className="space-y-6">
-                                            {/* By Department */}
-                                            <div className="space-y-3">
-                                                <label className="text-[10px] font-black text-gray-400 flex items-center gap-2 uppercase tracking-widest">
-                                                    <Building size={12}/> Berdasarkan Departemen
-                                                </label>
-                                                <div className="flex flex-wrap gap-2">
-                                                    {(appSettings.departments || []).map(dept => (
-                                                        <button 
-                                                            key={dept.id}
-                                                            type="button"
-                                                            onClick={() => toggleAssignment('department', dept.id)}
-                                                            className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${formData.assignedDepartmentIds?.includes(dept.id) ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-100' : 'bg-white text-gray-500 border-gray-200 hover:border-blue-400 hover:text-blue-600'}`}
-                                                        >
-                                                            {dept.name}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </div>
-
-                                            {/* By Role */}
-                                            <div className="space-y-3">
-                                                <label className="text-[10px] font-black text-gray-400 flex items-center gap-2 uppercase tracking-widest">
-                                                    <Briefcase size={12}/> Berdasarkan Jabatan
-                                                </label>
-                                                <div className="flex flex-wrap gap-2">
-                                                    {appSettings.jobRoles.map(role => (
-                                                        <button 
-                                                            key={role.id}
-                                                            type="button"
-                                                            onClick={() => toggleAssignment('role', role.id)}
-                                                            className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${formData.assignedRoleIds?.includes(role.id) ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-100' : 'bg-white text-gray-500 border-gray-200 hover:border-indigo-400 hover:text-indigo-600'}`}
-                                                        >
-                                                            {role.title}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </div>
-
-                                            {/* By User */}
-                                            <div className="space-y-3">
-                                                <div className="flex justify-between items-center">
-                                                    <label className="text-[10px] font-black text-gray-400 flex items-center gap-2 uppercase tracking-widest">
-                                                        <Users size={12}/> Karyawan Spesifik
-                                                    </label>
-                                                    <div className="relative">
-                                                        <input 
-                                                            type="text"
-                                                            placeholder="Cari nama..."
-                                                            className="text-[10px] font-bold px-3 py-1 bg-gray-100 rounded-lg border-none focus:ring-1 focus:ring-blue-500 outline-none w-32"
-                                                            onChange={(e) => setUserSearch(e.target.value)}
-                                                            value={userSearch}
-                                                        />
-                                                    </div>
-                                                </div>
-                                                <div className="flex flex-wrap gap-2 max-h-[200px] overflow-y-auto p-1">
-                                                    {users
-                                                        .filter(u => u.isActive && u.name.toLowerCase().includes(userSearch.toLowerCase()))
-                                                        .map(u => (
-                                                            <button 
-                                                                key={u.id}
-                                                                type="button"
-                                                                onClick={() => toggleAssignment('user', u.id)}
-                                                                className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${formData.assignedUserIds?.includes(u.id) ? 'bg-emerald-600 text-white border-emerald-600 shadow-lg shadow-emerald-100' : 'bg-white text-gray-500 border-gray-200 hover:border-emerald-400 hover:text-emerald-600'}`}
-                                                            >
-                                                                {u.name}
-                                                            </button>
-                                                        ))}
-                                                </div>
-                                            </div>
+                                    {/* By Role */}
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] font-black text-gray-400 flex items-center gap-2 uppercase tracking-widest">
+                                            <Briefcase size={12}/> Berdasarkan Jabatan
+                                        </label>
+                                        <div className="flex flex-wrap gap-2">
+                                            {appSettings.jobRoles.map(role => (
+                                                <button 
+                                                    key={role.id}
+                                                    type="button"
+                                                    onClick={() => toggleAssignment('role', role.id)}
+                                                    className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${formData.assignedRoleIds?.includes(role.id) ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-100' : 'bg-white text-gray-500 border-gray-200 hover:border-indigo-400 hover:text-indigo-600'}`}
+                                                >
+                                                    {role.title}
+                                                </button>
+                                            ))}
                                         </div>
                                     </div>
-                                )}
+
+                                    {/* By User */}
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] font-black text-gray-400 flex items-center gap-2 uppercase tracking-widest">
+                                            <Users size={12}/> Karyawan Spesifik
+                                        </label>
+                                        <div className="flex flex-wrap gap-2">
+                                            {users.filter(u => u.isActive).map(u => (
+                                                <button 
+                                                    key={u.id}
+                                                    type="button"
+                                                    onClick={() => toggleAssignment('user', u.id)}
+                                                    className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${formData.assignedUserIds?.includes(u.id) ? 'bg-emerald-600 text-white border-emerald-600 shadow-lg shadow-emerald-100' : 'bg-white text-gray-500 border-gray-200 hover:border-emerald-400 hover:text-emerald-600'}`}
+                                                >
+                                                    {u.name}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
                             </form>
 
                             <div className="p-8 border-t border-gray-100 flex flex-col sm:flex-row gap-3 bg-white sticky bottom-0 z-20">
@@ -407,23 +336,14 @@ const AdminTasks: React.FC = () => {
                                 >
                                     Batal
                                 </button>
-                                {modalTab === 'info' ? (
-                                    <button 
-                                        type="button"
-                                        onClick={() => setModalTab('assignment')}
-                                        className="w-full sm:w-auto flex-1 px-8 py-4 bg-gray-900 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-black transition-all active:scale-95"
-                                    >
-                                        Lanjut ke Penugasan
-                                    </button>
-                                ) : (
-                                    <button 
-                                        type="submit"
-                                        form="taskForm"
-                                        className="w-full sm:w-auto flex-1 px-8 py-4 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-blue-700 transition-all active:scale-95 shadow-xl shadow-blue-200"
-                                    >
-                                        {editingTask ? 'Simpan Perubahan' : 'Buat Tugas Sekarang'}
-                                    </button>
-                                )}
+                                <button 
+                                    onClick={() => document.getElementById('userForm')?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }))}
+                                    type="submit"
+                                    form="userForm"
+                                    className="w-full sm:w-auto flex-1 px-8 py-4 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-blue-700 transition-all active:scale-95 shadow-xl shadow-blue-200"
+                                >
+                                    {editingTask ? 'Simpan Perubahan' : 'Buat Tugas'}
+                                </button>
                             </div>
                         </motion.div>
                     </div>
@@ -478,13 +398,6 @@ const TaskCard: React.FC<{ task: Task, onEdit: (t: Task) => void, onDelete: (id:
 
             <div className="flex-1 relative z-10">
                 <div className="flex items-center gap-2 mb-2">
-                    <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg ${
-                        task.priority === 'High' ? 'bg-red-50 text-red-600' :
-                        task.priority === 'Medium' ? 'bg-amber-50 text-amber-600' :
-                        'bg-blue-50 text-blue-600'
-                    }`}>
-                        {task.priority || 'Medium'}
-                    </span>
                     <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg ${isDaily ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'}`}>
                         {task.category}
                     </span>

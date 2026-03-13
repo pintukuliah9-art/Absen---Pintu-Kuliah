@@ -216,17 +216,12 @@ const Attendance: React.FC<AttendanceProps> = ({ user, settings, onCheckIn, onCh
         }
 
     if (!userShift.isFlexible) {
-        const ACCURACY_THRESHOLD = 800; // More lenient threshold
-        const IDEAL_ACCURACY = 100;
+        const ACCURACY_THRESHOLD = 300; 
         
         if (accuracy > ACCURACY_THRESHOLD) {
             setStep('error');
-            setErrorMsg(`Akurasi GPS rendah (${Math.round(accuracy)}m). Batas maksimal adalah ${ACCURACY_THRESHOLD}m. Pastikan Anda di area terbuka atau nyalakan Wi-Fi.`);
+            setErrorMsg(`Akurasi GPS rendah (${Math.round(accuracy)}m). Batas maksimal adalah ${ACCURACY_THRESHOLD}m. Pastikan Anda di dekat jendela atau nyalakan Wi-Fi.`);
             return;
-        }
-
-        if (accuracy > IDEAL_ACCURACY) {
-            showToast(`Akurasi GPS sedang (${Math.round(accuracy)}m). Hasil presensi mungkin kurang presisi.`, "info");
         }
 
             const offices = settings.offices && settings.offices.length > 0 
@@ -254,28 +249,17 @@ const Attendance: React.FC<AttendanceProps> = ({ user, settings, onCheckIn, onCh
             } else if (offices.length === 1 && closest) {
                 const dist = calculateDistance(latitude, longitude, closest.lat, closest.lng);
                 if (dist > closest.radius) {
-                    // Don't error immediately, let them see the map and choose if multiple offices exist
-                    setSelectedOffice(closest);
-                } else {
-                    setSelectedOffice(closest);
+                    setTimeout(() => {
+                        setStep('error');
+                        setErrorMsg(`Anda berada di luar jangkauan kantor ${closest!.name}. Jarak Anda: ${dist.toFixed(2)}km (Maks: ${closest!.radius}km).`);
+                    }, 1500);
+                    return;
                 }
-            } else if (closest) {
                 setSelectedOffice(closest);
-            }
-        } else {
-            // Flexible/Remote mode: Auto-select nearest if available, but don't enforce
-            const offices = settings.offices || [];
-            if (offices.length > 0) {
-                let closest: OfficeLocation | null = null;
-                let minDistance = Infinity;
-                offices.forEach(o => {
-                    const d = calculateDistance(latitude, longitude, o.lat, o.lng);
-                    if (d < minDistance) {
-                        minDistance = d;
-                        closest = o;
-                    }
-                });
-                setSelectedOffice(closest);
+            } else {
+                if (closest) {
+                    setSelectedOffice(null);
+                }
             }
         }
       },
@@ -629,24 +613,18 @@ const Attendance: React.FC<AttendanceProps> = ({ user, settings, onCheckIn, onCh
                         </div>
  
                         <div className="flex-1 flex flex-col overflow-y-auto no-scrollbar">
-                            {selectedOffice || userShift?.isFlexible ? (
+                            {selectedOffice ? (
                                 <motion.div 
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     className="bg-white p-4 md:p-8 rounded-[1.5rem] flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xl shadow-slate-200 border border-slate-100"
                                 >
                                     <div className="flex items-center gap-3 w-full sm:w-auto">
-                                        <div className="p-2.5 bg-blue-50 text-blue-600 rounded-lg flex-shrink-0 shadow-inner">
-                                            {userShift?.isFlexible ? <Navigation size={16} /> : <Briefcase size={16} />}
-                                        </div>
+                                        <div className="p-2.5 bg-blue-50 text-blue-600 rounded-lg flex-shrink-0 shadow-inner"><Briefcase size={16} /></div>
                                         <div className="min-w-0">
-                                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">
-                                                {userShift?.isFlexible ? 'Mode Kerja' : 'Kantor'}
-                                            </p>
-                                            <p className="text-xs font-black text-slate-900 truncate">
-                                                {userShift?.isFlexible ? 'Remote / Fleksibel' : (selectedOffice?.name || 'Pilih Lokasi')}
-                                            </p>
-                                            {location && selectedOffice && (
+                                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Kantor</p>
+                                            <p className="text-xs font-black text-slate-900 truncate">{selectedOffice.name}</p>
+                                            {location && (
                                                 <div className="flex items-center gap-1.5 mt-0.5">
                                                     <div className={`w-1 h-1 rounded-full ${calculateDistance(location.lat, location.lng, selectedOffice.lat, selectedOffice.lng) <= selectedOffice.radius ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
                                                     <p className={`text-[8px] font-black uppercase tracking-widest ${calculateDistance(location.lat, location.lng, selectedOffice.lat, selectedOffice.lng) <= selectedOffice.radius ? 'text-emerald-600' : 'text-rose-600'}`}>
@@ -658,10 +636,10 @@ const Attendance: React.FC<AttendanceProps> = ({ user, settings, onCheckIn, onCh
                                     </div>
                                     <button 
                                         onClick={() => {
-                                            if (location && selectedOffice && !userShift?.isFlexible) {
+                                            if (location) {
                                                 const dist = calculateDistance(location.lat, location.lng, selectedOffice.lat, selectedOffice.lng);
                                                 if (dist > selectedOffice.radius) {
-                                                    showToast(`Anda berada di luar jangkauan ${selectedOffice.name}`, "error");
+                                                    showToast(`Luar jangkauan ${selectedOffice.name}`, "error");
                                                     return;
                                                 }
                                             }

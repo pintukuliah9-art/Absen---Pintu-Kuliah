@@ -14,7 +14,6 @@ interface SettingsProps {
   onUpdateSettings: (settings: AppSettings) => void;
   onReset: () => void;
   onLogout: () => void;
-  initialTab?: 'profile' | 'company' | 'security' | 'locations' | 'shifts' | 'jobs' | 'permissions';
 }
 
 const MODULES = [
@@ -30,16 +29,10 @@ const MODULES = [
     { id: 'settings', name: 'Pengaturan Sistem', icon: Shield, desc: 'Konfigurasi aplikasi, lokasi, dan hak akses.' },
 ];
 
-const Settings: React.FC<SettingsProps> = ({ user, appSettings, onUpdateSettings, onReset, onLogout, initialTab }) => {
+const Settings: React.FC<SettingsProps> = ({ user, appSettings, onUpdateSettings, onReset, onLogout }) => {
   const { state, updateUser } = useStore(); 
   const { showToast } = useToast();
-  const [activeTab, setActiveTab] = useState<'profile' | 'company' | 'security' | 'locations' | 'shifts' | 'jobs' | 'permissions'>(initialTab || 'profile');
-  
-  useEffect(() => {
-    if (initialTab) {
-      setActiveTab(initialTab);
-    }
-  }, [initialTab]);
+  const [activeTab, setActiveTab] = useState<'profile' | 'company' | 'security' | 'locations' | 'shifts' | 'jobs' | 'permissions'>('profile');
   
   const SETTINGS_MENU = [
     { id: 'profile', label: 'Profil Saya', icon: UserIcon, desc: 'Informasi pribadi dan keamanan akun.', roles: ['employee', 'manager', 'hr', 'admin', 'superadmin'] },

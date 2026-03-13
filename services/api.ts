@@ -3,7 +3,7 @@ import { AppState, User, AttendanceRecord, RequestRecord, AppSettings, JobRole, 
 
 // URL Google Apps Script Web App (Default)
 // Jika kosong, server akan menggunakan environment variable GAS_API_URL
-const DEFAULT_API_URL = (process.env.GAS_API_URL || "https://script.google.com/macros/s/AKfycbyBGXKUFi7okwEX5T7wueF798lgvXGXCjVUOshZAF47piQJdiI5u3r4LP0uFtR2eWpq/exec"); 
+const DEFAULT_API_URL = (process.env.GAS_API_URL || "https://script.google.com/macros/s/AKfycbwZrxNV9pd5XtL_f_Vbkx1PCArkEg1y5LtnZVmxU2H4ATKqcPsMWymsRHF1kF3dyPfT/exec"); 
 let API_URL = DEFAULT_API_URL;
 
 // Helper untuk POST request ke Google Apps Script via Express Proxy
@@ -20,44 +20,54 @@ const postData = async (action: string, payload: any = {}, retryCount = 0): Prom
         
         console.log(`[API] Fetching from: ${fullUrl} for action: ${action} (Attempt: ${retryCount + 1})`);
         
-        const response = await fetch(fullUrl, {
+        const response = await fetch(proxyUrl, {
             method: 'POST',
             headers: {
                 "Content-Type": "application/json",
-                "Accept": "application/json",
-                "X-Requested-With": "XMLHttpRequest"
+                "Accept": "application/json"
             },
             body: JSON.stringify({ action, payload, apiUrl: apiUrlToSend }),
         });
         
-        const contentType = response.headers.get("content-type");
         const text = await response.text();
-        
-        console.log(`[API] Response from proxy: ${response.status} ${response.statusText} (${contentType})`);
-
-        if (contentType && contentType.includes("text/html")) {
-            console.error(`[API Error] Received HTML instead of JSON for ${action}. Response starts with:`, text.substring(0, 200));
-            
-            // Check if it's the React app's index.html
-            if (text.includes('<div id="root">') || text.includes('vite')) {
-                throw new Error("The API proxy route (/api/proxy) returned the application's HTML instead of JSON. This usually means the backend server is not handling the proxy route correctly or the request was redirected.");
-            }
-            
-            throw new Error("Server returned HTML instead of JSON. This usually means the Google Apps Script is not deployed with 'Who has access: Anyone' or the Script URL is incorrect.");
-        }
-
         let result;
         try {
             result = JSON.parse(text);
         } catch (e) {
-            console.error(`[API Error] Failed to parse JSON for ${action}:`, e);
-            throw new Error(`Invalid JSON response from server: ${text.substring(0, 100)}...`);
+            // Not JSON
         }
         
-        if (!response.ok || result.status === 'error') {
-            const errorMessage = result.message || `Server Error: ${response.status}`;
-            console.error(`[API Error] ${action} failed:`, errorMessage);
+        if (!response.ok) {
+            // Handle Rate Limit (429) specifically
+            if (response.status === 429 && retryCount < 5) {
+                const delay = Math.pow(2, retryCount) * 1000 + Math.random() * 1000;
+                console.warn(`[API] Rate limit exceeded (429). Retrying ${action} in ${Math.round(delay)}ms... (Attempt ${retryCount + 1}/5)`);
+                await new Promise(resolve => setTimeout(resolve, delay));
+                return postData(action, payload, retryCount + 1);
+            }
+
+            let errorMessage = response.statusText;
+            if (result && result.message) {
+                errorMessage = result.message;
+            } else if (text) {
+                 // If it's HTML, try to extract title or just show start
+                 const match = text.match(/<title>(.*?)<\/title>/i);
+                 if (match) errorMessage = `Server Error: ${match[1]}`;
+                 else errorMessage = `Server Error: ${text.substring(0, 100)}`;
+            }
+            console.error(`[API Error] ${action} (${response.status}):`, result || text.substring(0, 200));
             throw new Error(errorMessage);
+        }
+
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("text/html")) {
+            console.error(`[API Error] Received HTML instead of JSON for ${action}. Response starts with:`, text.substring(0, 100));
+            throw new Error("Server returned HTML instead of JSON. This usually means the Google Apps Script is not deployed with 'Who has access: Anyone' or the Script URL is incorrect.");
+        }
+
+        if (!result) {
+            console.error(`[API Error] Empty or invalid JSON response for ${action}:`, text.substring(0, 200));
+            throw new Error("Empty or invalid JSON response from server.");
         }
 
         return result;

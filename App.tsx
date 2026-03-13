@@ -160,7 +160,6 @@ const AppContent: React.FC = () => {
                     settings={appSettings} 
                     onUpdateLocationLog={addLocationLog}
                     onNavigateToReports={() => setActiveTab('work-reports')}
-                    onNavigateToHistory={() => setActiveTab('history')}
                 />;
             case 'attendance':
                 return (
@@ -194,24 +193,8 @@ const AppContent: React.FC = () => {
                     onReset={resetData} 
                     onLogout={logout}
                 />;
-            case 'company-profile':
-                return <Settings 
-                    user={currentUser} 
-                    appSettings={appSettings} 
-                    onUpdateSettings={updateAppSettings} 
-                    onReset={resetData} 
-                    onLogout={logout}
-                    initialTab="company"
-                />;
             default:
-                return <Dashboard 
-                    user={currentUser} 
-                    history={myHistory} 
-                    settings={appSettings} 
-                    onUpdateLocationLog={addLocationLog} 
-                    onNavigateToReports={() => setActiveTab('work-reports')}
-                    onNavigateToHistory={() => setActiveTab('history')}
-                />;
+                return <Dashboard user={currentUser} history={myHistory} settings={appSettings} onUpdateLocationLog={addLocationLog} />;
         }
     }
 
