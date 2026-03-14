@@ -201,11 +201,24 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-    console.log(`[Server] GAS_API_URL: ${process.env.GAS_API_URL ? 'Configured' : 'Not Configured (using fallback)'}`);
-  });
+  // Hanya jalankan listen jika tidak di lingkungan Vercel
+  if (process.env.VERCEL !== "1") {
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+      console.log(`[Server] GAS_API_URL: ${process.env.GAS_API_URL ? 'Configured' : 'Not Configured (using fallback)'}`);
+    });
+  }
+
+  return app;
 }
+
+const appPromise = startServer();
+
+// Export app untuk Vercel
+export default async (req: any, res: any) => {
+  const app = await appPromise;
+  return app(req, res);
+};
 
 process.on('unhandledRejection', (reason, promise) => {
   console.error('[Server Error] Unhandled Rejection at:', promise, 'reason:', reason);
@@ -213,9 +226,4 @@ process.on('unhandledRejection', (reason, promise) => {
 
 process.on('uncaughtException', (err) => {
   console.error('[Server Error] Uncaught Exception:', err);
-});
-
-startServer().catch(err => {
-  console.error('[Server Error] Failed to start server:', err);
-  process.exit(1);
 });
