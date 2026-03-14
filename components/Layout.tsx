@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Home, Calendar, ClipboardList, Settings, LogOut, User as UserIcon, Users, FileCheck, Briefcase, RefreshCw, AlertCircle, Eye, Menu, X, ChevronLeft, ChevronRight, CheckSquare, List, Activity } from 'lucide-react';
+import { Home, Calendar, ClipboardList, Settings, LogOut, User as UserIcon, Users, FileCheck, Briefcase, RefreshCw, AlertCircle, Eye, Menu, X, ChevronLeft, ChevronRight, CheckSquare, List, Activity, Shield } from 'lucide-react';
 import { User } from '../types';
 import { useStore } from '../services/store';
 import { motion, AnimatePresence } from 'motion/react';
@@ -240,6 +240,21 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, user
               </motion.div>
             )}
           </div>
+          {isAdmin && (
+            <button
+              onClick={() => setActiveTab('company-profile')}
+              className={`w-full flex items-center transition-all duration-300 rounded-2xl mb-3 ${
+                isSidebarMinimized ? 'justify-center p-2' : 'gap-3 px-4 py-3'
+              } bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 border border-blue-100 dark:border-blue-800/50 shadow-sm active:scale-95 group`}
+            >
+              <Shield size={18} className="group-hover:rotate-12 transition-transform" />
+              {!isSidebarMinimized && (
+                <span className="text-xs font-black uppercase tracking-widest truncate">
+                  {user.role === 'superadmin' ? 'Super Admin' : 'Admin Panel'}
+                </span>
+              )}
+            </button>
+          )}
           <button
             onClick={onLogout}
             title={isSidebarMinimized ? 'Keluar' : ''}

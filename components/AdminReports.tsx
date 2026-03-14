@@ -3,6 +3,7 @@ import { AttendanceRecord, User, AttendanceStatus } from '../types';
 import { Download, Calendar, Filter, FileText, Printer, BarChart3, RefreshCw, Eye, MapPin } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { useStore } from '../services/store';
+import { getLocalDateString } from '../services/dateUtils';
 import { useToast } from './Toast';
 import ImageModal from './ImageModal';
 
@@ -15,9 +16,9 @@ const AdminReports: React.FC<AdminReportsProps> = ({ history, users }) => {
   const { fetchData } = useStore();
   const { showToast } = useToast();
   const [startDate, setStartDate] = useState(
-    new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]
+    getLocalDateString(new Date(new Date().getFullYear(), new Date().getMonth(), 1))
   );
-  const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
+  const [endDate, setEndDate] = useState(getLocalDateString());
   const [selectedUser, setSelectedUser] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'table' | 'visual'>('table');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -111,7 +112,7 @@ const AdminReports: React.FC<AdminReportsProps> = ({ history, users }) => {
       ...rows.map(row => row.join(sep))
     ];
 
-    const csvContent = csvRows.map(row => row.join(sep)).join('\n');
+    const csvContent = csvRows.map(row => Array.isArray(row) ? row.join(sep) : row).join('\n');
     
     // Add BOM for Excel UTF-8 support
     const BOM = '\uFEFF';

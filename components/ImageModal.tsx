@@ -6,6 +6,7 @@ interface ImageModalProps {
     isOpen: boolean;
     imageUrl: string | null;
     onClose: () => void;
+    referrerPolicy?: React.HTMLAttributeReferrerPolicy;
 }
 
 const ImageModal: React.FC<ImageModalProps> = ({ isOpen, imageUrl, onClose }) => {

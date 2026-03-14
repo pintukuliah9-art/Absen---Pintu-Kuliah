@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Camera, MapPin, RefreshCw, AlertTriangle, CheckCircle, LogOut, Eye, Timer, Navigation, XCircle, Clock, Calendar, Briefcase, ChevronRight, Loader2, Search, Crosshair, Check, Sparkles, ArrowRight, ShieldCheck } from 'lucide-react';
 import { AttendanceRecord, AttendanceStatus, User, AppSettings, OfficeLocation } from '../types';
 import { useToast } from './Toast';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface AttendanceProps {
   user: User;
@@ -173,6 +173,7 @@ const Attendance: React.FC<AttendanceProps> = ({ user, settings, onCheckIn, onCh
 
   const [livenessChallenge, setLivenessChallenge] = useState('');
   const [isFlashing, setIsFlashing] = useState(false);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   const [challengeCountdown, setChallengeCountdown] = useState(3);
 
   const CHALLENGES = [
@@ -273,18 +274,39 @@ const Attendance: React.FC<AttendanceProps> = ({ user, settings, onCheckIn, onCh
 
   const openCamera = async () => {
     try {
-      const constraints = {
-        video: {
-          facingMode: 'user',
-          width: { ideal: 640 },
-          height: { ideal: 480 }
-        },
-        audio: false
-      };
-      
-      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
-      setStream(mediaStream);
+      // Clear any existing stream first
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+
       setStep('camera');
+      setIsVideoPlaying(false);
+
+      const tryGetUserMedia = async (constraints: MediaStreamConstraints) => {
+        try {
+          return await navigator.mediaDevices.getUserMedia(constraints);
+        } catch (e) {
+          console.warn("Constraint failed:", constraints, e);
+          return null;
+        }
+      };
+
+      // Try sequence of constraints
+      let mediaStream = await tryGetUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
+      
+      if (!mediaStream) {
+        mediaStream = await tryGetUserMedia({ video: { facingMode: 'user' }, audio: false });
+      }
+      
+      if (!mediaStream) {
+        mediaStream = await tryGetUserMedia({ video: true, audio: false });
+      }
+
+      if (!mediaStream || mediaStream.getTracks().length === 0) {
+        throw new Error("Kamera tidak dapat diakses atau tidak ditemukan.");
+      }
+
+      setStream(mediaStream);
       
       setChallengeCountdown(3);
       const timer = setInterval(() => {
@@ -305,7 +327,7 @@ const Attendance: React.FC<AttendanceProps> = ({ user, settings, onCheckIn, onCh
       } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
         setErrorMsg("Kamera tidak ditemukan pada perangkat Anda.");
       } else {
-        setErrorMsg("Gagal akses kamera. Pastikan izin kamera diberikan dan tidak sedang digunakan aplikasi lain.");
+        setErrorMsg(`Gagal akses kamera: ${err.message || 'Pastikan izin kamera diberikan.'}`);
       }
     }
   };
@@ -319,27 +341,75 @@ const Attendance: React.FC<AttendanceProps> = ({ user, settings, onCheckIn, onCh
   }, [stream]);
 
   useEffect(() => {
-    let mounted = true;
     if (step === 'camera' && videoRef.current && stream) {
-      videoRef.current.srcObject = stream;
-      videoRef.current.onloadedmetadata = () => {
-        if (mounted && videoRef.current) {
-          videoRef.current.play().catch(e => console.error("Video play error:", e));
+      const video = videoRef.current;
+      
+      const setupVideo = async () => {
+        // Set listener BEFORE setting srcObject
+        video.onloadedmetadata = async () => {
+          try {
+            await video.play();
+            console.log("Video playing via onloadedmetadata");
+          } catch (playErr) {
+            console.error("Play failed in listener:", playErr);
+          }
+        };
+
+        // Attach stream
+        if (video.srcObject !== stream) {
+          video.srcObject = stream;
+        }
+
+        // Immediate play attempt as fallback
+        try {
+          await video.play();
+          console.log("Video playing via immediate call");
+        } catch (err) {
+          console.warn("Immediate play failed, waiting for metadata...", err);
         }
       };
+      
+      setupVideo();
     }
-    return () => { mounted = false; };
   }, [step, stream]);
+
+  // Watchdog to ensure video starts playing
+  useEffect(() => {
+    let interval: any;
+    if (step === 'camera' && stream && !isVideoPlaying) {
+      interval = setInterval(() => {
+        if (videoRef.current && videoRef.current.paused) {
+          console.log("Watchdog: Attempting to play video...");
+          videoRef.current.play().catch(e => console.warn("Watchdog play failed:", e));
+        }
+      }, 2000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [step, stream, isVideoPlaying]);
 
   const takePhoto = () => {
     if (videoRef.current && canvasRef.current && userShift) {
       setIsFlashing(true);
       setTimeout(() => setIsFlashing(false), 150);
 
-      const context = canvasRef.current.getContext('2d');
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      const context = canvas.getContext('2d');
+      
       if (context) {
-        context.drawImage(videoRef.current, 0, 0, 640, 480);
-        const photoUrl = canvasRef.current.toDataURL('image/jpeg');
+        // Set canvas dimensions to match video stream
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 480;
+        
+        // Flip context for mirrored selfie
+        context.translate(canvas.width, 0);
+        context.scale(-1, 1);
+        
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const photoUrl = canvas.toDataURL('image/jpeg', 0.8);
+        
         if (stream) stream.getTracks().forEach(track => track.stop());
 
         const now = new Date();
@@ -679,11 +749,68 @@ const Attendance: React.FC<AttendanceProps> = ({ user, settings, onCheckIn, onCh
             key="camera"
             initial={{ opacity: 0, scale: 1.1 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="relative w-full max-w-xl bg-slate-900 rounded-[30px] md:rounded-[60px] overflow-hidden shadow-2xl border-[4px] md:border-[8px] border-white h-[75vh] md:h-auto"
+            className="relative w-full max-w-xl bg-black rounded-[40px] md:rounded-[80px] overflow-hidden shadow-2xl border-[6px] md:border-[12px] border-white h-[80vh] md:h-[700px] flex flex-col"
         >
-            <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover transform scale-x-[-1]" />
+            <div className="absolute inset-0 z-0 bg-slate-900">
+                <video 
+                    ref={videoRef} 
+                    autoPlay 
+                    playsInline 
+                    muted 
+                    width="640"
+                    height="480"
+                    onPlay={() => {
+                        console.log("Video onPlay fired");
+                        setIsVideoPlaying(true);
+                    }}
+                    onPause={() => {
+                        console.log("Video onPause fired");
+                        setIsVideoPlaying(false);
+                    }}
+                    onLoadedData={() => {
+                        console.log("Video onLoadedData fired");
+                        if (videoRef.current) videoRef.current.play().catch(e => console.error("Play onLoadedData failed:", e));
+                    }}
+                    onCanPlay={() => {
+                        console.log("Video onCanPlay fired");
+                        if (videoRef.current) videoRef.current.play().catch(e => console.error("Play onCanPlay failed:", e));
+                    }}
+                    className="w-full h-full object-cover transform scale-x-[-1] block" 
+                    style={{ width: '100%', height: '100%' }}
+                />
+                
+                {/* Autoplay Block Fallback */}
+                {!isVideoPlaying && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-10 pointer-events-auto">
+                        <button 
+                            onClick={() => {
+                                if (videoRef.current) {
+                                    videoRef.current.play().catch(e => console.error("Force play failed:", e));
+                                }
+                            }}
+                            className="bg-white/10 hover:bg-white/20 text-white px-8 py-4 rounded-full border border-white/20 backdrop-blur-xl flex flex-col items-center gap-2 transition-all active:scale-95"
+                        >
+                            <Camera size={32} className="mb-2" />
+                            <span className="text-[10px] font-black uppercase tracking-widest">Klik untuk Mulai Kamera</span>
+                            <span className="text-[8px] opacity-60 uppercase tracking-widest">Jika kamera tidak muncul otomatis</span>
+                        </button>
+                    </div>
+                )}
+            </div>
             <canvas ref={canvasRef} width={640} height={480} className="hidden" />
             
+            {/* Face Guide Overlay */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                <div className="w-[260px] h-[340px] md:w-[300px] md:h-[400px] border-[3px] border-white/20 rounded-[130px/170px] md:rounded-[150px/200px] relative">
+                    {/* Scanning Line Animation */}
+                    <motion.div 
+                        animate={{ top: ['10%', '90%', '10%'] }}
+                        transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                        className="absolute left-4 right-4 h-0.5 bg-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.5)]"
+                    />
+                </div>
+            </div>
+
             {/* Flash Overlay */}
             <AnimatePresence>
                 {isFlashing && (
@@ -697,56 +824,79 @@ const Attendance: React.FC<AttendanceProps> = ({ user, settings, onCheckIn, onCh
             </AnimatePresence>
  
             {/* Header Overlay */}
-            <div className="absolute top-0 left-0 right-0 p-4 md:p-10 bg-gradient-to-b from-black/80 to-transparent text-white flex justify-between items-start z-20">
-                <button onClick={reset} className="p-2 md:p-3 bg-white/10 backdrop-blur-xl rounded-full hover:bg-white/20 transition-all active:scale-90 border border-white/10">
-                    <XCircle size={20} className="md:w-6 md:h-6" />
-                </button>
-                <div className="bg-rose-600/90 backdrop-blur-xl px-3 py-1 md:px-5 md:py-2 rounded-full flex items-center gap-2 md:gap-3 border border-rose-500/50 shadow-2xl">
-                    <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>
-                    <span className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.2em]">Live Verification</span>
+            <div className="absolute top-0 left-0 right-0 p-6 md:p-10 bg-gradient-to-b from-black/90 via-black/40 to-transparent text-white flex justify-between items-center z-20">
+                <div className="flex gap-3">
+                    <button onClick={reset} className="w-12 h-12 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-all active:scale-90">
+                        <XCircle size={24} />
+                    </button>
+                    <button 
+                        onClick={() => {
+                            if (videoRef.current) {
+                                videoRef.current.play().catch(e => console.error("Manual play failed:", e));
+                            }
+                        }}
+                        className="w-12 h-12 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-all active:scale-90"
+                        title="Refresh Kamera"
+                    >
+                        <RefreshCw size={20} />
+                    </button>
+                </div>
+                
+                <div className="bg-[#5c0011] px-4 py-2 rounded-full flex items-center gap-3 border border-white/10 shadow-2xl">
+                    <div className="w-2 h-2 bg-rose-500 rounded-full animate-pulse"></div>
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/90">Live Verification</span>
                 </div>
             </div>
  
             {/* Liveness Challenge Overlay */}
-            <div className="absolute top-16 md:top-32 left-4 right-4 md:left-10 md:right-10 bg-white/10 backdrop-blur-xl text-white p-4 md:p-10 rounded-[1.5rem] md:rounded-[2.5rem] border border-white/20 text-center animate-in slide-in-from-top-10 z-10 shadow-2xl">
-                <div className="flex flex-col items-center gap-2 md:gap-4">
-                    <div className="bg-amber-400 text-slate-900 text-[8px] md:text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-[0.2em] animate-pulse shadow-xl">
-                        Verifikasi Keaslian
-                    </div>
+            <div className="absolute top-24 md:top-32 left-6 right-6 z-20">
+                <AnimatePresence mode="wait">
                     {challengeCountdown > 0 ? (
-                        <div className="flex flex-col items-center">
-                            <p className="text-[8px] md:text-[10px] font-black text-white/60 uppercase tracking-widest mb-1">Bersiap dalam...</p>
-                            <span className="text-4xl md:text-6xl font-black text-white tracking-tighter">{challengeCountdown}</span>
-                        </div>
+                        <motion.div 
+                            key="countdown"
+                            initial={{ opacity: 0, y: -20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 20 }}
+                            className="bg-black/60 backdrop-blur-xl text-white p-6 rounded-[2rem] border border-white/10 text-center shadow-2xl"
+                        >
+                            <p className="text-[10px] font-black text-white/60 uppercase tracking-widest mb-2">Bersiap dalam</p>
+                            <span className="text-5xl font-black text-white tracking-tighter">{challengeCountdown}</span>
+                        </motion.div>
                     ) : (
                         <motion.div 
-                            initial={{ scale: 0.9, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            className="flex flex-col items-center w-full"
+                            key="challenge"
+                            initial={{ opacity: 0, y: -20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="bg-blue-600/90 backdrop-blur-xl text-white p-6 rounded-[2rem] border border-blue-400/50 text-center shadow-2xl"
                         >
-                            <p className="text-[8px] md:text-[10px] font-black text-white/60 uppercase tracking-widest mb-2">Lakukan gerakan berikut:</p>
-                            <p className="text-lg md:text-3xl font-black text-white drop-shadow-2xl bg-slate-900/40 px-4 py-3 rounded-[1rem] border border-white/10 w-full">
+                            <p className="text-[10px] font-black text-white/80 uppercase tracking-widest mb-2">Lakukan Gerakan:</p>
+                            <p className="text-xl md:text-2xl font-black text-white leading-tight">
                                 {livenessChallenge}
                             </p>
                         </motion.div>
                     )}
-                </div>
+                </AnimatePresence>
             </div>
 
             {/* Controls */}
-            <div className="absolute bottom-0 left-0 right-0 p-6 md:p-16 bg-gradient-to-t from-black/90 to-transparent flex flex-col items-center gap-4 md:gap-8 z-20">
+            <div className="absolute bottom-0 left-0 right-0 p-8 md:p-16 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex flex-col items-center gap-6 z-20">
                 <motion.button 
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={takePhoto}
                     disabled={challengeCountdown > 0}
-                    className={`w-16 h-16 md:w-24 md:h-24 bg-white rounded-full border-4 md:border-8 border-slate-200 shadow-2xl flex items-center justify-center transition-all group ${challengeCountdown > 0 ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
+                    className={`relative w-20 h-20 md:w-28 md:h-28 bg-white rounded-full p-2 shadow-2xl transition-all ${challengeCountdown > 0 ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
                 >
-                    <div className="w-10 h-10 md:w-16 md:h-16 bg-white border-2 md:border-4 border-blue-600 rounded-full group-hover:bg-blue-50 transition-colors shadow-inner"></div>
+                    <div className="w-full h-full rounded-full border-[4px] border-blue-600 flex items-center justify-center">
+                        <div className="w-12 h-12 md:w-16 md:h-16 bg-blue-600 rounded-full flex items-center justify-center text-white">
+                            <Camera size={32} />
+                        </div>
+                    </div>
                 </motion.button>
+
                 <button 
                     onClick={reset}
-                    className="text-white/50 hover:text-white text-[8px] md:text-[10px] font-black uppercase tracking-[0.3em] transition-colors active:scale-95"
+                    className="text-white/60 hover:text-white text-[10px] font-black uppercase tracking-[0.4em] transition-colors active:scale-95"
                 >
                     Batalkan & Kembali
                 </button>

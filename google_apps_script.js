@@ -31,18 +31,18 @@ function setupDatabaseLengkap() {
     {
       nama: "Karyawan",
       warna: "#2C3E50",
-      kolom: ["id", "id_karyawan", "nama", "username", "peran", "jabatan", "id_departemen", "aktif", "tanggal_bergabung", "kuota_cuti", "password", "email", "telepon", "url_avatar", "jenis_kelamin", "alamat", "mode_login"],
+      kolom: ["id", "id_karyawan", "nama", "username", "peran", "jabatan", "id_jabatan", "id_departemen", "telepon", "tgl_bergabung", "kuota_cuti", "status_aktif", "url_avatar", "tempat_lahir", "tgl_lahir", "gender", "alamat", "dok_ktp", "dok_kk", "dok_ijazah", "mode_login"],
       dropdown: {
         "peran": ["Admin", "Manajer", "Karyawan"],
-        "aktif": ["TRUE", "FALSE"],
-        "jenis_kelamin": ["Laki-laki", "Perempuan"],
+        "status_aktif": ["TRUE", "FALSE"],
+        "gender": ["Laki-laki", "Perempuan"],
         "mode_login": ["Password", "Wajah", "Keduanya"]
       }
     },
     {
       nama: "Absensi",
       warna: "#27AE60",
-      kolom: ["id", "tanggal", "id_user", "jam_masuk", "jam_keluar", "status", "nama_kantor", "url_foto", "lat_masuk", "lng_masuk", "catatan", "kerja_online"],
+      kolom: ["id", "tanggal", "id_user", "jam_masuk", "jam_keluar", "status", "nama_kantor", "url_foto", "lat_masuk", "lng_masuk", "lat_keluar", "lng_keluar", "id_kantor", "catatan", "kerja_online", "location_logs"],
       dropdown: {
         "status": ["Hadir", "Terlambat", "Izin", "Sakit", "Alpa"],
         "kerja_online": ["Ya", "Tidak"]
@@ -51,7 +51,7 @@ function setupDatabaseLengkap() {
     {
       nama: "Pengajuan",
       warna: "#E67E22",
-      kolom: ["id", "id_user", "tipe", "tanggal_mulai", "tanggal_selesai", "alasan", "status", "url_lampiran"],
+      kolom: ["id", "id_user", "tipe", "tgl_mulai", "tgl_selesai", "alasan", "alasan_ai", "status", "id_tipe_cuti", "url_lampiran"],
       dropdown: {
         "tipe": ["Cuti", "Izin", "Sakit", "Lembur", "Dinas"],
         "status": ["Pending", "Disetujui", "Ditolak"]
@@ -195,6 +195,7 @@ function doPost(e) {
     
     var result = {};
     switch(action) {
+      case 'ping': result = { message: 'pong', version: '5.0.6' }; break;
       case 'getAllData': result = ambilSemuaData(); break;
       case 'syncUser': result = simpanData("Karyawan", payload); break;
       case 'syncAttendance': result = simpanData("Absensi", payload); break;

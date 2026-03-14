@@ -25,9 +25,10 @@ async function startServer() {
   
   // CORS configuration
   app.use(cors({
-    origin: '*', // Allow all origins in dev/preview
-    methods: ['GET', 'POST', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    origin: true, // Reflect the request origin
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With']
   }));
   
   // Explicit OPTIONS handler for preflight
@@ -36,7 +37,7 @@ async function startServer() {
   // JSON Parse Error Handler
   app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (err instanceof SyntaxError && 'body' in err) {
-        console.error('[Server] JSON Parse Error:', err);
+        console.error('[Server] JSON Parse Error:', err.message);
         return res.status(400).json({ status: 'error', message: 'Invalid JSON body' });
     }
     next();
@@ -44,56 +45,66 @@ async function startServer() {
 
   // API routes go here
   app.get("/api/health", (req, res) => {
+    console.log('[Server] Health check requested (GET)');
     res.json({ 
       status: "ok", 
       timestamp: new Date().toISOString(),
-      env: process.env.NODE_ENV,
-      gasUrl: process.env.GAS_API_URL ? "Set" : "Not Set (Using Default)"
+      env: process.env.NODE_ENV || 'development',
+      gasUrl: process.env.GAS_API_URL ? "Configured" : "Using Fallback",
+      nodeVersion: process.version
     });
   });
 
-  // Proxy to Google Apps Script
-  app.all("/api/proxy", async (req, res) => {
-    console.log(`[Proxy] Received request: ${req.method} ${req.url}`);
-    
-    if (req.method !== 'POST') {
-       console.warn(`[Proxy] Blocked ${req.method} request to /api/proxy`);
-       return res.status(405).json({ status: 'error', message: 'Method Not Allowed. Use POST.' });
-    }
+  app.post("/api/health", (req, res) => {
+    console.log('[Server] Health check requested (POST)');
+    res.json({ status: "ok", method: "POST" });
+  });
 
+  // Proxy to Google Apps Script
+  app.post("/api/proxy", async (req, res) => {
+    const requestId = Math.random().toString(36).substring(7);
+    console.log(`[Proxy][${requestId}] Request: ${req.method} ${req.url}`);
+    
     try {
-      if (!req.body) {
-         console.error("[Proxy Error] Missing request body");
-         return res.status(400).json({ status: 'error', message: "Missing request body" });
+      if (!req.body || Object.keys(req.body).length === 0) {
+         console.error(`[Proxy Error][${requestId}] Missing or empty request body`);
+         return res.status(400).json({ status: 'error', message: "Missing or empty request body" });
       }
 
       const { action, payload, apiUrl } = req.body;
       
+      if (!action) {
+        console.error(`[Proxy Error][${requestId}] Missing action in request body`);
+        return res.status(400).json({ status: 'error', message: "Missing action in request body" });
+      }
+      
       // Sanitize and validate target URL
-      let targetUrl = (apiUrl || process.env.GAS_API_URL || "https://script.google.com/macros/s/AKfycbwZrxNV9pd5XtL_f_Vbkx1PCArkEg1y5LtnZVmxU2H4ATKqcPsMWymsRHF1kF3dyPfT/exec").trim();
+      const fallbackUrl = "https://script.google.com/macros/s/AKfycbyBGXKUFi7okwEX5T7wueF798lgvXGXCjVUOshZAF47piQJdiI5u3r4LP0uFtR2eWpq/exec";
+      let targetUrl = (apiUrl || process.env.GAS_API_URL || fallbackUrl).trim();
 
-      if (!targetUrl.startsWith('http')) {
-        console.error("[Proxy Error] Invalid target URL:", targetUrl);
+      if (!targetUrl || !targetUrl.startsWith('http')) {
+        console.error(`[Proxy Error][${requestId}] Invalid target URL:`, targetUrl);
         return res.status(400).json({ status: 'error', message: "Invalid API URL configuration." });
       }
 
-      if (!targetUrl) {
-        console.error("[Proxy Error] No target URL provided");
-        return res.status(500).json({ status: 'error', message: "GAS_API_URL environment variable is not set and no API URL provided in request." });
-      }
-
-      console.log(`[Proxy] Action: ${action} -> ${targetUrl}`);
+      console.log(`[Proxy][${requestId}] Action: ${action} -> ${targetUrl}`);
       
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+      const timeoutId = setTimeout(() => {
+          console.warn(`[Proxy][${requestId}] Timing out request for action: ${action}`);
+          controller.abort();
+      }, 60000); // 60 second timeout
 
       try {
-        console.log(`[Proxy] Fetching from GAS for action: ${action}...`);
+        console.log(`[Proxy][${requestId}] Fetching from GAS for action: ${action}...`);
+        
+        // Use global fetch (Node 18+)
         const response = await fetch(targetUrl, {
           method: 'POST',
           body: JSON.stringify({ action, payload: payload || {} }),
           headers: {
-            "Content-Type": "text/plain;charset=utf-8", 
+            "Content-Type": "application/json", 
+            "User-Agent": "Pintu-Kuliah-Proxy/1.0"
           },
           redirect: "follow",
           signal: controller.signal
@@ -101,11 +112,11 @@ async function startServer() {
 
         clearTimeout(timeoutId);
 
-        console.log(`[Proxy] GAS Response Status: ${response.status} ${response.statusText}`);
+        console.log(`[Proxy][${requestId}] GAS Response Status: ${response.status} ${response.statusText}`);
         const text = await response.text();
         
         if (!response.ok) {
-          console.error(`[Proxy Error] GAS returned ${response.status}: ${response.statusText}`);
+          console.error(`[Proxy Error][${requestId}] GAS returned ${response.status}: ${response.statusText}`);
           return res.status(response.status).json({ 
             status: 'error', 
             message: `GAS Server Error (${response.status}): ${response.statusText}`,
@@ -117,7 +128,7 @@ async function startServer() {
           // Handle GAS redirecting to HTML login page or error page
           const trimmedText = text.trim();
           if (trimmedText.startsWith("<!DOCTYPE html") || trimmedText.startsWith("<html")) {
-               console.error("[Proxy Error] Received HTML response from GAS");
+               console.error(`[Proxy Error][${requestId}] Received HTML response from GAS`);
                const titleMatch = trimmedText.match(/<title>(.*?)<\/title>/i);
                const title = titleMatch ? titleMatch[1] : "HTML Response";
                
@@ -133,41 +144,40 @@ async function startServer() {
                    helpfulMessage = "Script needs authorization. Open the script editor and run any function to trigger the authorization prompt.";
                }
                
-               console.error(`[Proxy Error] Detailed HTML Error: ${helpfulMessage}`);
-               console.error(`[Proxy Error] Full HTML Response (first 1000 chars): ${trimmedText.substring(0, 1000)}`);
-               throw new Error(helpfulMessage);
+               console.error(`[Proxy Error][${requestId}] Detailed HTML Error: ${helpfulMessage}`);
+               return res.status(500).json({ status: 'error', message: helpfulMessage });
           }
 
           if (!trimmedText) {
-              console.error("[Proxy Error] Empty response from GAS");
-              throw new Error("Empty response from Google Apps Script. Check if your script's doPost function is returning a valid ContentService response.");
+              console.error(`[Proxy Error][${requestId}] Empty response from GAS`);
+              return res.status(500).json({ status: 'error', message: "Empty response from Google Apps Script." });
           }
 
           const json = JSON.parse(text);
-          console.log(`[Proxy] Successfully parsed JSON for action: ${action}`);
+          console.log(`[Proxy][${requestId}] Successfully parsed JSON for action: ${action}`);
           res.json(json);
         } catch (e: any) {
-          console.error("[Proxy Error] Failed to process GAS response:", e.message);
+          console.error(`[Proxy Error][${requestId}] Failed to process GAS response:`, e.message);
           res.status(500).json({ 
             status: 'error', 
-            message: e.message || "Invalid response from Google Apps Script.", 
+            message: "Invalid response from Google Apps Script: " + e.message, 
             raw: text.substring(0, 500) 
           });
         }
       } catch (fetchError: any) {
         clearTimeout(timeoutId);
         if (fetchError.name === 'AbortError') {
-          console.error("[Proxy Error] Request timed out");
-          throw new Error("Request to Google Apps Script timed out after 60 seconds.");
+          console.error(`[Proxy Error][${requestId}] Request timed out`);
+          return res.status(504).json({ status: 'error', message: "Request to Google Apps Script timed out." });
         }
-        console.error("[Proxy Error] Fetch to GAS failed:", fetchError.message);
-        throw fetchError;
+        console.error(`[Proxy Error][${requestId}] Fetch to GAS failed:`, fetchError.message);
+        return res.status(502).json({ status: 'error', message: `Fetch to GAS failed: ${fetchError.message}` });
       }
     } catch (error: any) {
-      console.error("[Proxy Error] Outer catch:", error.message);
+      console.error(`[Proxy Error][${requestId}] Outer catch:`, error.message);
       res.status(500).json({ 
         status: 'error', 
-        message: `Proxy Fetch Failed: ${error.message}. Check your internet connection or the GAS URL.`,
+        message: `Internal Proxy Error: ${error.message}`,
         details: error.stack
       });
     }
@@ -175,11 +185,14 @@ async function startServer() {
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
+    console.log('[Server] Initializing Vite middleware...');
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
+      base: "/",
     });
     app.use(vite.middlewares);
+    console.log('[Server] Vite middleware initialized');
   } else {
     // Serve static files in production
     app.use(express.static(path.join(__dirname, "dist")));
@@ -202,4 +215,7 @@ process.on('uncaughtException', (err) => {
   console.error('[Server Error] Uncaught Exception:', err);
 });
 
-startServer();
+startServer().catch(err => {
+  console.error('[Server Error] Failed to start server:', err);
+  process.exit(1);
+});

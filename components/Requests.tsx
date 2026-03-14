@@ -168,7 +168,7 @@ const Requests: React.FC<RequestsProps> = ({ requests, leaveTypes, userQuota, on
       >
         <div className="bg-white p-4 md:p-8 rounded-2xl shadow-sm border border-gray-100">
             <h2 className="text-lg md:text-2xl font-bold text-gray-800 mb-4 md:mb-6 flex items-center gap-2">
-                <FileText className="text-blue-600" size={18} md:size={24} />
+                <FileText className="text-blue-600" size={24} />
                 Form Pengajuan
             </h2>
             
@@ -220,7 +220,7 @@ const Requests: React.FC<RequestsProps> = ({ requests, leaveTypes, userQuota, on
                                 </div>
                                 {selectedLeaveType.requiresFile && (
                                     <div className="flex items-center gap-1.5 text-[8px] md:text-[9px] text-red-500 font-bold uppercase">
-                                        <AlertCircle size={9} md:size={10} /> Wajib lampiran bukti
+                                        <AlertCircle size={10} /> Wajib lampiran bukti
                                     </div>
                                 )}
                             </div>
@@ -233,7 +233,7 @@ const Requests: React.FC<RequestsProps> = ({ requests, leaveTypes, userQuota, on
                 <div>
                 <label className="block text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 md:mb-2">Mulai</label>
                 <div className="relative">
-                    <CalendarIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" size={12} md:size={16} />
+                    <CalendarIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                     <input 
                         type="date" 
                         required
@@ -246,7 +246,7 @@ const Requests: React.FC<RequestsProps> = ({ requests, leaveTypes, userQuota, on
                 <div>
                 <label className="block text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 md:mb-2">Selesai</label>
                 <div className="relative">
-                    <CalendarIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" size={12} md:size={16} />
+                    <CalendarIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                     <input 
                         type="date" 
                         required
@@ -278,7 +278,7 @@ const Requests: React.FC<RequestsProps> = ({ requests, leaveTypes, userQuota, on
                     disabled={isGenerating || !rawReason}
                     className="absolute bottom-2 right-2 md:bottom-3 md:right-3 text-[8px] md:text-[10px] font-bold bg-indigo-600 text-white hover:bg-indigo-700 px-2 py-1 md:px-3 md:py-1.5 rounded-full flex items-center gap-1 md:gap-1.5 transition-all shadow-sm disabled:opacity-50 disabled:bg-gray-400 active:scale-95"
                 >
-                    {isGenerating ? <Loader2 size={9} md:size={12} className="animate-spin"/> : <Wand2 size={9} md:size={12} />}
+                    {isGenerating ? <Loader2 size={12} className="animate-spin"/> : <Wand2 size={12} />}
                     Perhalus Alasan
                 </button>
                 </div>
@@ -291,7 +291,7 @@ const Requests: React.FC<RequestsProps> = ({ requests, leaveTypes, userQuota, on
                         >
                             <div className="flex justify-between items-start mb-0.5">
                             <span className="text-[8px] md:text-[10px] font-bold text-indigo-600 uppercase tracking-widest flex items-center gap-1">
-                                <Sparkles size={9} md:size={10} className="text-indigo-500" /> Saran AI
+                                <Sparkles size={10} className="text-indigo-500" /> Saran AI
                             </span>
                             </div>
                             <p className="text-[11px] md:text-sm text-indigo-900 leading-relaxed italic">"{refinedReason}"</p>
@@ -311,7 +311,7 @@ const Requests: React.FC<RequestsProps> = ({ requests, leaveTypes, userQuota, on
                             attachment ? 'bg-green-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
                         }`}
                     >
-                        {attachment ? <CheckCircle size={12} md:size={16} /> : <Upload size={12} md:size={16} />}
+                        {attachment ? <CheckCircle size={16} /> : <Upload size={16} />}
                         {attachment ? 'Ganti File' : 'Pilih File'}
                     </button>
                     <input 
@@ -357,7 +357,7 @@ const Requests: React.FC<RequestsProps> = ({ requests, leaveTypes, userQuota, on
                     disabled={selectedLeaveType?.requiresFile && !attachment}
                     className="flex-[2] bg-blue-600 text-white font-bold py-3 md:py-4 rounded-xl hover:bg-blue-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-100 disabled:bg-gray-300 disabled:shadow-none disabled:cursor-not-allowed active:scale-[0.98] text-[11px] md:text-sm"
                 >
-                    <Send size={14} md:size={18} />
+                    <Send size={18} />
                     Kirim Pengajuan
                 </button>
             </div>
@@ -366,7 +366,7 @@ const Requests: React.FC<RequestsProps> = ({ requests, leaveTypes, userQuota, on
 
         {/* Info Card */}
         <div className="bg-blue-50 p-2.5 md:p-4 rounded-2xl border border-blue-100 flex gap-2 md:gap-3">
-            <div className="p-1 md:p-2 bg-blue-100 rounded-lg h-fit flex-shrink-0"><Info size={14} md:size={18} className="text-blue-600" /></div>
+            <div className="p-1 md:p-2 bg-blue-100 rounded-lg h-fit flex-shrink-0"><Info size={18} className="text-blue-600" /></div>
             <div>
                 <h4 className="text-[11px] md:text-sm font-bold text-blue-800">Tips Pengajuan</h4>
                 <p className="text-[9px] md:text-xs text-blue-700 leading-relaxed mt-0.5">
@@ -391,7 +391,7 @@ const Requests: React.FC<RequestsProps> = ({ requests, leaveTypes, userQuota, on
                     }`}
                     title="Sinkronkan data pending"
                 >
-                    {isSyncingAll ? <Loader2 size={9} md:size={12} className="animate-spin" /> : <RefreshCw size={9} md:size={12} />}
+                    {isSyncingAll ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
                     SINKRON
                 </button>
                 <button 
@@ -400,7 +400,7 @@ const Requests: React.FC<RequestsProps> = ({ requests, leaveTypes, userQuota, on
                     className={`p-1.5 md:p-2 rounded-full bg-gray-100 text-gray-500 hover:bg-blue-50 hover:text-blue-600 transition-all active:scale-90 flex-shrink-0 ${isRefreshing ? 'animate-spin' : ''}`}
                     title="Refresh Data"
                 >
-                    <RefreshCw size={10} md:size={14} />
+                    <RefreshCw size={14} />
                 </button>
                 <div className="text-[8px] md:text-[10px] font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full whitespace-nowrap">
                     Total: {requests.length}
@@ -416,7 +416,7 @@ const Requests: React.FC<RequestsProps> = ({ requests, leaveTypes, userQuota, on
                 className="p-6 md:p-12 text-center bg-white rounded-2xl border border-dashed border-gray-200"
             >
                 <div className="w-10 h-10 md:w-16 md:h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <FileText size={20} md:size={32} className="text-gray-300" />
+                    <FileText size={32} className="text-gray-300" />
                 </div>
                 <h3 className="text-gray-800 font-bold text-xs md:text-base">Belum Ada Pengajuan</h3>
                 <p className="text-gray-500 text-[10px] md:text-xs mt-1">Semua pengajuan izin atau cuti Anda akan muncul di sini.</p>
@@ -437,14 +437,14 @@ const Requests: React.FC<RequestsProps> = ({ requests, leaveTypes, userQuota, on
                                     req.type === RequestType.LEAVE ? 'bg-blue-50 text-blue-600' : 
                                     req.type === RequestType.PERMISSION ? 'bg-purple-50 text-purple-600' : 'bg-orange-50 text-orange-600'
                                 }`}>
-                                    <FileText size={16} md:size={20} />
+                                    <FileText size={20} />
                                 </div>
                                 <div className="min-w-0 flex-1">
                                     <div className="flex items-center gap-1.5 flex-wrap">
                                         <span className="text-[8px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest">{req.type}</span>
                                         {req.attachmentUrl && (
                                             <span className="bg-blue-50 text-blue-600 text-[7px] md:text-[9px] font-bold px-1 py-0.5 rounded flex items-center gap-0.5">
-                                                <Upload size={7} md:size={8} /> DOKUMEN
+                                                <Upload size={8} /> DOKUMEN
                                             </span>
                                         )}
                                     </div>
@@ -457,7 +457,7 @@ const Requests: React.FC<RequestsProps> = ({ requests, leaveTypes, userQuota, on
                                 <div className="flex items-center gap-1.5">
                                     {req.syncStatus === 'pending' && (
                                         <span className="flex items-center gap-1 text-[7px] md:text-[9px] font-bold text-orange-500 bg-orange-50 px-1.5 py-0.5 rounded-full border border-orange-100 animate-pulse">
-                                            <RefreshCw size={7} md:size={8} className="animate-spin" /> PENDING
+                                            <RefreshCw size={8} className="animate-spin" /> PENDING
                                         </span>
                                     )}
                                     <span className={`flex items-center gap-1 px-2 py-0.5 md:px-3 md:py-1.5 rounded-full text-[8px] md:text-[10px] font-black uppercase border whitespace-nowrap ${getStatusColor(req.status)}`}>
@@ -471,7 +471,7 @@ const Requests: React.FC<RequestsProps> = ({ requests, leaveTypes, userQuota, on
                                         className="text-red-400 hover:text-red-600 p-1 transition-colors active:scale-90"
                                         title="Batalkan Pengajuan"
                                     >
-                                        <Trash2 size={12} md:size={16} />
+                                        <Trash2 size={16} />
                                     </button>
                                 )}
                             </div>
@@ -491,7 +491,7 @@ const Requests: React.FC<RequestsProps> = ({ requests, leaveTypes, userQuota, on
                                     rel="noreferrer" 
                                     className="text-[8px] md:text-[10px] text-blue-600 font-bold flex items-center gap-1 hover:underline bg-blue-50 px-2 py-1 rounded-lg active:scale-95"
                                 >
-                                    <FileText size={9} md:size={12} /> LIHAT LAMPIRAN
+                                    <FileText size={12} /> LIHAT LAMPIRAN
                                 </a>
                                 <span className="text-[8px] md:text-[10px] text-gray-400 font-medium whitespace-nowrap">ID: {(req.id || '').split('-')[1] || req.id}</span>
                             </div>

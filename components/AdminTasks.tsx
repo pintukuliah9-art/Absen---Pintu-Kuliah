@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../services/store';
 import { Task, TASK_CATEGORIES } from '../types';
-import { Plus, Edit2, Trash2, CheckCircle, XCircle, Users, Briefcase, Building, Info, Search, Filter, ClipboardList, Clock } from 'lucide-react';
+import { Plus, Edit2, Trash2, CheckCircle, XCircle, Users, Briefcase, Building, Info, Search, Filter, ClipboardList, Clock, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import ConfirmModal from './ConfirmModal';
 
@@ -42,24 +42,35 @@ const AdminTasks: React.FC = () => {
         setIsModalOpen(true);
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (isSubmitting) return;
+        
+        setIsSubmitting(true);
         const now = new Date().toISOString();
         
-        if (editingTask) {
-            updateTask({
-                ...editingTask,
-                ...formData,
-            } as Task);
-        } else {
-            addTask({
-                ...formData,
-                id: `task-${Date.now()}`,
-                createdAt: now,
-                createdBy: state.currentUser?.id || 'admin',
-            } as Task);
+        try {
+            if (editingTask) {
+                await updateTask({
+                    ...editingTask,
+                    ...formData,
+                } as Task);
+            } else {
+                await addTask({
+                    ...formData,
+                    id: `task-${Date.now()}`,
+                    createdAt: now,
+                    createdBy: state.currentUser?.id || 'admin',
+                } as Task);
+            }
+            setIsModalOpen(false);
+        } catch (error) {
+            console.error("Submission error:", error);
+        } finally {
+            setIsSubmitting(false);
         }
-        setIsModalOpen(false);
     };
 
     const [searchTerm, setSearchTerm] = useState('');
@@ -218,7 +229,7 @@ const AdminTasks: React.FC = () => {
                                 </button>
                             </div>
 
-                            <form onSubmit={handleSubmit} className="p-8 space-y-8 overflow-y-auto flex-1">
+                            <form id="userForm" onSubmit={handleSubmit} className="p-8 space-y-8 overflow-y-auto flex-1">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="md:col-span-2">
                                         <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Judul Tugas</label>
@@ -337,12 +348,19 @@ const AdminTasks: React.FC = () => {
                                     Batal
                                 </button>
                                 <button 
-                                    onClick={() => document.getElementById('userForm')?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }))}
                                     type="submit"
                                     form="userForm"
-                                    className="w-full sm:w-auto flex-1 px-8 py-4 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-blue-700 transition-all active:scale-95 shadow-xl shadow-blue-200"
+                                    disabled={isSubmitting}
+                                    className="w-full sm:w-auto flex-1 px-8 py-4 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-blue-700 transition-all active:scale-95 shadow-xl shadow-blue-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                 >
-                                    {editingTask ? 'Simpan Perubahan' : 'Buat Tugas'}
+                                    {isSubmitting ? (
+                                        <>
+                                            <RefreshCw size={14} className="animate-spin" />
+                                            Memproses...
+                                        </>
+                                    ) : (
+                                        editingTask ? 'Simpan Perubahan' : 'Buat Tugas'
+                                    )}
                                 </button>
                             </div>
                         </motion.div>

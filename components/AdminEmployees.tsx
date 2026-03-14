@@ -3,6 +3,7 @@ import React, { useState, useRef } from 'react';
 import { User, AttendanceRecord, AttendanceStatus, JobRole } from '../types';
 import { Search, Plus, MoreVertical, Edit2, Power, Trash2, Mail, Phone, Calendar, Clock, X, Check, FileText, Upload, MapPin, User as UserIcon, Briefcase, File, Eye, Trash, FolderOpen, AlertCircle, Camera, ShieldAlert, Fingerprint, RefreshCw } from 'lucide-react';
 import { useStore } from '../services/store';
+import { getLocalDateString } from '../services/dateUtils';
 import { useToast } from './Toast';
 import ConfirmModal from './ConfirmModal';
 
@@ -52,7 +53,7 @@ const AdminEmployees: React.FC<AdminEmployeesProps> = ({ users, history, onAddUs
       setFormData({ 
           name: '', email: '', phone: '', position: '', 
           role: 'employee', leaveQuota: 12, isActive: true, 
-          joinDate: new Date().toISOString().split('T')[0],
+          joinDate: getLocalDateString(),
           avatar: `https://i.pravatar.cc/150?u=${Date.now()}`,
           jobRoleId: '',
           username: '', employeeId: '',

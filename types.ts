@@ -58,6 +58,7 @@ export interface User {
   username?: string; // New: Unique username for login
   employeeId?: string; // New: Unique Employee ID for login
   loginMode?: 'username' | 'employee_id'; // New: Login mode per user
+  password?: string; // New: Password for login
   phone?: string;
   joinDate?: string;
   
@@ -197,6 +198,7 @@ export interface Task {
   isActive: boolean;
   createdAt: string;
   createdBy: string;
+  syncStatus?: 'synced' | 'pending';
 }
 
 export interface WorkReport {
@@ -208,6 +210,7 @@ export interface WorkReport {
   notes?: string;
   proofUrl?: string;
   submittedAt: string;
+  syncStatus?: 'synced' | 'pending'; 
 }
 
 export interface AppState {

@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { User, AttendanceRecord, AttendanceStatus, AppSettings, LocationLog, TaskStatus, TaskCategory } from '../types';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { Clock, MapPin, Sparkles, CheckCircle, XCircle, CloudSun, Flame, Briefcase, RefreshCw, Crosshair, Calendar, Coffee, LogOut, AlertTriangle, ArrowRight, Sun, Moon, Cloud, Activity, CheckSquare, ClipboardList, History, Settings as SettingsIcon, ChevronRight } from 'lucide-react';
+import { Clock, MapPin, Sparkles, CheckCircle, XCircle, CloudSun, Flame, Briefcase, RefreshCw, Crosshair, Calendar, Coffee, LogOut, AlertTriangle, ArrowRight, Sun, Moon, Cloud, Activity, CheckSquare, ClipboardList, History, Settings as SettingsIcon, ChevronRight, Target } from 'lucide-react';
 import { analyzePerformance } from '../services/geminiService';
 import { useStore } from '../services/store';
+import { getLocalDateString } from '../services/dateUtils';
 import { motion } from 'motion/react';
 
 interface DashboardProps {
@@ -12,9 +13,21 @@ interface DashboardProps {
   settings: AppSettings;
   onUpdateLocationLog?: (recordId: string, log: LocationLog) => void;
   onNavigateToReports?: () => void;
+  onNavigateToHistory?: () => void;
+  onNavigateToRequests?: () => void;
+  onNavigateToSettings?: () => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ user, history, settings, onUpdateLocationLog, onNavigateToReports }) => {
+const Dashboard: React.FC<DashboardProps> = ({ 
+  user, 
+  history, 
+  settings, 
+  onUpdateLocationLog, 
+  onNavigateToReports, 
+  onNavigateToHistory,
+  onNavigateToRequests,
+  onNavigateToSettings
+}) => {
   const { state, fetchData } = useStore();
   const { tasks, workReports } = state;
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -56,8 +69,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, history, settings, onUpdate
   };
 
   // Identify today's status & shift
-  const todayStr = new Date().toISOString().split('T')[0];
-  const todayRecord = history.find(h => h.date.startsWith(todayStr));
+  const todayStr = getLocalDateString();
+  const todayRecord = history.find(h => h.date === todayStr);
   const userShift = settings.shifts?.find(s => s.assignedUserIds.includes(user.id));
   const isWorkDay = userShift?.workDays.includes(currentTime.getDay());
 
@@ -65,7 +78,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, history, settings, onUpdate
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Work Progress Logic
-  const todayStrOnly = new Date().toISOString().split('T')[0];
+  const todayStrOnly = getLocalDateString();
   const assignedTasks = tasks.filter(task => {
       if (!task.isActive) return false;
       if (task.assignedUserIds.includes(user.id)) return true;
@@ -439,9 +452,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user, history, settings, onUpdate
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-6">
           {[
             { icon: ClipboardList, label: 'Tugas', sub: 'Update', color: 'blue', action: onNavigateToReports },
-            { icon: Calendar, label: 'Izin', sub: 'Cuti', color: 'emerald' },
-            { icon: History, label: 'Riwayat', sub: 'Absen', color: 'purple' },
-            { icon: SettingsIcon, label: 'Profil', sub: 'Akun', color: 'orange' }
+            { icon: Calendar, label: 'Izin', sub: 'Cuti', color: 'emerald', action: onNavigateToRequests },
+            { icon: History, label: 'Riwayat', sub: 'Absen', color: 'purple', action: onNavigateToHistory },
+            { icon: SettingsIcon, label: 'Profil', sub: 'Akun', color: 'orange', action: onNavigateToSettings }
           ].map((item, i) => (
             <motion.button 
                 key={i}

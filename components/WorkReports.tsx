@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../services/store';
 import { Task, TASK_CATEGORIES, TaskStatus, WorkReport } from '../types';
+import { getLocalDateString } from '../services/dateUtils';
 import { CheckCircle2, Circle, Clock, Camera, FileText, Send, AlertCircle, Calendar, ChevronRight, ClipboardList, Sparkles, ArrowRight, Trash2, Image as ImageIcon, Search, RefreshCw } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 
 const WorkReports: React.FC = () => {
     const { state, submitWorkReport, updateWorkReport } = useStore();
     const { tasks, workReports, currentUser } = state;
-    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+
+    const [selectedDate, setSelectedDate] = useState(getLocalDateString());
     const [isReporting, setIsReporting] = useState<string | null>(null); // Task ID being reported
     const [reportForm, setReportForm] = useState({
         notes: '',

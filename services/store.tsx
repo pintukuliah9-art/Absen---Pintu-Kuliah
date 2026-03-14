@@ -152,11 +152,19 @@ export const useStoreInternal = () => {
     if (typeof newState === 'function') {
         setState(prev => {
             const next = newState(prev);
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+            } catch (e) {
+                console.error("Failed to save state to localStorage", e);
+            }
             return next;
         });
     } else {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
+        } catch (e) {
+            console.error("Failed to save state to localStorage", e);
+        }
         setState(newState);
     }
   }, []);
@@ -247,10 +255,6 @@ export const useStoreInternal = () => {
                       }
                   }
                   
-                  // Preserve local pending data so they don't disappear on background sync
-                  const localPendingAttendance = prev.attendanceHistory.filter(r => r.syncStatus === 'pending');
-                  const localPendingRequests = prev.requests.filter(r => r.syncStatus === 'pending');
-
                   // Robust merge: Only overwrite if API data is present
                   const mergedState = {
                       ...prev,
@@ -290,30 +294,37 @@ export const useStoreInternal = () => {
                   }
                   
                   if (mergedState.attendanceHistory) {
-                      const serverIds = new Set(mergedState.attendanceHistory.map(r => r.id));
-                      const uniquePending = localPendingAttendance.filter(r => !serverIds.has(r.id));
-                      mergedState.attendanceHistory = deduplicate([...uniquePending, ...mergedState.attendanceHistory]);
+                      const serverRecords = mergedState.attendanceHistory;
+                      const localRecords = prev.attendanceHistory;
+                      const serverIds = new Set(serverRecords.map(r => r.id));
+                      const uniqueLocal = localRecords.filter(r => !serverIds.has(r.id));
+                      // Keep local records that are not on the server yet (including recently synced ones)
+                      mergedState.attendanceHistory = deduplicate([...serverRecords, ...uniqueLocal]);
                   }
 
                   if (mergedState.requests) {
                       const serverRequests = mergedState.requests;
-                      const localPending = localPendingRequests;
-                      
-                      // Logic: If server has the record, check its status.
-                      // If server status is still 'Pending' but local is 'pending' (sync-wise), 
-                      // we might want to keep local if it has more info (though usually server is source of truth).
-                      // CRITICAL: If server status is NOT 'Pending' (e.g., Approved/Rejected), 
-                      // it MUST override local even if local is 'pending' (sync-wise).
-                      
+                      const localRequests = prev.requests;
                       const serverIds = new Set(serverRequests.map(r => r.id));
-                      
-                      // Keep local pending only if they are NOT on the server yet
-                      const uniquePending = localPending.filter(r => !serverIds.has(r.id));
-                      
-                      // For records on both, server version is already in mergedState.requests
-                      mergedState.requests = deduplicate([...uniquePending, ...serverRequests]);
+                      const uniqueLocal = localRequests.filter(r => !serverIds.has(r.id));
+                      mergedState.requests = deduplicate([...serverRequests, ...uniqueLocal]);
                   }
-                  if (mergedState.tasks) mergedState.tasks = deduplicate(mergedState.tasks);
+
+                  if (mergedState.workReports) {
+                      const serverReports = mergedState.workReports;
+                      const localReports = prev.workReports;
+                      const serverReportIds = new Set(serverReports.map(r => r.id));
+                      const uniqueLocal = localReports.filter(r => !serverReportIds.has(r.id));
+                      mergedState.workReports = deduplicate([...serverReports, ...uniqueLocal]);
+                  }
+
+                  if (mergedState.tasks) {
+                      const serverTasks = mergedState.tasks;
+                      const localTasks = prev.tasks;
+                      const serverTaskIds = new Set(serverTasks.map(r => r.id));
+                      const uniqueLocal = localTasks.filter(r => !serverTaskIds.has(r.id));
+                      mergedState.tasks = deduplicate([...serverTasks, ...uniqueLocal]);
+                  }
                   if (mergedState.workReports) mergedState.workReports = deduplicate(mergedState.workReports);
 
                   // Re-assign shifts logic
@@ -331,7 +342,11 @@ export const useStoreInternal = () => {
                   }
                   
                   // Persist to local storage
-                  localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedState));
+                  try {
+                      localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedState));
+                  } catch (e) {
+                      console.error("Failed to save state to localStorage during merge", e);
+                  }
                   return mergedState;
               });
 
@@ -360,21 +375,6 @@ export const useStoreInternal = () => {
       }
   }, [deduplicate]);
 
-  // Initial Load
-  useEffect(() => {
-    fetchData(false);
-  }, [fetchData]);
-
-  // Background Sync (Every 60s)
-  useEffect(() => {
-      const interval = setInterval(() => {
-          if (document.visibilityState === 'visible' && navigator.onLine) {
-              fetchData(true);
-          }
-      }, 60000);
-      return () => clearInterval(interval);
-  }, [fetchData]);
-
   // Sync on Focus (Throttle to 60s)
   useEffect(() => {
       const onFocus = () => {
@@ -395,8 +395,10 @@ export const useStoreInternal = () => {
       const currentState = stateRef.current;
       const pendingRecords = currentState.attendanceHistory.filter(r => r.syncStatus === 'pending');
       const pendingRequests = currentState.requests.filter(r => r.syncStatus === 'pending');
+      const pendingWorkReports = currentState.workReports.filter(r => r.syncStatus === 'pending');
+      const pendingTasks = currentState.tasks.filter(r => r.syncStatus === 'pending');
       
-      if (pendingRecords.length === 0 && pendingRequests.length === 0) return;
+      if (pendingRecords.length === 0 && pendingRequests.length === 0 && pendingWorkReports.length === 0 && pendingTasks.length === 0) return;
 
       if (pendingRecords.length > 0) {
           console.log(`Syncing ${pendingRecords.length} pending attendance records...`);
@@ -431,6 +433,39 @@ export const useStoreInternal = () => {
               }
           }
       }
+
+      if (pendingWorkReports.length > 0) {
+          console.log(`Syncing ${pendingWorkReports.length} pending work reports...`);
+          for (const report of pendingWorkReports) {
+              try {
+                  await api.syncWorkReport(report);
+                  saveState(prev => ({
+                      ...prev,
+                      workReports: prev.workReports.map(r => r.id === report.id ? { ...r, syncStatus: 'synced' } : r)
+                  }));
+                  // Add a small delay between items to avoid rate limits
+                  await new Promise(resolve => setTimeout(resolve, 1000));
+              } catch (e) {
+                  console.error(`Failed to sync work report ${report.id}`, e);
+              }
+          }
+      }
+
+      if (pendingTasks.length > 0) {
+          console.log(`Syncing ${pendingTasks.length} pending tasks...`);
+          for (const task of pendingTasks) {
+              try {
+                  await api.syncTask(task);
+                  saveState(prev => ({
+                      ...prev,
+                      tasks: prev.tasks.map(t => t.id === task.id ? { ...t, syncStatus: 'synced' } : t)
+                  }));
+                  await new Promise(resolve => setTimeout(resolve, 1000));
+              } catch (e) {
+                  console.error(`Failed to sync task ${task.id}`, e);
+              }
+          }
+      }
   }, [saveState]);
 
   // Listen to online event
@@ -442,6 +477,26 @@ export const useStoreInternal = () => {
       window.addEventListener('online', onOnline);
       return () => window.removeEventListener('online', onOnline);
   }, [syncPendingItems]);
+
+  // Initial Load
+  useEffect(() => {
+    const timer = setTimeout(() => {
+        fetchData(false).then(() => {
+            syncPendingItems();
+        });
+    }, 1500); // 1.5 second delay to ensure server is ready
+    return () => clearTimeout(timer);
+  }, [fetchData, syncPendingItems]);
+
+  // Background Sync (Every 60s)
+  useEffect(() => {
+      const interval = setInterval(() => {
+          if (document.visibilityState === 'visible' && navigator.onLine) {
+              fetchData(true);
+          }
+      }, 60000);
+      return () => clearInterval(interval);
+  }, [fetchData]);
 
   // --- Actions ---
 
@@ -485,7 +540,7 @@ export const useStoreInternal = () => {
     saveState(prev => {
         const targetRecord = prev.attendanceHistory.find(r => r.id === recordId);
         const updatedHistory = prev.attendanceHistory.map(rec => 
-            rec.id === recordId ? { ...rec, checkOutTime, checkOutLocation: location, officeId: officeId || rec.officeId, officeName: officeName || rec.officeName, syncStatus: 'pending' } : rec
+            rec.id === recordId ? { ...rec, checkOutTime, checkOutLocation: location, officeId: officeId || rec.officeId, officeName: officeName || rec.officeName, syncStatus: 'pending' as const } : rec
         );
         
         if (targetRecord && navigator.onLine) {
@@ -493,7 +548,7 @@ export const useStoreInternal = () => {
                .then(() => {
                    saveState(p => ({
                        ...p,
-                       attendanceHistory: p.attendanceHistory.map(r => r.id === recordId ? { ...r, syncStatus: 'synced' } : r)
+                       attendanceHistory: p.attendanceHistory.map(r => r.id === recordId ? { ...r, syncStatus: 'synced' as const } : r)
                    }));
                })
                .catch(console.error);
@@ -681,16 +736,26 @@ export const useStoreInternal = () => {
   };
 
   const addTask = async (task: any) => {
-      saveState(prev => ({ ...prev, tasks: [task, ...prev.tasks] }));
+      const taskWithStatus = { ...task, syncStatus: 'pending' };
+      saveState(prev => ({ ...prev, tasks: [taskWithStatus, ...prev.tasks] }));
       try {
-          await api.syncTask(task);
+          await api.syncTask(taskWithStatus);
+          saveState(prev => ({
+              ...prev,
+              tasks: prev.tasks.map(t => t.id === task.id ? { ...t, syncStatus: 'synced' } : t)
+          }));
       } catch (e) { console.error(e); }
   };
 
   const updateTask = async (task: any) => {
-      saveState(prev => ({ ...prev, tasks: prev.tasks.map(t => t.id === task.id ? task : t) }));
+      const taskWithStatus = { ...task, syncStatus: 'pending' };
+      saveState(prev => ({ ...prev, tasks: prev.tasks.map(t => t.id === task.id ? taskWithStatus : t) }));
       try {
-          await api.syncTask(task);
+          await api.syncTask(taskWithStatus);
+          saveState(prev => ({
+              ...prev,
+              tasks: prev.tasks.map(t => t.id === task.id ? { ...t, syncStatus: 'synced' } : t)
+          }));
       } catch (e) { console.error(e); }
   };
 
@@ -706,16 +771,26 @@ export const useStoreInternal = () => {
   };
 
   const submitWorkReport = async (report: any) => {
-      saveState(prev => ({ ...prev, workReports: [report, ...prev.workReports] }));
+      const reportWithStatus = { ...report, syncStatus: 'pending' };
+      saveState(prev => ({ ...prev, workReports: [reportWithStatus, ...prev.workReports] }));
       try {
-          await api.syncWorkReport(report);
+          await api.syncWorkReport(reportWithStatus);
+          saveState(prev => ({
+              ...prev,
+              workReports: prev.workReports.map(r => r.id === report.id ? { ...r, syncStatus: 'synced' } : r)
+          }));
       } catch (e) { console.error(e); }
   };
 
   const updateWorkReport = async (report: any) => {
-      saveState(prev => ({ ...prev, workReports: prev.workReports.map(r => r.id === report.id ? report : r) }));
+      const reportWithStatus = { ...report, syncStatus: 'pending' };
+      saveState(prev => ({ ...prev, workReports: prev.workReports.map(r => r.id === report.id ? reportWithStatus : r) }));
       try {
-          await api.syncWorkReport(report);
+          await api.syncWorkReport(reportWithStatus);
+          saveState(prev => ({
+              ...prev,
+              workReports: prev.workReports.map(r => r.id === report.id ? { ...r, syncStatus: 'synced' } : r)
+          }));
       } catch (e) { console.error(e); }
   };
 

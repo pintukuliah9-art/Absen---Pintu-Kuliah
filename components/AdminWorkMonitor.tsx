@@ -1,6 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { useStore } from '../services/store';
+import { getLocalDateString } from '../services/dateUtils';
 import { Task, TaskStatus, WorkReport, User } from '../types';
 import { Search, Calendar, CheckCircle, XCircle, Clock, FileText, Camera, ChevronRight, User as UserIcon, Filter } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -8,7 +9,7 @@ import { motion, AnimatePresence } from 'motion/react';
 const AdminWorkMonitor: React.FC = () => {
     const { state } = useStore();
     const { tasks, workReports, users, appSettings } = state;
-    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+    const [selectedDate, setSelectedDate] = useState(getLocalDateString());
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [filterDept, setFilterDept] = useState('all');

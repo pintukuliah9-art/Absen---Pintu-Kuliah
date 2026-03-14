@@ -10,8 +10,10 @@ interface LoginProps {
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const { state } = useStore();
-  const [loginStep, setLoginStep] = useState<'select' | 'loading'>('select');
+  const [loginStep, setLoginStep] = useState<'select' | 'password' | 'loading'>('select');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -31,7 +33,21 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         return;
     }
 
-    performLogin(user);
+    if (user.password) {
+        setLoginStep('password');
+        setPassword('');
+    } else {
+        performLogin(user);
+    }
+  };
+
+  const handlePasswordSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selectedUser && selectedUser.password === password) {
+        performLogin(selectedUser);
+    } else {
+        setError("Password salah. Silakan coba lagi.");
+    }
   };
 
   const performLogin = (user: User) => {
@@ -153,6 +169,94 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                                     </div>
                                 )}
                             </div>
+                        </motion.div>
+                    )}
+
+                    {loginStep === 'password' && selectedUser && (
+                        <motion.div 
+                            key="password"
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -20 }}
+                            className="space-y-8"
+                        >
+                            <div className="flex items-center gap-4">
+                                <button 
+                                    onClick={() => setLoginStep('select')}
+                                    className="p-2 hover:bg-slate-100 rounded-xl transition-colors"
+                                >
+                                    <Search size={20} className="text-slate-400" />
+                                </button>
+                                <div>
+                                    <h2 className="text-2xl font-black text-slate-900 tracking-tighter">Masukkan Password</h2>
+                                    <p className="text-xs text-slate-400 font-medium">Keamanan akun untuk {selectedUser.name}</p>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col items-center gap-4 py-4">
+                                <img 
+                                    src={selectedUser.avatar} 
+                                    alt={selectedUser.name} 
+                                    className="w-24 h-24 rounded-3xl object-cover border-4 border-white shadow-xl"
+                                    referrerPolicy="no-referrer"
+                                />
+                                <div className="text-center">
+                                    <p className="text-lg font-black text-slate-800">{selectedUser.name}</p>
+                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{selectedUser.position}</p>
+                                </div>
+                            </div>
+
+                            <form onSubmit={handlePasswordSubmit} className="space-y-6">
+                                {error && (
+                                    <motion.div 
+                                        initial={{ opacity: 0, y: -10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="bg-rose-50 border border-rose-100 p-4 rounded-2xl flex items-start gap-3 text-rose-600 text-xs font-bold"
+                                    >
+                                        <ShieldAlert size={16} className="mt-0.5 shrink-0" />
+                                        <span>{error}</span>
+                                    </motion.div>
+                                )}
+
+                                <div className="space-y-2">
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Password</label>
+                                    <div className="relative">
+                                        <input 
+                                            type={showPassword ? "text" : "password"}
+                                            required 
+                                            autoFocus
+                                            value={password} 
+                                            onChange={e => setPassword(e.target.value)} 
+                                            className="w-full pl-12 pr-12 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 outline-none transition-all" 
+                                            placeholder="••••••••"
+                                        />
+                                        <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                                        <button 
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-500 transition-colors"
+                                        >
+                                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <button 
+                                    type="submit"
+                                    className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-slate-800 shadow-xl shadow-slate-200 transition-all active:scale-95 flex items-center justify-center gap-2"
+                                >
+                                    Masuk Sekarang
+                                    <CheckCircle2 size={16} />
+                                </button>
+
+                                <button 
+                                    type="button"
+                                    onClick={() => setLoginStep('select')}
+                                    className="w-full py-3 text-slate-400 font-bold text-xs hover:text-slate-600 transition-colors"
+                                >
+                                    Bukan Anda? Ganti Akun
+                                </button>
+                            </form>
                         </motion.div>
                     )}
 

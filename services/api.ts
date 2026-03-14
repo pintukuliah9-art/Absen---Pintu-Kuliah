@@ -14,19 +14,21 @@ const postData = async (action: string, payload: any = {}, retryCount = 0): Prom
         
         console.log(`[API] Calling action: ${action}${apiUrlToSend ? ` with URL: ${apiUrlToSend}` : ' using server default URL'}`);
         
-        // Gunakan relative path untuk proxy agar browser menangani origin dengan benar
-        const proxyUrl = '/api/proxy';
-        const fullUrl = `${window.location.origin}${proxyUrl}`;
+        // Gunakan relative URL agar lebih robust di lingkungan iframe/proxy
+        const fullUrl = '/api/proxy';
         
         console.log(`[API] Fetching from: ${fullUrl} for action: ${action} (Attempt: ${retryCount + 1})`);
         
-        const response = await fetch(proxyUrl, {
+        const response = await fetch(fullUrl, {
             method: 'POST',
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
             },
             body: JSON.stringify({ action, payload, apiUrl: apiUrlToSend }),
+        }).catch(err => {
+            console.error(`[API] Fetch failed for ${action}:`, err);
+            throw new Error(`Network Error: ${err.message}. Please check if the server is running and accessible.`);
         });
         
         const text = await response.text();
@@ -96,16 +98,20 @@ const toBoolean = (val: any) => {
 
 const formatDate = (val: any) => {
     if (!val) return '';
-    if (val instanceof Date) {
-        if (val.getFullYear() === 1899) return '';
-        return val.toISOString().split('T')[0];
-    }
-    if (typeof val === 'string') {
-        if (val.startsWith('1899-12-30')) return '';
-        if (val.includes('T')) return val.split('T')[0];
+    
+    // If it's already a YYYY-MM-DD string, return it as is
+    if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(val)) {
         return val;
     }
-    return '';
+
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return typeof val === 'string' ? val : '';
+    if (d.getFullYear() === 1899) return '';
+    
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 };
 
 const getValue = (obj: any, keys: string | string[]) => {
@@ -216,7 +222,8 @@ const mapTaskFromDB = (t: any): Task => ({
     assignedDepartmentIds: safeJsonParse(getValue(t, ['id_dept_ditugaskan', 'id_departemen_ditugaskan', 'assigned_department_ids']), []),
     isActive: toBoolean(getValue(t, ['aktif', 'is_active'])),
     createdAt: getValue(t, ['dibuat_pada', 'created_at']),
-    createdBy: getValue(t, ['dibuat_oleh', 'created_by'])
+    createdBy: getValue(t, ['dibuat_oleh', 'created_by']),
+    syncStatus: 'synced'
 });
 
 const mapWorkReportFromDB = (w: any): WorkReport => ({
@@ -227,7 +234,8 @@ const mapWorkReportFromDB = (w: any): WorkReport => ({
     status: getValue(w, 'status') as any,
     notes: getValue(w, ['catatan', 'notes']),
     proofUrl: getValue(w, ['url_bukti', 'proof_url']),
-    submittedAt: getValue(w, ['dikirim_pada', 'submitted_at'])
+    submittedAt: getValue(w, ['dikirim_pada', 'submitted_at']),
+    syncStatus: 'synced'
 });
 
 // Helper for safe JSON parsing
@@ -244,6 +252,7 @@ const safeJsonParse = (str: any, fallback: any = []) => {
 export const api = {
     setApiUrl: (url: string) => {
         if (url && url.trim() && url.startsWith('http')) {
+            console.log(`[API] Setting API URL to: ${url.trim()}`);
             API_URL = url.trim();
         } else {
             console.warn(`[API] Attempted to set invalid API URL: "${url}". Keeping current: ${API_URL}`);
@@ -251,7 +260,7 @@ export const api = {
     },
     getAllData: async (): Promise<Partial<AppState>> => {
         // Mengubah request menjadi POST agar lebih stabil
-        const data = await postData('getAllData');
+        const data = await postData('getAllData', { _t: Date.now() });
         
         if (!data || data.status === 'error') throw new Error(data?.message || 'Gagal memuat data dari server');
 
@@ -509,5 +518,9 @@ export const api = {
 
     deleteRequest: async (requestId: string) => {
         return postData('deleteRequest', { id: requestId });
+    },
+
+    ping: async () => {
+        return postData('ping', {});
     }
 };

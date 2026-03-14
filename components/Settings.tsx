@@ -4,6 +4,8 @@ import { User, AppSettings, Shift, JobRole, OfficeLocation } from '../types';
 import { User as UserIcon, Bell, Shield, Save, MapPin, Clock, Trash2, Moon, LogOut, Plus, Edit2, Users, Check, X, Briefcase, List, Calendar, Mail, Phone, Home, FileText, Download, Eye, Award, Crosshair, Camera, CheckCircle2, Loader2, ChevronRight, Sun, ShieldAlert, AlertCircle, Fingerprint, Globe, Search, Link as LinkIcon, Zap, Info, RefreshCw, DownloadCloud, Navigation } from 'lucide-react';
 import { WEEK_DAYS } from '../constants';
 import { useStore } from '../services/store';
+import { api } from '../services/api';
+import { getLocalDateString } from '../services/dateUtils';
 import { useToast } from './Toast';
 import { motion, AnimatePresence } from 'motion/react';
 import ConfirmModal from './ConfirmModal';
@@ -11,7 +13,7 @@ import ConfirmModal from './ConfirmModal';
 interface SettingsProps {
   user: User;
   appSettings: AppSettings;
-  onUpdateSettings: (settings: AppSettings) => void;
+  onUpdateSettings: (settings: AppSettings) => Promise<void>;
   onReset: () => void;
   onLogout: () => void;
 }
@@ -834,7 +836,7 @@ const Settings: React.FC<SettingsProps> = ({ user, appSettings, onUpdateSettings
                                     <input 
                                         type="date"
                                         className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-slate-800 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all"
-                                        value={profileForm.birthDate ? new Date(profileForm.birthDate).toISOString().split('T')[0] : ''}
+                                        value={profileForm.birthDate ? getLocalDateString(new Date(profileForm.birthDate)) : ''}
                                         onChange={e => setProfileForm({...profileForm, birthDate: e.target.value})}
                                     />
                                 </div>
@@ -1224,19 +1226,18 @@ const Settings: React.FC<SettingsProps> = ({ user, appSettings, onUpdateSettings
                                                     if (!config.apiUrl) return showToast('Masukkan URL API terlebih dahulu', 'error');
                                                     setIsTestingApi(true);
                                                     try {
-                                                        const response = await fetch('/api/proxy', {
-                                                            method: 'POST',
-                                                            headers: { "Content-Type": "application/json" },
-                                                            body: JSON.stringify({ action: 'ping', apiUrl: config.apiUrl })
-                                                        });
-                                                        const data = await response.json();
+                                                        // Update URL in API service temporarily for testing
+                                                        api.setApiUrl(config.apiUrl);
+                                                        const data = await api.ping();
+                                                        
                                                         if (data.status === 'success' || data.status === 'ok' || data.message === 'pong') {
-                                                            showToast('Koneksi Berhasil!', 'success');
+                                                            const versionInfo = data.version ? ` (v${data.version})` : '';
+                                                            showToast(`Koneksi Berhasil!${versionInfo}`, 'success');
                                                         } else {
                                                             showToast('Koneksi Gagal: ' + (data.message || 'Unknown error'), 'error');
                                                         }
-                                                    } catch (e) {
-                                                        showToast('Gagal terhubung ke backend', 'error');
+                                                    } catch (e: any) {
+                                                        showToast('Gagal terhubung ke backend: ' + (e.message || 'Network error'), 'error');
                                                     } finally {
                                                         setIsTestingApi(false);
                                                     }
@@ -2018,7 +2019,7 @@ const Settings: React.FC<SettingsProps> = ({ user, appSettings, onUpdateSettings
                                           />
                                           <div className="flex-1 min-w-0">
                                               <p className={`text-xs font-black truncate ${isAssigned ? 'text-slate-900' : 'text-slate-600'}`}>{user.name}</p>
-                                              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest truncate">{user.jobRole || 'Karyawan'}</p>
+                                              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest truncate">{user.position || 'Karyawan'}</p>
                                           </div>
                                       </button>
                                   );

@@ -4,6 +4,7 @@ import { AttendanceRecord, AttendanceStatus, User, AppSettings, TaskStatus } fro
 import { Users, UserCheck, Clock, AlertCircle, Bell, Calendar, MapPin, CheckCircle2, XCircle, Activity, Download, ShieldAlert, CheckSquare, Plus, FileText, Settings } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useStore } from '../services/store';
+import { getLocalDateString } from '../services/dateUtils';
 
 interface AdminDashboardProps {
   history: AttendanceRecord[];
@@ -29,8 +30,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const { state } = useStore();
   const { tasks, workReports } = state;
   const isSuperAdmin = currentUser?.role === 'superadmin';
-  const today = new Date().toISOString().split('T')[0];
-  const todayRecords = history.filter(h => h.date.startsWith(today));
+  const today = getLocalDateString();
+  const todayRecords = history.filter(h => h.date === today);
   const activeEmployees = users.filter(u => u.role === 'employee' && u.isActive);
   
   // Enhanced Stats Calculation
@@ -94,10 +95,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     for (let i = 6; i >= 0; i--) {
         const d = new Date();
         d.setDate(d.getDate() - i);
-        const dateStr = d.toISOString().split('T')[0];
+        const dateStr = getLocalDateString(d);
         const dayName = d.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric' });
         
-        const dayRecords = history.filter(h => h.date.startsWith(dateStr));
+        const dayRecords = history.filter(h => h.date === dateStr);
         
         data.push({
             name: dayName,

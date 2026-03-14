@@ -2,7 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { AttendanceRecord, AttendanceStatus, AppSettings } from '../types';
 import { Calendar, MapPin, Timer, ArrowRight, Ruler, Filter, X, Search, Download, TrendingUp, AlertCircle, Clock, CheckCircle2, Loader2, Eye, Sparkles, ChevronRight, FileText, Map as MapIcon } from 'lucide-react';
 import { OFFICE_LOCATION } from '../constants';
-import { motion, AnimatePresence } from 'framer-motion';
+import { getLocalDateString } from '../services/dateUtils';
+import { motion, AnimatePresence } from 'motion/react';
 import { useToast } from './Toast';
 import ImageModal from './ImageModal';
 
@@ -122,7 +123,7 @@ const History: React.FC<HistoryProps> = ({ history, settings }) => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.setAttribute("href", url);
-      link.setAttribute("download", `riwayat_kehadiran_${new Date().toISOString().split('T')[0]}.csv`);
+      link.setAttribute("download", `riwayat_kehadiran_${getLocalDateString()}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

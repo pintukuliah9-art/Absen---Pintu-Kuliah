@@ -17,6 +17,7 @@ import AdminWorkMonitor from './components/AdminWorkMonitor';
 import WorkReports from './components/WorkReports';
 import { useStore } from './services/store';
 import { RequestStatus } from './types';
+import { getLocalDateString } from './services/dateUtils';
 import { RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -48,7 +49,69 @@ const AppContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [impersonatedUser, setImpersonatedUser] = useState<any>(null);
 
+  // Health check on mount
+  React.useEffect(() => {
+    const checkHealth = async () => {
+      try {
+        console.log('[App] Performing backend health check (GET)...');
+        const getResponse = await fetch('/api/health');
+        if (getResponse.ok) {
+          const data = await getResponse.json();
+          console.log('[App] GET health check successful:', data);
+        } else {
+          console.error('[App] GET health check failed:', getResponse.status);
+        }
+
+        console.log('[App] Performing backend health check (POST)...');
+        const postResponse = await fetch('/api/health', { method: 'POST' });
+        if (postResponse.ok) {
+          const data = await postResponse.json();
+          console.log('[App] POST health check successful:', data);
+        } else {
+          console.error('[App] POST health check failed:', postResponse.status);
+        }
+      } catch (error: any) {
+        console.error('[App] Health check error:', error.message);
+      }
+    };
+    checkHealth();
+  }, []);
+
   const currentUser = impersonatedUser || state.currentUser;
+
+  if (state.isLoading && !state.currentUser) {
+    return (
+      <div className="min-h-screen bg-[#F0F2F5] flex flex-col items-center justify-center p-4">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="flex flex-col items-center gap-6"
+        >
+          <div className="relative">
+            <div className="w-20 h-20 border-4 border-emerald-100 rounded-full animate-pulse"></div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <RefreshCw className="w-8 h-8 text-emerald-500 animate-spin" />
+            </div>
+          </div>
+          <div className="text-center space-y-2">
+            <h2 className="text-xl font-semibold text-slate-800">Menyiapkan Pintu Kuliah</h2>
+            <p className="text-slate-500 text-sm">Sedang memuat data dari server...</p>
+            {state.syncError && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-100 rounded-xl">
+                <p className="text-xs text-red-600 font-mono break-all">{state.syncError}</p>
+                <button 
+                  onClick={() => window.location.reload()}
+                  className="mt-2 text-xs font-medium text-red-700 hover:underline"
+                >
+                  Coba Lagi
+                </button>
+              </div>
+            )}
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
 
   if (!state.currentUser) {
     return <Login onLogin={(user) => {
@@ -80,11 +143,7 @@ const AppContent: React.FC = () => {
 
   // Helper to find today's attendance record for the current user
   const getTodayRecord = () => {
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const day = String(now.getDate()).padStart(2, '0');
-      const today = `${year}-${month}-${day}`;
+      const today = getLocalDateString();
       
       return state.attendanceHistory.find(
           h => h.userId === state.currentUser!.id && h.date.startsWith(today)
@@ -160,6 +219,9 @@ const AppContent: React.FC = () => {
                     settings={appSettings} 
                     onUpdateLocationLog={addLocationLog}
                     onNavigateToReports={() => setActiveTab('work-reports')}
+                    onNavigateToHistory={() => setActiveTab('history')}
+                    onNavigateToRequests={() => setActiveTab('requests')}
+                    onNavigateToSettings={() => setActiveTab('settings')}
                 />;
             case 'attendance':
                 return (
@@ -194,7 +256,16 @@ const AppContent: React.FC = () => {
                     onLogout={logout}
                 />;
             default:
-                return <Dashboard user={currentUser} history={myHistory} settings={appSettings} onUpdateLocationLog={addLocationLog} />;
+                return <Dashboard 
+                    user={currentUser} 
+                    history={myHistory} 
+                    settings={appSettings} 
+                    onUpdateLocationLog={addLocationLog}
+                    onNavigateToReports={() => setActiveTab('work-reports')}
+                    onNavigateToHistory={() => setActiveTab('history')}
+                    onNavigateToRequests={() => setActiveTab('requests')}
+                    onNavigateToSettings={() => setActiveTab('settings')}
+                />;
         }
     }
 
@@ -244,7 +315,16 @@ const AppContent: React.FC = () => {
                     onLogout={logout}
                 />;
             default:
-                return <AdminDashboard history={attendanceHistory} users={users} settings={appSettings} />;
+                return <AdminDashboard 
+                            history={attendanceHistory} 
+                            users={users} 
+                            settings={appSettings} 
+                            currentUser={currentUser}
+                            onNavigateToReports={() => setActiveTab('admin-reports')}
+                            onNavigateToTasks={() => setActiveTab('admin-tasks')}
+                            onNavigateToEmployees={() => setActiveTab('admin-employees')}
+                            onNavigateToSettings={() => setActiveTab('settings')}
+                        />;
         }
     }
   };
