@@ -1260,9 +1260,12 @@ const Settings: React.FC<SettingsProps> = ({ user, appSettings, onUpdateSettings
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-6 border-t border-slate-50">
                                         <button 
                                             onClick={() => {
-                                                if (window.confirm("Hapus semua data lokal dan reset ke pengaturan awal? Anda akan keluar dari sistem.")) {
-                                                    onReset();
-                                                }
+                                                setConfirmModal({
+                                                    isOpen: true,
+                                                    title: "Reset Data Lokal?",
+                                                    message: "Hapus semua data lokal dan reset ke pengaturan awal? Anda akan keluar dari sistem.",
+                                                    onConfirm: onReset
+                                                });
                                             }}
                                             className="p-6 bg-rose-50 border border-rose-100 rounded-[32px] text-left group hover:bg-rose-100 transition-all active:scale-95"
                                         >
@@ -1274,17 +1277,22 @@ const Settings: React.FC<SettingsProps> = ({ user, appSettings, onUpdateSettings
                                         </button>
 
                                         <button 
-                                            onClick={async () => {
-                                                if (window.confirm("Impor data karyawan awal ke backend?")) {
-                                                    try {
-                                                        showToast("Memulai impor data...", "info");
-                                                        const { seedEmployees } = await import('../services/seed_data');
-                                                        await seedEmployees();
-                                                        showToast("Data karyawan berhasil diimpor!", "success");
-                                                    } catch (e: any) {
-                                                        showToast("Gagal impor: " + e.message, "error");
+                                            onClick={() => {
+                                                setConfirmModal({
+                                                    isOpen: true,
+                                                    title: "Impor Data Karyawan?",
+                                                    message: "Impor data karyawan awal ke backend?",
+                                                    onConfirm: async () => {
+                                                        try {
+                                                            showToast("Memulai impor data...", "info");
+                                                            const { seedEmployees } = await import('../services/seed_data');
+                                                            await seedEmployees();
+                                                            showToast("Data karyawan berhasil diimpor!", "success");
+                                                        } catch (e: any) {
+                                                            showToast("Gagal impor: " + e.message, "error");
+                                                        }
                                                     }
-                                                }
+                                                });
                                             }}
                                             className="p-6 bg-indigo-50 border border-indigo-100 rounded-[32px] text-left group hover:bg-indigo-100 transition-all active:scale-95"
                                         >
@@ -1337,7 +1345,6 @@ const Settings: React.FC<SettingsProps> = ({ user, appSettings, onUpdateSettings
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {config.offices?.map((office) => (
                                     <motion.div 
-                                        layout
                                         key={office.id} 
                                         className="bg-white p-6 rounded-[32px] shadow-sm border border-slate-100 group hover:shadow-xl hover:border-blue-100 transition-all relative overflow-hidden"
                                     >
@@ -1415,7 +1422,6 @@ const Settings: React.FC<SettingsProps> = ({ user, appSettings, onUpdateSettings
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {config.shifts?.map((shift) => (
                                     <motion.div 
-                                        layout
                                         key={shift.id} 
                                         className="bg-white p-6 rounded-[32px] shadow-sm border border-slate-100 group hover:shadow-xl hover:border-blue-100 transition-all"
                                     >
@@ -1525,7 +1531,6 @@ const Settings: React.FC<SettingsProps> = ({ user, appSettings, onUpdateSettings
                                     
                                     return (
                                         <motion.div 
-                                            layout
                                             key={job.id} 
                                             className="bg-white rounded-[40px] shadow-sm border border-slate-100 overflow-hidden group hover:shadow-xl transition-all"
                                         >

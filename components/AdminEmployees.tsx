@@ -6,6 +6,7 @@ import { useStore } from '../services/store';
 import { getLocalDateString } from '../services/dateUtils';
 import { useToast } from './Toast';
 import ConfirmModal from './ConfirmModal';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface AdminEmployeesProps {
   users: User[];
@@ -31,7 +32,18 @@ const AdminEmployees: React.FC<AdminEmployeesProps> = ({ users, history, onAddUs
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [modalTab, setModalTab] = useState<'bio'|'job'|'docs'|'access'>('bio');
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [confirmConfig, setConfirmConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    variant?: 'danger' | 'warning' | 'info';
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
 
   // Form State
   const [formData, setFormData] = useState<Partial<User>>({});
@@ -83,10 +95,17 @@ const AdminEmployees: React.FC<AdminEmployeesProps> = ({ users, history, onAddUs
   };
 
   const handleRemovePhoto = () => {
-    if (window.confirm('Hapus foto profil ini?')) {
-        const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name || 'User')}&background=random`;
-        setFormData({ ...formData, avatar: defaultAvatar });
-    }
+    setConfirmConfig({
+        isOpen: true,
+        title: 'Hapus Foto Profil?',
+        message: 'Apakah Anda yakin ingin menghapus foto profil ini?',
+        variant: 'warning',
+        onConfirm: () => {
+            const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name || 'User')}&background=random`;
+            setFormData({ ...formData, avatar: defaultAvatar });
+            setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+        }
+    });
   };
 
   // Helper for Document Uploads (KTP, KK, Ijazah)
@@ -95,7 +114,7 @@ const AdminEmployees: React.FC<AdminEmployeesProps> = ({ users, history, onAddUs
       if (file) {
           // Simple size validation (e.g., max 2MB)
           if(file.size > 2 * 1024 * 1024) {
-              alert("Ukuran file terlalu besar. Maksimal 2MB.");
+              showToast("Ukuran file terlalu besar. Maksimal 2MB.", "error");
               return;
           }
 
@@ -114,13 +133,20 @@ const AdminEmployees: React.FC<AdminEmployeesProps> = ({ users, history, onAddUs
   };
 
   const handleRemoveDoc = (key: 'ktp' | 'kk' | 'ijazah') => {
-      if(window.confirm('Hapus dokumen ini?')) {
-          setFormData(prev => {
-              const newDocs = { ...prev.documents };
-              delete newDocs[key];
-              return { ...prev, documents: newDocs };
-          });
-      }
+      setConfirmConfig({
+          isOpen: true,
+          title: 'Hapus Dokumen?',
+          message: `Apakah Anda yakin ingin menghapus dokumen ${key.toUpperCase()} ini?`,
+          variant: 'danger',
+          onConfirm: () => {
+              setFormData(prev => {
+                  const newDocs = { ...prev.documents };
+                  delete newDocs[key];
+                  return { ...prev, documents: newDocs };
+              });
+              setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+          }
+      });
   };
 
   const handleUserSubmit = (e: React.FormEvent) => {
@@ -176,14 +202,18 @@ const AdminEmployees: React.FC<AdminEmployeesProps> = ({ users, history, onAddUs
           return;
       }
 
-      setConfirmDeleteId(id);
+      setConfirmConfig({
+          isOpen: true,
+          title: 'Hapus Data Karyawan?',
+          message: `Anda akan menghapus data "${userToDelete.name}" secara permanen. Tindakan ini tidak dapat dibatalkan.`,
+          variant: 'danger',
+          onConfirm: () => executeDelete(id)
+      });
   };
 
-  const executeDelete = () => {
-      if (!confirmDeleteId) return;
-      const id = confirmDeleteId;
+  const executeDelete = (id: string) => {
       const userToDelete = users.find(u => u.id === id);
-      setConfirmDeleteId(null);
+      setConfirmConfig(prev => ({ ...prev, isOpen: false }));
 
       console.log("AdminEmployees: Executing deletion for:", userToDelete?.name);
       onDeleteUser(id).catch((err: any) => {
@@ -194,10 +224,19 @@ const AdminEmployees: React.FC<AdminEmployeesProps> = ({ users, history, onAddUs
   };
 
   const toggleStatus = (user: User) => {
-      if(window.confirm(user.isActive ? "Nonaktifkan karyawan ini?" : "Aktifkan kembali karyawan ini?")) {
-          onUpdateUser({ ...user, isActive: !user.isActive });
-          showToast(`Status ${user.name} diubah menjadi ${!user.isActive ? 'Aktif' : 'Nonaktif'}.`, 'info');
-      }
+      setConfirmConfig({
+          isOpen: true,
+          title: user.isActive ? 'Nonaktifkan Karyawan?' : 'Aktifkan Karyawan?',
+          message: user.isActive 
+              ? `Apakah Anda yakin ingin menonaktifkan "${user.name}"? Karyawan ini tidak akan bisa login.` 
+              : `Apakah Anda yakin ingin mengaktifkan kembali "${user.name}"?`,
+          variant: user.isActive ? 'warning' : 'info',
+          onConfirm: () => {
+              onUpdateUser({ ...user, isActive: !user.isActive });
+              showToast(`Status ${user.name} diubah menjadi ${!user.isActive ? 'Aktif' : 'Nonaktif'}.`, 'info');
+              setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+          }
+      });
   };
 
   const getRoleBadgeColor = (role: string) => {
@@ -480,11 +519,17 @@ const AdminEmployees: React.FC<AdminEmployeesProps> = ({ users, history, onAddUs
 
 
         {/* Enhanced User Modal */}
-        {isModalOpen && (
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-0 sm:p-4 overflow-hidden">
-                <div className="bg-white w-full h-full sm:h-auto sm:max-w-2xl sm:rounded-3xl flex flex-col max-h-full sm:max-h-[90vh] shadow-2xl animate-in zoom-in-95 duration-200">
-                    {/* Modal Header */}
-                    <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-white sticky top-0 z-20">
+        <AnimatePresence>
+            {isModalOpen && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-0 sm:p-4 overflow-hidden">
+                    <motion.div 
+                        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                        className="bg-white w-full h-full sm:h-auto sm:max-w-2xl sm:rounded-3xl flex flex-col max-h-full sm:max-h-[90vh] shadow-2xl overflow-hidden"
+                    >
+                        {/* Modal Header */}
+                        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-white sticky top-0 z-20">
                         <div>
                             <h3 className="text-xl font-black text-gray-900 tracking-tight">
                                 {editingUser ? 'Edit Karyawan' : 'Tambah Karyawan'}
@@ -529,7 +574,12 @@ const AdminEmployees: React.FC<AdminEmployeesProps> = ({ users, history, onAddUs
                         <form id="userForm" onSubmit={handleUserSubmit} className="space-y-8">
                             
                             {modalTab === 'bio' && (
-                                <div className="space-y-8 animate-in slide-in-from-left-4 fade-in duration-300">
+                                <motion.div 
+                                    key="bio"
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    className="space-y-8"
+                                >
                                     {/* Photo Upload */}
                                     <div className="flex flex-col sm:flex-row items-center gap-6 bg-gray-50 p-6 rounded-3xl border border-gray-100">
                                         <div className="relative group">
@@ -636,11 +686,16 @@ const AdminEmployees: React.FC<AdminEmployeesProps> = ({ users, history, onAddUs
                                             ></textarea>
                                         </div>
                                     </div>
-                                </div>
+                                </motion.div>
                             )}
 
                             {modalTab === 'job' && (
-                                <div className="space-y-8 animate-in slide-in-from-right-4 fade-in duration-300">
+                                <motion.div 
+                                    key="job"
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    className="space-y-8"
+                                >
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div>
                                             <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Struktur Jabatan</label>
@@ -710,11 +765,16 @@ const AdminEmployees: React.FC<AdminEmployeesProps> = ({ users, history, onAddUs
                                             </div>
                                         )}
                                     </div>
-                                </div>
+                                </motion.div>
                             )}
 
                             {modalTab === 'access' && (
-                                <div className="space-y-8 animate-in slide-in-from-right-4 fade-in duration-300">
+                                <motion.div 
+                                    key="access"
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    className="space-y-8"
+                                >
                                     <div className="bg-amber-50 p-6 rounded-3xl border border-amber-100 flex items-start gap-4">
                                         <div className="w-10 h-10 rounded-2xl bg-amber-100 flex items-center justify-center text-amber-600 flex-shrink-0">
                                             <ShieldAlert size={20} />
@@ -757,11 +817,16 @@ const AdminEmployees: React.FC<AdminEmployeesProps> = ({ users, history, onAddUs
                                             </div>
                                         </div>
                                     </div>
-                                </div>
+                                </motion.div>
                             )}
 
                             {modalTab === 'docs' && (
-                                <div className="space-y-8 animate-in slide-in-from-right-4 fade-in duration-300">
+                                <motion.div 
+                                    key="docs"
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    className="space-y-8"
+                                >
                                     <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100 flex items-start gap-4">
                                         <div className="w-10 h-10 rounded-2xl bg-white border border-gray-200 flex items-center justify-center text-gray-400 flex-shrink-0">
                                             <FileText size={20} />
@@ -779,7 +844,7 @@ const AdminEmployees: React.FC<AdminEmployeesProps> = ({ users, history, onAddUs
                                         {renderDocInput('kk', 'Kartu Keluarga')}
                                         {renderDocInput('ijazah', 'Ijazah Terakhir')}
                                     </div>
-                                </div>
+                                </motion.div>
                             )}
                         </form>
                     </div>
@@ -793,23 +858,26 @@ const AdminEmployees: React.FC<AdminEmployeesProps> = ({ users, history, onAddUs
                             Batal
                         </button>
                         <button 
-                            onClick={() => document.getElementById('userForm')?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }))} 
+                            type="submit"
+                            form="userForm"
                             className="w-full sm:w-auto px-10 py-3.5 bg-blue-600 text-white font-black uppercase tracking-widest text-[10px] rounded-2xl hover:bg-blue-700 shadow-xl shadow-blue-200 transition-all active:scale-95"
                         >
                             Simpan Data
                         </button>
                     </div>
-                </div>
+                </motion.div>
             </div>
         )}
+    </AnimatePresence>
 
-        {/* Custom Confirmation Modal for Deletion */}
+        {/* Custom Confirmation Modal */}
         <ConfirmModal 
-            isOpen={!!confirmDeleteId}
-            onClose={() => setConfirmDeleteId(null)}
-            onConfirm={executeDelete}
-            title="Hapus Data Karyawan?"
-            message={`Anda akan menghapus data "${users.find(u => u.id === confirmDeleteId)?.name}" secara permanen. Tindakan ini tidak dapat dibatalkan.`}
+            isOpen={confirmConfig.isOpen}
+            onClose={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+            onConfirm={confirmConfig.onConfirm}
+            title={confirmConfig.title}
+            message={confirmConfig.message}
+            variant={confirmConfig.variant}
         />
     </div>
   );

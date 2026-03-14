@@ -119,8 +119,9 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, user
       {/* Sidebar (Desktop & Tablet Rail) */}
       <aside className={`hidden md:flex flex-col transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1) bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 h-screen sticky top-0 print:hidden ${isSidebarMinimized ? 'w-20' : 'w-72'}`}>
         <div className={`p-6 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between ${isSidebarMinimized ? 'px-4' : ''}`}>
-          {!isSidebarMinimized && (
+          {!isSidebarMinimized ? (
             <motion.div 
+              key="sidebar-full"
               initial={{ opacity: 0, x: -20 }} 
               animate={{ opacity: 1, x: 0 }}
               className="flex items-center gap-3"
@@ -139,9 +140,8 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, user
                 </div>
               </div>
             </motion.div>
-          )}
-          {isSidebarMinimized && (
-            <div className="w-full flex justify-center">
+          ) : (
+            <div key="sidebar-minimized" className="w-full flex justify-center">
               <motion.div 
                 whileHover={{ scale: 1.1, rotate: 5 }}
                 className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-blue-200"
@@ -177,10 +177,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, user
                 </motion.span>
               )}
               {activeTab === item.id && isSidebarMinimized && (
-                <motion.div 
-                  layoutId="active-indicator"
-                  className="absolute left-0 w-1.5 h-8 bg-white rounded-r-full"
-                />
+                <div className="absolute left-0 w-1.5 h-8 bg-white rounded-r-full" />
               )}
             </button>
           ))}
@@ -242,7 +239,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, user
           </div>
           {isAdmin && (
             <button
-              onClick={() => setActiveTab('company-profile')}
+              onClick={() => setActiveTab('settings')}
               className={`w-full flex items-center transition-all duration-300 rounded-2xl mb-3 ${
                 isSidebarMinimized ? 'justify-center p-2' : 'gap-3 px-4 py-3'
               } bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 border border-blue-100 dark:border-blue-800/50 shadow-sm active:scale-95 group`}
@@ -430,10 +427,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, user
             }`}
           >
             {activeTab === item.id && (
-              <motion.div 
-                layoutId="bottom-nav-indicator"
-                className="absolute inset-0 bg-blue-50 dark:bg-blue-900/10 rounded-2xl -z-10"
-              />
+              <div className="absolute inset-0 bg-blue-50 dark:bg-blue-900/10 rounded-2xl -z-10" />
             )}
             <item.icon size={22} strokeWidth={activeTab === item.id ? 2.5 : 2} className={activeTab === item.id ? 'scale-110' : ''} />
             <AnimatePresence>

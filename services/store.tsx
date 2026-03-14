@@ -503,7 +503,7 @@ export const useStoreInternal = () => {
   const login = (user: User) => {
     const freshUser = state.users.find(u => u.email === user.email) || user;
     if (!freshUser.isActive) {
-        alert("Akun ini telah dinonaktifkan.");
+        showToast("Akun ini telah dinonaktifkan. Hubungi Admin untuk bantuan.", "error");
         return;
     }
     saveState({ ...state, currentUser: freshUser });
