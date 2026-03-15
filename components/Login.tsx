@@ -98,8 +98,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                         >
                             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-6">
                                 <div>
-                                    <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tighter">Selamat Datang</h2>
-                                    <p className="text-xs md:text-sm text-slate-400 font-medium mt-0.5 md:mt-1">Pilih profil Anda untuk mulai bekerja</p>
+                                    <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tighter"><span>Selamat Datang</span></h2>
+                                    <p className="text-xs md:text-sm text-slate-400 font-medium mt-0.5 md:mt-1"><span>Pilih profil Anda untuk mulai bekerja</span></p>
                                 </div>
                                 <div className="relative w-full md:w-72 group">
                                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={16} />
@@ -150,11 +150,11 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                                             )}
                                         </div>
                                         <div className="w-full">
-                                            <p className="text-xs md:text-sm font-black text-slate-800 truncate">{user.name}</p>
+                                            <p className="text-xs md:text-sm font-black text-slate-800 truncate"><span>{user.name}</span></p>
                                             <div className="flex flex-col items-center gap-0.5 mt-0.5 md:mt-1">
-                                                <p className="text-[8px] md:text-[10px] text-slate-400 font-bold uppercase tracking-widest truncate w-full">{user.position}</p>
+                                                <p className="text-[8px] md:text-[10px] text-slate-400 font-bold uppercase tracking-widest truncate w-full"><span>{user.position}</span></p>
                                                 {user.employeeId && (
-                                                    <p className="text-[7px] md:text-[9px] text-slate-300 font-medium truncate">ID: {user.employeeId}</p>
+                                                    <p className="text-[7px] md:text-[9px] text-slate-300 font-medium truncate"><span>ID: {user.employeeId}</span></p>
                                                 )}
                                             </div>
                                         </div>
@@ -165,7 +165,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                                         <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
                                             <Search size={32} />
                                         </div>
-                                        <p className="text-slate-400 font-bold text-sm">Karyawan tidak ditemukan</p>
+                                        <p className="text-slate-400 font-bold text-sm"><span>Karyawan tidak ditemukan</span></p>
                                     </div>
                                 )}
                             </div>
@@ -188,8 +188,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                                     <Search size={20} className="text-slate-400" />
                                 </button>
                                 <div>
-                                    <h2 className="text-2xl font-black text-slate-900 tracking-tighter">Masukkan Password</h2>
-                                    <p className="text-xs text-slate-400 font-medium">Keamanan akun untuk {selectedUser.name}</p>
+                                    <h2 className="text-2xl font-black text-slate-900 tracking-tighter"><span>Masukkan Password</span></h2>
+                                    <p className="text-xs text-slate-400 font-medium"><span>Keamanan akun untuk {selectedUser.name}</span></p>
                                 </div>
                             </div>
 
@@ -201,8 +201,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                                     referrerPolicy="no-referrer"
                                 />
                                 <div className="text-center">
-                                    <p className="text-lg font-black text-slate-800">{selectedUser.name}</p>
-                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{selectedUser.position}</p>
+                                    <p className="text-lg font-black text-slate-800"><span>{selectedUser.name}</span></p>
+                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest"><span>{selectedUser.position}</span></p>
                                 </div>
                             </div>
 
@@ -219,7 +219,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                                 )}
 
                                 <div className="space-y-2">
-                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Password</label>
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1"><span>Password</span></label>
                                     <div className="relative">
                                         <input 
                                             type={showPassword ? "text" : "password"}
@@ -245,7 +245,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                                     type="submit"
                                     className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-slate-800 shadow-xl shadow-slate-200 transition-all active:scale-95 flex items-center justify-center gap-2"
                                 >
-                                    Masuk Sekarang
+                                    <span>Masuk Sekarang</span>
                                     <CheckCircle2 size={16} />
                                 </button>
 
@@ -254,7 +254,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                                     onClick={() => setLoginStep('select')}
                                     className="w-full py-3 text-slate-400 font-bold text-xs hover:text-slate-600 transition-colors"
                                 >
-                                    Bukan Anda? Ganti Akun
+                                    <span>Bukan Anda? Ganti Akun</span>
                                 </button>
                             </form>
                         </motion.div>
@@ -274,8 +274,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                                 </div>
                             </div>
                             <div className="space-y-3">
-                                <h3 className="text-3xl font-black text-slate-900 tracking-tighter">Otentikasi...</h3>
-                                <p className="text-slate-400 text-sm font-medium">Menghubungkan ke server aman</p>
+                                <h3 className="text-3xl font-black text-slate-900 tracking-tighter"><span>Otentikasi...</span></h3>
+                                <p className="text-slate-400 text-sm font-medium"><span>Menghubungkan ke server aman</span></p>
                             </div>
                         </motion.div>
                     )}

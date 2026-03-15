@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { RequestRecord, RequestStatus, RequestType, User } from '../types';
 import { getUserById } from '../services/store';
 import { Check, X, Calendar, AlertTriangle, CheckSquare, Square, XCircle, FileText, Search, RefreshCw } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 import { useToast } from './Toast';
 
@@ -266,42 +267,57 @@ const AdminApprovals: React.FC<AdminApprovalsProps> = ({ requests, users, onUpda
 
 
         {/* Rejection Modal */}
-        {rejectModalOpen && (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-hidden">
-                <div 
-                    onClick={() => setRejectModalOpen(false)}
-                    className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-                />
-                <div className="bg-white rounded-[40px] w-full max-w-md p-8 relative z-10 shadow-2xl animate-in zoom-in-95 duration-200">
-                    <div className="flex justify-between items-center mb-6">
-                        <div>
-                            <h3 className="text-2xl font-black text-gray-900 tracking-tighter">Tolak Pengajuan</h3>
-                            <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-1">Berikan alasan yang jelas</p>
+        <AnimatePresence>
+            {rejectModalOpen && (
+                <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-hidden"
+                >
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setRejectModalOpen(false)}
+                        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                    />
+                    <motion.div 
+                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                        className="bg-white rounded-[40px] w-full max-w-md p-8 relative z-10 shadow-2xl"
+                    >
+                        <div className="flex justify-between items-center mb-6">
+                            <div>
+                                <h3 className="text-2xl font-black text-gray-900 tracking-tighter"><span>Tolak Pengajuan</span></h3>
+                                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-1"><span>Berikan alasan yang jelas</span></p>
+                            </div>
+                            <button onClick={() => setRejectModalOpen(false)} className="w-10 h-10 flex items-center justify-center bg-gray-50 rounded-xl text-gray-400 hover:text-gray-900 transition-all">
+                                <XCircle size={20}/>
+                            </button>
                         </div>
-                        <button onClick={() => setRejectModalOpen(false)} className="w-10 h-10 flex items-center justify-center bg-gray-50 rounded-xl text-gray-400 hover:text-gray-900 transition-all">
-                            <XCircle size={20}/>
-                        </button>
-                    </div>
-                    <p className="text-xs text-gray-500 font-bold mb-6 leading-relaxed">Silahkan masukkan alasan penolakan agar karyawan dapat memahami keputusan ini dan melakukan perbaikan jika diperlukan.</p>
-                    <textarea 
-                        className="w-full bg-gray-50 border border-gray-100 rounded-2xl p-5 text-sm font-bold focus:ring-4 focus:ring-red-500/10 outline-none mb-6 min-h-[120px] resize-none transition-all"
-                        placeholder="Contoh: Kuota cuti tim sudah penuh untuk periode ini..."
-                        value={rejectReason}
-                        onChange={(e) => setRejectReason(e.target.value)}
-                    ></textarea>
-                    <div className="flex flex-col sm:flex-row gap-3">
-                         <button onClick={() => setRejectModalOpen(false)} className="w-full sm:flex-1 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500 hover:bg-gray-100 rounded-2xl transition-all">Batal</button>
-                         <button 
-                            onClick={confirmReject} 
-                            disabled={!rejectReason} 
-                            className="w-full sm:flex-1 py-4 bg-red-600 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl hover:bg-red-700 disabled:opacity-50 shadow-xl shadow-red-200 transition-all active:scale-95"
-                        >
-                            Konfirmasi Tolak
-                        </button>
-                    </div>
-                </div>
-            </div>
-        )}
+                        <p className="text-xs text-gray-500 font-bold mb-6 leading-relaxed"><span>Silahkan masukkan alasan penolakan agar karyawan dapat memahami keputusan ini dan melakukan perbaikan jika diperlukan.</span></p>
+                        <textarea 
+                            className="w-full bg-gray-50 border border-gray-100 rounded-2xl p-5 text-sm font-bold focus:ring-4 focus:ring-red-500/10 outline-none mb-6 min-h-[120px] resize-none transition-all"
+                            placeholder="Contoh: Kuota cuti tim sudah penuh untuk periode ini..."
+                            value={rejectReason}
+                            onChange={(e) => setRejectReason(e.target.value)}
+                        ></textarea>
+                        <div className="flex flex-col sm:flex-row gap-3">
+                             <button onClick={() => setRejectModalOpen(false)} className="w-full sm:flex-1 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500 hover:bg-gray-100 rounded-2xl transition-all"><span>Batal</span></button>
+                             <button 
+                                onClick={confirmReject} 
+                                disabled={!rejectReason} 
+                                className="w-full sm:flex-1 py-4 bg-red-600 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl hover:bg-red-700 disabled:opacity-50 shadow-xl shadow-red-200 transition-all active:scale-95"
+                            >
+                                <span>Konfirmasi Tolak</span>
+                            </button>
+                        </div>
+                    </motion.div>
+                </motion.div>
+            )}
+        </AnimatePresence>
 
         {/* History List */}
         <div className="pt-12 border-t border-gray-100">

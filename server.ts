@@ -15,17 +15,9 @@ async function startServer() {
   
   console.log(`[Server] Starting in ${process.env.NODE_ENV || 'development'} mode`);
 
-  // Request Logger
-  app.use((req, res, next) => {
-    console.log(`[Server] ${req.method} ${req.url}`);
-    next();
-  });
-
-  app.use(express.json({ limit: '50mb' }));
-  
-  // CORS configuration
+  // 1. CORS configuration (MUST BE FIRST)
   app.use(cors({
-    origin: true, // Reflect the request origin
+    origin: true,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With']
@@ -33,8 +25,18 @@ async function startServer() {
   
   // Explicit OPTIONS handler for preflight
   app.options('*all', cors());
+
+  // 2. Request Logger
+  app.use((req, res, next) => {
+    console.log(`[Server] ${req.method} ${req.url}`);
+    next();
+  });
+
+  // 3. Body Parsers
+  app.use(express.json({ limit: '50mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '50mb' }));
   
-  // JSON Parse Error Handler
+  // 4. JSON Parse Error Handler
   app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (err instanceof SyntaxError && 'body' in err) {
         console.error('[Server] JSON Parse Error:', err.message);
@@ -63,7 +65,7 @@ async function startServer() {
   // Proxy to Google Apps Script
   app.post("/api/proxy", async (req, res) => {
     const requestId = Math.random().toString(36).substring(7);
-    console.log(`[Proxy][${requestId}] Request: ${req.method} ${req.url}`);
+    console.log(`[Proxy][${requestId}] Incoming request: ${req.method} ${req.url}`);
     
     try {
       if (!req.body || Object.keys(req.body).length === 0) {
@@ -72,6 +74,7 @@ async function startServer() {
       }
 
       const { action, payload, apiUrl } = req.body;
+      console.log(`[Proxy][${requestId}] Action: ${action}`);
       
       if (!action) {
         console.error(`[Proxy Error][${requestId}] Missing action in request body`);
@@ -181,6 +184,16 @@ async function startServer() {
         details: error.stack
       });
     }
+  });
+
+  // Catch-all for other API routes to help debugging
+  app.all("/api/*", (req, res) => {
+    console.warn(`[Server] Unhandled API request: ${req.method} ${req.url}`);
+    res.status(404).json({ 
+      status: "error", 
+      message: `API route not found: ${req.method} ${req.url}`,
+      suggestion: "Check if the route is defined in server.ts"
+    });
   });
 
   // Vite middleware for development

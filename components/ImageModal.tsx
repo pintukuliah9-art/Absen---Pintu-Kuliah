@@ -31,7 +31,7 @@ const ImageModal: React.FC<ImageModalProps> = ({ isOpen, imageUrl, onClose }) =>
                             onClick={onClose}
                             className="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors flex items-center gap-2 font-bold"
                         >
-                            <X size={24} /> Tutup
+                            <X size={24} /> <span>Tutup</span>
                         </button>
                         
                         <div className="bg-white p-2 rounded-3xl shadow-2xl overflow-hidden">

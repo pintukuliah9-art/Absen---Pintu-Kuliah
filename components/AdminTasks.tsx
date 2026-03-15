@@ -203,7 +203,12 @@ const AdminTasks: React.FC = () => {
             {/* Modal */}
             <AnimatePresence>
                 {isModalOpen && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4 overflow-hidden">
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4 overflow-hidden"
+                    >
                         <motion.div 
                             initial={{ opacity: 0 }} 
                             animate={{ opacity: 1 }} 
@@ -220,9 +225,9 @@ const AdminTasks: React.FC = () => {
                             <div className="p-8 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 sticky top-0 z-20">
                                 <div>
                                     <h3 className="text-2xl font-black text-gray-900 tracking-tighter">
-                                        {editingTask ? 'Edit Tugas' : 'Tambah Tugas'}
+                                        {editingTask ? <span>Edit Tugas</span> : <span>Tambah Tugas</span>}
                                     </h3>
-                                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-1">Konfigurasi Penugasan Kerja</p>
+                                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-1"><span>Konfigurasi Penugasan Kerja</span></p>
                                 </div>
                                 <button onClick={() => setIsModalOpen(false)} className="w-12 h-12 flex items-center justify-center bg-white rounded-2xl transition-all text-gray-400 hover:text-gray-900 shadow-sm border border-gray-100">
                                     <XCircle size={24} />
@@ -232,7 +237,7 @@ const AdminTasks: React.FC = () => {
                             <form id="userForm" onSubmit={handleSubmit} className="p-8 space-y-8 overflow-y-auto flex-1">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="md:col-span-2">
-                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Judul Tugas</label>
+                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block"><span>Judul Tugas</span></label>
                                         <input 
                                             required
                                             type="text" 
@@ -243,7 +248,7 @@ const AdminTasks: React.FC = () => {
                                         />
                                     </div>
                                     <div className="md:col-span-2">
-                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Deskripsi (Opsional)</label>
+                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block"><span>Deskripsi (Opsional)</span></label>
                                         <textarea 
                                             value={formData.description}
                                             onChange={e => setFormData({...formData, description: e.target.value})}
@@ -252,7 +257,7 @@ const AdminTasks: React.FC = () => {
                                         />
                                     </div>
                                     <div>
-                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Kategori</label>
+                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block"><span>Kategori</span></label>
                                         <select 
                                             value={formData.category}
                                             onChange={e => setFormData({...formData, category: e.target.value})}
@@ -271,19 +276,19 @@ const AdminTasks: React.FC = () => {
                                         >
                                             <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${formData.isActive ? 'left-7' : 'left-1'}`} />
                                         </button>
-                                        <span className="text-xs font-black text-gray-700 uppercase tracking-widest">Status Aktif</span>
+                                        <span className="text-xs font-black text-gray-700 uppercase tracking-widest"><span>Status Aktif</span></span>
                                     </div>
                                 </div>
 
                                 <div className="space-y-6 pt-6 border-t border-gray-100">
                                     <h4 className="text-xs font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
-                                        <Users size={16} className="text-blue-600" /> Penugasan Tim
+                                        <Users size={16} className="text-blue-600" /> <span>Penugasan Tim</span>
                                     </h4>
                                     
                                     {/* By Department */}
                                     <div className="space-y-3">
                                         <label className="text-[10px] font-black text-gray-400 flex items-center gap-2 uppercase tracking-widest">
-                                            <Building size={12}/> Berdasarkan Departemen
+                                            <Building size={12}/> <span>Berdasarkan Departemen</span>
                                         </label>
                                         <div className="flex flex-wrap gap-2">
                                             {(appSettings.departments || []).map(dept => (
@@ -293,7 +298,7 @@ const AdminTasks: React.FC = () => {
                                                     onClick={() => toggleAssignment('department', dept.id)}
                                                     className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${formData.assignedDepartmentIds?.includes(dept.id) ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-100' : 'bg-white text-gray-500 border-gray-200 hover:border-blue-400 hover:text-blue-600'}`}
                                                 >
-                                                    {dept.name}
+                                                    <span>{dept.name}</span>
                                                 </button>
                                             ))}
                                         </div>
@@ -302,7 +307,7 @@ const AdminTasks: React.FC = () => {
                                     {/* By Role */}
                                     <div className="space-y-3">
                                         <label className="text-[10px] font-black text-gray-400 flex items-center gap-2 uppercase tracking-widest">
-                                            <Briefcase size={12}/> Berdasarkan Jabatan
+                                            <Briefcase size={12}/> <span>Berdasarkan Jabatan</span>
                                         </label>
                                         <div className="flex flex-wrap gap-2">
                                             {appSettings.jobRoles.map(role => (
@@ -312,7 +317,7 @@ const AdminTasks: React.FC = () => {
                                                     onClick={() => toggleAssignment('role', role.id)}
                                                     className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${formData.assignedRoleIds?.includes(role.id) ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-100' : 'bg-white text-gray-500 border-gray-200 hover:border-indigo-400 hover:text-indigo-600'}`}
                                                 >
-                                                    {role.title}
+                                                    <span>{role.title}</span>
                                                 </button>
                                             ))}
                                         </div>
@@ -321,7 +326,7 @@ const AdminTasks: React.FC = () => {
                                     {/* By User */}
                                     <div className="space-y-3">
                                         <label className="text-[10px] font-black text-gray-400 flex items-center gap-2 uppercase tracking-widest">
-                                            <Users size={12}/> Karyawan Spesifik
+                                            <Users size={12}/> <span>Karyawan Spesifik</span>
                                         </label>
                                         <div className="flex flex-wrap gap-2">
                                             {users.filter(u => u.isActive).map(u => (
@@ -331,7 +336,7 @@ const AdminTasks: React.FC = () => {
                                                     onClick={() => toggleAssignment('user', u.id)}
                                                     className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${formData.assignedUserIds?.includes(u.id) ? 'bg-emerald-600 text-white border-emerald-600 shadow-lg shadow-emerald-100' : 'bg-white text-gray-500 border-gray-200 hover:border-emerald-400 hover:text-emerald-600'}`}
                                                 >
-                                                    {u.name}
+                                                    <span>{u.name}</span>
                                                 </button>
                                             ))}
                                         </div>
@@ -345,7 +350,7 @@ const AdminTasks: React.FC = () => {
                                     onClick={() => setIsModalOpen(false)}
                                     className="w-full sm:w-auto px-8 py-4 bg-gray-100 text-gray-500 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-gray-200 transition-all active:scale-95"
                                 >
-                                    Batal
+                                    <span>Batal</span>
                                 </button>
                                 <button 
                                     type="submit"
@@ -356,15 +361,15 @@ const AdminTasks: React.FC = () => {
                                     {isSubmitting ? (
                                         <>
                                             <RefreshCw size={14} className="animate-spin" />
-                                            Memproses...
+                                            <span>Memproses...</span>
                                         </>
                                     ) : (
-                                        editingTask ? 'Simpan Perubahan' : 'Buat Tugas'
+                                        <span>{editingTask ? 'Simpan Perubahan' : 'Buat Tugas'}</span>
                                     )}
                                 </button>
                             </div>
                         </motion.div>
-                    </div>
+                    </motion.div>
                 )}
             </AnimatePresence>
 

@@ -65,13 +65,11 @@ if (!rootElement) {
 
 const root = ReactDOM.createRoot(rootElement);
 root.render(
-  <React.StrictMode>
-    <ErrorBoundary>
-      <ToastProvider>
-        <StoreProvider>
-          <App />
-        </StoreProvider>
-      </ToastProvider>
-    </ErrorBoundary>
-  </React.StrictMode>
+  <ErrorBoundary>
+    <ToastProvider>
+      <StoreProvider>
+        <App />
+      </StoreProvider>
+    </ToastProvider>
+  </ErrorBoundary>
 );

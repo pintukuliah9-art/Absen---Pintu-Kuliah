@@ -200,7 +200,7 @@ const Requests: React.FC<RequestsProps> = ({ requests, leaveTypes, userQuota, on
                         exit={{ opacity: 0, height: 0 }}
                         className="space-y-1.5 md:space-y-2 overflow-hidden"
                     >
-                        <label className="block text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-wider">Kategori Cuti</label>
+                        <label className="block text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-wider"><span>Kategori Cuti</span></label>
                         <select 
                             value={selectedLeaveTypeId}
                             onChange={(e) => setSelectedLeaveTypeId(e.target.value)}
@@ -215,12 +215,12 @@ const Requests: React.FC<RequestsProps> = ({ requests, leaveTypes, userQuota, on
                         {selectedLeaveType && (
                             <div className="flex flex-col gap-1 mt-1">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-[9px] md:text-[10px] text-gray-500">Sisa Kuota Anda:</span>
-                                    <span className="text-[9px] md:text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">{userQuota} Hari</span>
+                                    <span className="text-[9px] md:text-[10px] text-gray-500"><span>Sisa Kuota Anda:</span></span>
+                                    <span className="text-[9px] md:text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full"><span>{userQuota} Hari</span></span>
                                 </div>
                                 {selectedLeaveType.requiresFile && (
                                     <div className="flex items-center gap-1.5 text-[8px] md:text-[9px] text-red-500 font-bold uppercase">
-                                        <AlertCircle size={10} /> Wajib lampiran bukti
+                                        <AlertCircle size={10} /> <span>Wajib lampiran bukti</span>
                                     </div>
                                 )}
                             </div>
@@ -291,10 +291,10 @@ const Requests: React.FC<RequestsProps> = ({ requests, leaveTypes, userQuota, on
                         >
                             <div className="flex justify-between items-start mb-0.5">
                             <span className="text-[8px] md:text-[10px] font-bold text-indigo-600 uppercase tracking-widest flex items-center gap-1">
-                                <Sparkles size={10} className="text-indigo-500" /> Saran AI
+                                <Sparkles size={10} className="text-indigo-500" /> <span>Saran AI</span>
                             </span>
                             </div>
-                            <p className="text-[11px] md:text-sm text-indigo-900 leading-relaxed italic">"{refinedReason}"</p>
+                            <p className="text-[11px] md:text-sm text-indigo-900 leading-relaxed italic"><span>"{refinedReason}"</span></p>
                         </motion.div>
                     )}
                 </AnimatePresence>
@@ -441,15 +441,15 @@ const Requests: React.FC<RequestsProps> = ({ requests, leaveTypes, userQuota, on
                                 </div>
                                 <div className="min-w-0 flex-1">
                                     <div className="flex items-center gap-1.5 flex-wrap">
-                                        <span className="text-[8px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest">{req.type}</span>
+                                        <span className="text-[8px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest"><span>{req.type}</span></span>
                                         {req.attachmentUrl && (
                                             <span className="bg-blue-50 text-blue-600 text-[7px] md:text-[9px] font-bold px-1 py-0.5 rounded flex items-center gap-0.5">
-                                                <Upload size={8} /> DOKUMEN
+                                                <Upload size={8} /> <span>DOKUMEN</span>
                                             </span>
                                         )}
                                     </div>
                                     <p className="text-[11px] md:text-sm text-gray-900 font-bold mt-0.5 truncate">
-                                        {new Date(req.startDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })} - {new Date(req.endDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                        <span>{new Date(req.startDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })} - {new Date(req.endDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                                     </p>
                                 </div>
                             </div>
@@ -457,12 +457,12 @@ const Requests: React.FC<RequestsProps> = ({ requests, leaveTypes, userQuota, on
                                 <div className="flex items-center gap-1.5">
                                     {req.syncStatus === 'pending' && (
                                         <span className="flex items-center gap-1 text-[7px] md:text-[9px] font-bold text-orange-500 bg-orange-50 px-1.5 py-0.5 rounded-full border border-orange-100 animate-pulse">
-                                            <RefreshCw size={8} className="animate-spin" /> PENDING
+                                            <RefreshCw size={8} className="animate-spin" /> <span>PENDING</span>
                                         </span>
                                     )}
                                     <span className={`flex items-center gap-1 px-2 py-0.5 md:px-3 md:py-1.5 rounded-full text-[8px] md:text-[10px] font-black uppercase border whitespace-nowrap ${getStatusColor(req.status)}`}>
                                         {getStatusIcon(req.status)}
-                                        {req.status}
+                                        <span>{req.status}</span>
                                     </span>
                                 </div>
                                 {req.status === RequestStatus.PENDING && onDelete && (
@@ -479,7 +479,7 @@ const Requests: React.FC<RequestsProps> = ({ requests, leaveTypes, userQuota, on
 
                         <div className="bg-gray-50/80 p-2.5 md:p-4 rounded-xl border border-gray-100 relative">
                             <p className="text-[10px] md:text-xs text-gray-700 leading-relaxed italic">
-                                "{req.aiEnhancedReason || req.reason}"
+                                <span>"{req.aiEnhancedReason || req.reason}"</span>
                             </p>
                         </div>
 
@@ -491,9 +491,9 @@ const Requests: React.FC<RequestsProps> = ({ requests, leaveTypes, userQuota, on
                                     rel="noreferrer" 
                                     className="text-[8px] md:text-[10px] text-blue-600 font-bold flex items-center gap-1 hover:underline bg-blue-50 px-2 py-1 rounded-lg active:scale-95"
                                 >
-                                    <FileText size={12} /> LIHAT LAMPIRAN
+                                    <FileText size={12} /> <span>LIHAT LAMPIRAN</span>
                                 </a>
-                                <span className="text-[8px] md:text-[10px] text-gray-400 font-medium whitespace-nowrap">ID: {(req.id || '').split('-')[1] || req.id}</span>
+                                <span className="text-[8px] md:text-[10px] text-gray-400 font-medium whitespace-nowrap"><span>ID: {(req.id || '').split('-')[1] || req.id}</span></span>
                             </div>
                         )}
                     </motion.div>

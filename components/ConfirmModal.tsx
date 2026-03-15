@@ -50,7 +50,12 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm"
+        >
           <motion.div 
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -68,9 +73,9 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
               {current.icon}
             </div>
 
-            <h3 className="text-xl font-black text-gray-900 text-center mb-2">{title}</h3>
+            <h3 className="text-xl font-black text-gray-900 text-center mb-2"><span>{title}</span></h3>
             <p className="text-gray-500 text-center mb-8 leading-relaxed text-sm font-medium px-4">
-              {message}
+              <span>{message}</span>
             </p>
 
             <div className="flex gap-3">
@@ -78,7 +83,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
                 onClick={onClose}
                 className="flex-1 py-3.5 text-sm font-black text-gray-500 hover:bg-gray-100 rounded-2xl transition-all active:scale-95"
               >
-                {cancelText}
+                <span>{cancelText}</span>
               </button>
               <button 
                 onClick={() => {
@@ -87,11 +92,11 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
                 }}
                 className={`flex-1 py-3.5 ${current.button} text-white text-sm font-black rounded-2xl shadow-lg transition-all active:scale-95`}
               >
-                {confirmText}
+                <span>{confirmText}</span>
               </button>
             </div>
           </motion.div>
-        </div>
+        </motion.div>
       )}
     </AnimatePresence>
   );

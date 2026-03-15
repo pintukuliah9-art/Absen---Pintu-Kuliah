@@ -14,8 +14,16 @@ const postData = async (action: string, payload: any = {}, retryCount = 0): Prom
         
         console.log(`[API] Calling action: ${action}${apiUrlToSend ? ` with URL: ${apiUrlToSend}` : ' using server default URL'}`);
         
-        // Gunakan relative URL agar lebih robust di lingkungan iframe/proxy
-        const fullUrl = '/api/proxy';
+        // Gunakan absolute URL agar lebih robust di lingkungan iframe/proxy
+        let origin = '';
+        if (typeof window !== 'undefined') {
+            origin = window.location.origin;
+            // Handle cases where origin might be 'null' in some iframe contexts
+            if (!origin || origin === 'null') {
+                origin = window.location.protocol + '//' + window.location.host;
+            }
+        }
+        const fullUrl = `${origin}/api/proxy`;
         
         console.log(`[API] Fetching from: ${fullUrl} for action: ${action} (Attempt: ${retryCount + 1})`);
         

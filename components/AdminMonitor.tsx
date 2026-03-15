@@ -2,6 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { AttendanceRecord, AttendanceStatus, User } from '../types';
 import { ChevronLeft, ChevronRight, Search, Calendar, Clock, MapPin, X, User as UserIcon, AlertCircle, CheckCircle, Navigation, Eye } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import ImageModal from './ImageModal';
 
 interface AdminMonitorProps {
@@ -254,40 +255,54 @@ const AdminMonitor: React.FC<AdminMonitorProps> = ({ history, users }) => {
 
 
         {/* Detail Modal */}
-        {selectedEmployee && (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4 overflow-hidden">
-                <div 
-                    onClick={() => setSelectedEmployee(null)}
-                    className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-                />
-                <div className="bg-white w-full h-full sm:h-auto sm:max-w-5xl sm:rounded-[40px] flex flex-col max-h-full sm:max-h-[90vh] relative z-10 shadow-2xl animate-in zoom-in-95 overflow-hidden">
-                    <div className="p-6 md:p-8 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 sticky top-0 z-20">
-                        <div className="flex items-center gap-4">
-                            <div className="relative">
-                                <img 
-                                    src={selectedEmployee.avatar} 
-                                    className="w-14 h-14 rounded-3xl border-2 border-white shadow-md object-cover" 
-                                    alt=""
-                                    referrerPolicy="no-referrer"
-                                    onError={(e) => {
-                                        (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedEmployee.name)}&background=random`;
-                                    }}
-                                />
-                                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-xl flex items-center justify-center shadow-sm border border-gray-100">
-                                    <div className={`w-3 h-3 rounded-full ${selectedEmployee.isActive ? 'bg-emerald-500' : 'bg-gray-300'}`} />
+        <AnimatePresence>
+            {selectedEmployee && (
+                <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4 overflow-hidden"
+                >
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setSelectedEmployee(null)}
+                        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                    />
+                    <motion.div 
+                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                        className="bg-white w-full h-full sm:h-auto sm:max-w-5xl sm:rounded-[40px] flex flex-col max-h-full sm:max-h-[90vh] relative z-10 shadow-2xl overflow-hidden"
+                    >
+                        <div className="p-6 md:p-8 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 sticky top-0 z-20">
+                            <div className="flex items-center gap-4">
+                                <div className="relative">
+                                    <img 
+                                        src={selectedEmployee.avatar} 
+                                        className="w-14 h-14 rounded-3xl border-2 border-white shadow-md object-cover" 
+                                        alt=""
+                                        referrerPolicy="no-referrer"
+                                        onError={(e) => {
+                                            (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedEmployee.name)}&background=random`;
+                                        }}
+                                    />
+                                    <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-xl flex items-center justify-center shadow-sm border border-gray-100">
+                                        <div className={`w-3 h-3 rounded-full ${selectedEmployee.isActive ? 'bg-emerald-500' : 'bg-gray-300'}`} />
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-black text-gray-900 tracking-tighter leading-none mb-1"><span>{selectedEmployee.name}</span></h3>
+                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                        <span>{selectedEmployee.position || 'Karyawan'}</span>
+                                    </p>
                                 </div>
                             </div>
-                            <div>
-                                <h3 className="text-xl font-black text-gray-900 tracking-tighter leading-none mb-1">{selectedEmployee.name}</h3>
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                                    {selectedEmployee.position || 'Karyawan'}
-                                </p>
-                            </div>
+                            <button onClick={() => setSelectedEmployee(null)} className="w-12 h-12 flex items-center justify-center bg-white rounded-2xl text-gray-400 hover:text-gray-900 transition-all shadow-sm border border-gray-100">
+                                <X size={24} />
+                            </button>
                         </div>
-                        <button onClick={() => setSelectedEmployee(null)} className="w-12 h-12 flex items-center justify-center bg-white rounded-2xl text-gray-400 hover:text-gray-900 transition-all shadow-sm border border-gray-100">
-                            <X size={24} />
-                        </button>
-                    </div>
 
                     <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-10">
                         <div className="flex items-center justify-center gap-4">
@@ -398,9 +413,10 @@ const AdminMonitor: React.FC<AdminMonitorProps> = ({ history, users }) => {
                             </div>
                         </section>
                     </div>
-                </div>
-            </div>
+                </motion.div>
+            </motion.div>
         )}
+    </AnimatePresence>
 
 
         <ImageModal 

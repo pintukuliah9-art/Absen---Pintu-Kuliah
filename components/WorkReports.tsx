@@ -267,7 +267,12 @@ const WorkReports: React.FC = () => {
             {/* Report Modal */}
             <AnimatePresence>
                 {isReporting && (
-                    <div className="fixed inset-0 z-[1000] flex items-end sm:items-center justify-center p-0 sm:p-6">
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[1000] flex items-end sm:items-center justify-center p-0 sm:p-6"
+                    >
                         <motion.div 
                             initial={{ opacity: 0 }} 
                             animate={{ opacity: 1 }} 
@@ -289,8 +294,8 @@ const WorkReports: React.FC = () => {
                                             <ClipboardList size={20} className="md:w-6 md:h-6" />
                                         </div>
                                         <div>
-                                            <h3 className="text-xl md:text-3xl font-black text-slate-900 tracking-tighter">Laporan Tugas</h3>
-                                            <p className="text-[8px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5 md:mt-1">Submit progres pekerjaan Anda</p>
+                                            <h3 className="text-xl md:text-3xl font-black text-slate-900 tracking-tighter"><span>Laporan Tugas</span></h3>
+                                            <p className="text-[8px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5 md:mt-1"><span>Submit progres pekerjaan Anda</span></p>
                                         </div>
                                     </div>
                                     <button 
@@ -301,9 +306,9 @@ const WorkReports: React.FC = () => {
                                     </button>
                                 </div>
                                 <div className="bg-white p-4 md:p-6 rounded-2xl md:rounded-[2rem] border border-slate-100 shadow-sm">
-                                    <p className="text-[8px] md:text-xs font-black text-blue-600 uppercase tracking-[0.2em] mb-1 md:mb-2">Tugas Terpilih:</p>
+                                    <p className="text-[8px] md:text-xs font-black text-blue-600 uppercase tracking-[0.2em] mb-1 md:mb-2"><span>Tugas Terpilih:</span></p>
                                     <p className="text-sm md:text-lg font-black text-slate-900 tracking-tight">
-                                        {tasks.find(t => t.id === isReporting)?.title}
+                                        <span>{tasks.find(t => t.id === isReporting)?.title}</span>
                                     </p>
                                 </div>
                             </div>
@@ -312,7 +317,7 @@ const WorkReports: React.FC = () => {
                             <div className="p-6 md:p-12 space-y-6 md:space-y-10 overflow-y-auto no-scrollbar flex-1">
                                 <div className="space-y-3 md:space-y-4">
                                     <label className="text-[8px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] flex items-center gap-2 md:gap-3">
-                                        <FileText size={12} className="text-blue-500" /> Catatan Pekerjaan
+                                        <FileText size={12} className="text-blue-500" /> <span>Catatan Pekerjaan</span>
                                     </label>
                                     <textarea 
                                         value={reportForm.notes}
@@ -324,7 +329,7 @@ const WorkReports: React.FC = () => {
 
                                 <div className="space-y-3 md:space-y-4">
                                     <label className="text-[8px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] flex items-center gap-2 md:gap-3">
-                                        <Camera size={12} className="text-purple-500" /> Bukti Dokumentasi
+                                        <Camera size={12} className="text-purple-500" /> <span>Bukti Dokumentasi</span>
                                     </label>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                                         <label className="cursor-pointer group">
@@ -382,21 +387,21 @@ const WorkReports: React.FC = () => {
 
                             {/* Modal Footer */}
                             <div className="p-6 md:p-12 bg-slate-50 flex flex-col sm:flex-row gap-3 md:gap-4 flex-shrink-0">
-                                <button 
+                                 <button 
                                     onClick={() => setIsReporting(null)}
                                     className="flex-1 px-6 md:px-10 py-4 md:py-6 bg-white border border-slate-100 text-slate-500 rounded-2xl md:rounded-[2rem] font-black text-[10px] md:text-xs uppercase tracking-[0.2em] md:tracking-[0.3em] hover:bg-slate-100 transition-all active:scale-95 shadow-sm"
                                 >
-                                    Batalkan
+                                    <span>Batalkan</span>
                                 </button>
                                 <button 
                                     onClick={() => handleSubmitReport(isReporting)}
                                     className="flex-[2] px-6 md:px-10 py-4 md:py-6 bg-blue-600 text-white rounded-2xl md:rounded-[2rem] font-black text-[10px] md:text-xs uppercase tracking-[0.2em] md:tracking-[0.3em] hover:bg-blue-700 transition-all active:scale-95 shadow-2xl shadow-blue-200 flex items-center justify-center gap-3 md:gap-4"
                                 >
-                                    <Send size={18} className="md:w-5 md:h-5" /> Kirim Laporan
+                                    <Send size={18} className="md:w-5 md:h-5" /> <span>Kirim Laporan</span>
                                 </button>
                             </div>
                         </motion.div>
-                    </div>
+                    </motion.div>
                 )}
             </AnimatePresence>
         </div>

@@ -203,7 +203,12 @@ const AdminWorkMonitor: React.FC = () => {
             {/* Detail Modal */}
             <AnimatePresence>
                 {selectedUser && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4 overflow-hidden">
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4 overflow-hidden"
+                    >
                         <motion.div 
                             initial={{ opacity: 0 }} 
                             animate={{ opacity: 1 }} 
@@ -226,10 +231,10 @@ const AdminWorkMonitor: React.FC = () => {
                                         onError={(e) => { (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedUser.name)}&background=random`; }}
                                     />
                                     <div>
-                                        <h3 className="text-xl md:text-2xl font-black text-gray-900 tracking-tighter leading-none mb-1">{selectedUser.name}</h3>
+                                        <h3 className="text-xl md:text-2xl font-black text-gray-900 tracking-tighter leading-none mb-1"><span>{selectedUser.name}</span></h3>
                                         <div className="flex items-center gap-2">
-                                            <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-100 uppercase tracking-widest">Laporan Kerja</span>
-                                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{selectedDate}</span>
+                                            <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-100 uppercase tracking-widest"><span>Laporan Kerja</span></span>
+                                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest"><span>{selectedDate}</span></span>
                                         </div>
                                     </div>
                                 </div>
@@ -317,7 +322,7 @@ const AdminWorkMonitor: React.FC = () => {
                                 )}
                             </div>
                         </motion.div>
-                    </div>
+                    </motion.div>
                 )}
             </AnimatePresence>
 

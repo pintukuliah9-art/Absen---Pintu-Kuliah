@@ -533,19 +533,19 @@ const Attendance: React.FC<AttendanceProps> = ({ user, settings, onCheckIn, onCh
            </div>
            
            <h2 className="text-xl md:text-4xl font-black text-slate-900 mb-1 md:mb-3 tracking-tighter">
-               {mode === 'IN' ? 'Check-In' : 'Check-Out'}
+               <span>{mode === 'IN' ? 'Check-In' : 'Check-Out'}</span>
            </h2>
-           <p className="text-slate-400 text-[8px] md:text-[10px] font-black uppercase tracking-[0.2em] mb-6 md:mb-10">Konfirmasi kehadiran harian</p>
+           <p className="text-slate-400 text-[8px] md:text-[10px] font-black uppercase tracking-[0.2em] mb-6 md:mb-10"><span>Konfirmasi kehadiran harian</span></p>
            
            {userShift ? (
                <div className="text-[10px] text-slate-500 mb-6 md:mb-10 bg-slate-50 p-4 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] border border-slate-100 text-left shadow-inner">
                    <div className="flex items-center justify-between mb-2 md:mb-4 pb-2 md:pb-4 border-b border-slate-200/50">
-                       <span className="text-slate-400 text-[8px] md:text-[10px] uppercase font-black tracking-widest flex items-center gap-2 md:gap-3"><Calendar size={10} className="text-blue-500 md:w-3.5 md:h-3.5"/> Jadwal</span>
-                       <span className="font-black text-slate-900 text-[9px] md:text-xs">{userShift.name}</span>
+                       <span className="text-slate-400 text-[8px] md:text-[10px] uppercase font-black tracking-widest flex items-center gap-2 md:gap-3"><Calendar size={10} className="text-blue-500 md:w-3.5 md:h-3.5"/> <span>Jadwal</span></span>
+                       <span className="font-black text-slate-900 text-[9px] md:text-xs"><span>{userShift.name}</span></span>
                    </div>
                    <div className="flex items-center justify-between mb-2 md:mb-4 pb-2 md:pb-4 border-b border-slate-200/50">
-                       <span className="text-slate-400 text-[8px] md:text-[10px] uppercase font-black tracking-widest flex items-center gap-2 md:gap-3"><Clock size={10} className="text-orange-500 md:w-3.5 md:h-3.5"/> Waktu</span>
-                       <span className="font-black text-slate-900 text-[9px] md:text-xs">{formatTimeDisplay(userShift.startTime)} - {formatTimeDisplay(userShift.endTime)}</span>
+                       <span className="text-slate-400 text-[8px] md:text-[10px] uppercase font-black tracking-widest flex items-center gap-2 md:gap-3"><Clock size={10} className="text-orange-500 md:w-3.5 md:h-3.5"/> <span>Waktu</span></span>
+                       <span className="font-black text-slate-900 text-[9px] md:text-xs"><span>{formatTimeDisplay(userShift.startTime)} - {formatTimeDisplay(userShift.endTime)}</span></span>
                    </div>
                    <div className="flex items-center justify-between">
                        <span className="text-slate-400 text-[8px] md:text-[10px] uppercase font-black tracking-widest flex items-center gap-2 md:gap-3"><Sparkles size={10} className="text-purple-500 md:w-3.5 md:h-3.5"/> Metode</span>
@@ -630,8 +630,8 @@ const Attendance: React.FC<AttendanceProps> = ({ user, settings, onCheckIn, onCh
                             </div>
                         </div>
                         <div className="text-center">
-                            <h4 className="text-[10px] font-black text-slate-900 uppercase tracking-[0.3em]">Sinkronisasi GPS</h4>
-                            <p className="text-[8px] font-bold text-slate-400 mt-1 uppercase tracking-widest">Mencari koordinat...</p>
+                            <h4 className="text-[10px] font-black text-slate-900 uppercase tracking-[0.3em]"><span>Sinkronisasi GPS</span></h4>
+                            <p className="text-[8px] font-bold text-slate-400 mt-1 uppercase tracking-widest"><span>Mencari koordinat...</span></p>
                         </div>
                     </div>
                 ) : (
@@ -859,8 +859,8 @@ const Attendance: React.FC<AttendanceProps> = ({ user, settings, onCheckIn, onCh
                             exit={{ opacity: 0, y: 20 }}
                             className="bg-black/60 backdrop-blur-xl text-white p-6 rounded-[2rem] border border-white/10 text-center shadow-2xl"
                         >
-                            <p className="text-[10px] font-black text-white/60 uppercase tracking-widest mb-2">Bersiap dalam</p>
-                            <span className="text-5xl font-black text-white tracking-tighter">{challengeCountdown}</span>
+                            <p className="text-[10px] font-black text-white/60 uppercase tracking-widest mb-2"><span>Bersiap dalam</span></p>
+                            <span className="text-5xl font-black text-white tracking-tighter"><span>{challengeCountdown}</span></span>
                         </motion.div>
                     ) : (
                         <motion.div 
@@ -869,9 +869,9 @@ const Attendance: React.FC<AttendanceProps> = ({ user, settings, onCheckIn, onCh
                             animate={{ opacity: 1, y: 0 }}
                             className="bg-blue-600/90 backdrop-blur-xl text-white p-6 rounded-[2rem] border border-blue-400/50 text-center shadow-2xl"
                         >
-                            <p className="text-[10px] font-black text-white/80 uppercase tracking-widest mb-2">Lakukan Gerakan:</p>
+                            <p className="text-[10px] font-black text-white/80 uppercase tracking-widest mb-2"><span>Lakukan Gerakan:</span></p>
                             <p className="text-xl md:text-2xl font-black text-white leading-tight">
-                                {livenessChallenge}
+                                <span>{livenessChallenge}</span>
                             </p>
                         </motion.div>
                     )}

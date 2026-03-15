@@ -518,10 +518,14 @@ const AdminEmployees: React.FC<AdminEmployeesProps> = ({ users, history, onAddUs
         </div>
 
 
-        {/* Enhanced User Modal */}
         <AnimatePresence>
             {isModalOpen && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-0 sm:p-4 overflow-hidden">
+                <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-0 sm:p-4 overflow-hidden"
+                >
                     <motion.div 
                         initial={{ opacity: 0, scale: 0.95, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -532,10 +536,10 @@ const AdminEmployees: React.FC<AdminEmployeesProps> = ({ users, history, onAddUs
                         <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-white sticky top-0 z-20">
                         <div>
                             <h3 className="text-xl font-black text-gray-900 tracking-tight">
-                                {editingUser ? 'Edit Karyawan' : 'Tambah Karyawan'}
+                                {editingUser ? <span>Edit Karyawan</span> : <span>Tambah Karyawan</span>}
                             </h3>
                             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">
-                                {editingUser ? `ID: ${editingUser.employeeId}` : 'Lengkapi data di bawah'}
+                                {editingUser ? <span>ID: {editingUser.employeeId}</span> : <span>Lengkapi data di bawah</span>}
                             </p>
                         </div>
                         <button 
@@ -600,15 +604,15 @@ const AdminEmployees: React.FC<AdminEmployeesProps> = ({ users, history, onAddUs
                                             <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handlePhotoUpload} />
                                         </div>
                                         <div className="text-center sm:text-left">
-                                            <p className="text-lg font-black text-gray-900 tracking-tight">Foto Profil</p>
-                                            <p className="text-xs font-bold text-gray-400 mb-4">Maksimal 2MB, format JPG/PNG.</p>
+                                            <p className="text-lg font-black text-gray-900 tracking-tight"><span>Foto Profil</span></p>
+                                            <p className="text-xs font-bold text-gray-400 mb-4"><span>Maksimal 2MB, format JPG/PNG.</span></p>
                                             <div className="flex flex-wrap justify-center sm:justify-start gap-2">
                                                 <button 
                                                     type="button"
                                                     onClick={() => fileInputRef.current?.click()}
                                                     className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-700 hover:bg-gray-50 transition-all"
                                                 >
-                                                    Ubah Foto
+                                                    <span>Ubah Foto</span>
                                                 </button>
                                                 {formData.avatar && !formData.avatar.includes('ui-avatars.com') && (
                                                     <button 
@@ -616,7 +620,7 @@ const AdminEmployees: React.FC<AdminEmployeesProps> = ({ users, history, onAddUs
                                                         onClick={handleRemovePhoto}
                                                         className="px-4 py-2 bg-red-50 text-red-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-100 transition-all"
                                                     >
-                                                        Hapus
+                                                        <span>Hapus</span>
                                                     </button>
                                                 )}
                                             </div>
@@ -626,7 +630,7 @@ const AdminEmployees: React.FC<AdminEmployeesProps> = ({ users, history, onAddUs
                                     {/* Personal Info */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div className="md:col-span-2">
-                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Nama Lengkap</label>
+                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2"><span>Nama Lengkap</span></label>
                                             <input 
                                                 type="text" 
                                                 required 
@@ -637,7 +641,7 @@ const AdminEmployees: React.FC<AdminEmployeesProps> = ({ users, history, onAddUs
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Email Perusahaan</label>
+                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2"><span>Email Perusahaan</span></label>
                                             <input 
                                                 type="email" 
                                                 required 
@@ -648,7 +652,7 @@ const AdminEmployees: React.FC<AdminEmployeesProps> = ({ users, history, onAddUs
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Nomor WhatsApp</label>
+                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2"><span>Nomor WhatsApp</span></label>
                                             <input 
                                                 type="text" 
                                                 value={formData.phone || ''} 
@@ -658,7 +662,7 @@ const AdminEmployees: React.FC<AdminEmployeesProps> = ({ users, history, onAddUs
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Tempat Lahir</label>
+                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2"><span>Tempat Lahir</span></label>
                                             <input 
                                                 type="text" 
                                                 value={formData.birthPlace || ''} 
@@ -667,7 +671,7 @@ const AdminEmployees: React.FC<AdminEmployeesProps> = ({ users, history, onAddUs
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Tanggal Lahir</label>
+                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2"><span>Tanggal Lahir</span></label>
                                             <input 
                                                 type="date" 
                                                 value={formData.birthDate || ''} 
@@ -676,7 +680,7 @@ const AdminEmployees: React.FC<AdminEmployeesProps> = ({ users, history, onAddUs
                                             />
                                         </div>
                                         <div className="md:col-span-2">
-                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Alamat Domisili</label>
+                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2"><span>Alamat Domisili</span></label>
                                             <textarea 
                                                 rows={3} 
                                                 value={formData.address || ''} 
@@ -698,7 +702,7 @@ const AdminEmployees: React.FC<AdminEmployeesProps> = ({ users, history, onAddUs
                                 >
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div>
-                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Struktur Jabatan</label>
+                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2"><span>Struktur Jabatan</span></label>
                                             <select 
                                                 value={formData.jobRoleId || ''} 
                                                 onChange={e => setFormData({...formData, jobRoleId: e.target.value})} 
@@ -711,7 +715,7 @@ const AdminEmployees: React.FC<AdminEmployeesProps> = ({ users, history, onAddUs
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Level Akses Sistem</label>
+                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2"><span>Level Akses Sistem</span></label>
                                             <select 
                                                 value={formData.role || 'employee'} 
                                                 onChange={e => setFormData({...formData, role: e.target.value as any})} 
@@ -725,7 +729,7 @@ const AdminEmployees: React.FC<AdminEmployeesProps> = ({ users, history, onAddUs
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Tanggal Bergabung</label>
+                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2"><span>Tanggal Bergabung</span></label>
                                             <input 
                                                 type="date" 
                                                 required 
@@ -735,7 +739,7 @@ const AdminEmployees: React.FC<AdminEmployeesProps> = ({ users, history, onAddUs
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Kuota Cuti (Hari/Tahun)</label>
+                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2"><span>Kuota Cuti (Hari/Tahun)</span></label>
                                             <input 
                                                 type="number" 
                                                 value={formData.leaveQuota || 0} 
@@ -748,20 +752,20 @@ const AdminEmployees: React.FC<AdminEmployeesProps> = ({ users, history, onAddUs
                                     {/* Jobdesk Preview */}
                                     <div className="bg-blue-50 p-6 rounded-3xl border border-blue-100">
                                         <h4 className="text-xs font-black text-blue-600 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                            <FileText size={16}/> Tanggung Jawab Inti
+                                            <FileText size={16}/> <span>Tanggung Jawab Inti</span>
                                         </h4>
                                         {formData.jobRoleId ? (
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                                 {jobRoles.find(j => j.id === formData.jobRoleId)?.coreResponsibilities.map((resp, i) => (
                                                     <div key={i} className="flex items-start gap-2 bg-white/50 p-3 rounded-xl border border-blue-100/50">
                                                         <Check size={14} className="text-blue-500 mt-0.5 flex-shrink-0" />
-                                                        <span className="text-xs font-bold text-blue-900 leading-relaxed">{resp}</span>
+                                                        <span className="text-xs font-bold text-blue-900 leading-relaxed"><span>{resp}</span></span>
                                                     </div>
                                                 ))}
                                             </div>
                                         ) : (
                                             <div className="text-center py-4">
-                                                <p className="text-xs font-bold text-blue-400 italic">Pilih jabatan untuk melihat daftar tanggung jawab otomatis.</p>
+                                                <p className="text-xs font-bold text-blue-400 italic"><span>Pilih jabatan untuk melihat daftar tanggung jawab otomatis.</span></p>
                                             </div>
                                         )}
                                     </div>
@@ -780,16 +784,16 @@ const AdminEmployees: React.FC<AdminEmployeesProps> = ({ users, history, onAddUs
                                             <ShieldAlert size={20} />
                                         </div>
                                         <div>
-                                            <p className="text-sm font-black text-amber-900 tracking-tight">Kredensial Akses</p>
+                                            <p className="text-sm font-black text-amber-900 tracking-tight"><span>Kredensial Akses</span></p>
                                             <p className="text-xs font-bold text-amber-700/70 leading-relaxed">
-                                                Data ini digunakan untuk masuk ke sistem. Pastikan Username dan ID Karyawan unik dan mudah diingat oleh karyawan.
+                                                <span>Data ini digunakan untuk masuk ke sistem. Pastikan Username dan ID Karyawan unik dan mudah diingat oleh karyawan.</span>
                                             </p>
                                         </div>
                                     </div>
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div>
-                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Username Login</label>
+                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2"><span>Username Login</span></label>
                                             <div className="relative">
                                                 <input 
                                                     type="text" 
@@ -803,7 +807,7 @@ const AdminEmployees: React.FC<AdminEmployeesProps> = ({ users, history, onAddUs
                                             </div>
                                         </div>
                                         <div>
-                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">ID Karyawan (NIK)</label>
+                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2"><span>ID Karyawan (NIK)</span></label>
                                             <div className="relative">
                                                 <input 
                                                     type="text" 
@@ -832,9 +836,9 @@ const AdminEmployees: React.FC<AdminEmployeesProps> = ({ users, history, onAddUs
                                             <FileText size={20} />
                                         </div>
                                         <div>
-                                            <p className="text-sm font-black text-gray-900 tracking-tight">Dokumen Legalitas</p>
+                                            <p className="text-sm font-black text-gray-900 tracking-tight"><span>Dokumen Legalitas</span></p>
                                             <p className="text-xs font-bold text-gray-400 leading-relaxed">
-                                                Unggah scan dokumen asli untuk keperluan administrasi. Format yang didukung: PDF, JPG, PNG (Maks. 2MB).
+                                                <span>Unggah scan dokumen asli untuk keperluan administrasi. Format yang didukung: PDF, JPG, PNG (Maks. 2MB).</span>
                                             </p>
                                         </div>
                                     </div>
@@ -855,18 +859,18 @@ const AdminEmployees: React.FC<AdminEmployeesProps> = ({ users, history, onAddUs
                             onClick={() => setIsModalOpen(false)} 
                             className="w-full sm:w-auto px-8 py-3.5 text-gray-500 font-black uppercase tracking-widest text-[10px] hover:bg-gray-50 rounded-2xl transition-all"
                         >
-                            Batal
+                            <span>Batal</span>
                         </button>
                         <button 
                             type="submit"
                             form="userForm"
                             className="w-full sm:w-auto px-10 py-3.5 bg-blue-600 text-white font-black uppercase tracking-widest text-[10px] rounded-2xl hover:bg-blue-700 shadow-xl shadow-blue-200 transition-all active:scale-95"
                         >
-                            Simpan Data
+                            <span>Simpan Data</span>
                         </button>
                     </div>
                 </motion.div>
-            </div>
+            </motion.div>
         )}
     </AnimatePresence>
 

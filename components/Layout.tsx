@@ -197,16 +197,16 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, user
         <div className={`px-6 py-2 ${isSidebarMinimized ? 'px-4 flex justify-center' : ''}`}>
             {state.isLoading ? (
                 <div className="flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400">
-                    <RefreshCw size={12} className="animate-spin" /> {!isSidebarMinimized && 'Sinkronisasi Data...'}
+                    <RefreshCw size={12} className="animate-spin" /> {!isSidebarMinimized && <span>Sinkronisasi Data...</span>}
                 </div>
             ) : state.syncError ? (
                 <div className="flex items-center gap-2 text-xs text-red-500 font-bold" title={state.syncError}>
-                    <AlertCircle size={12} /> {!isSidebarMinimized && 'Error Koneksi'}
+                    <AlertCircle size={12} /> {!isSidebarMinimized && <span>Error Koneksi</span>}
                 </div>
             ) : (
                 <div className={`flex ${isSidebarMinimized ? 'justify-center' : 'flex-col gap-0.5'}`}>
                     <div className="flex items-center gap-2 text-xs text-green-600 dark:text-green-400 font-medium">
-                        <RefreshCw size={12} /> {!isSidebarMinimized && 'Terhubung'}
+                        <RefreshCw size={12} /> {!isSidebarMinimized && <span>Terhubung</span>}
                     </div>
                     {!isSidebarMinimized && <span className="text-[10px] text-gray-400 pl-5">Auto-sync aktif</span>}
                 </div>
@@ -324,15 +324,18 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, user
       {/* Mobile Drawer Menu */}
       <AnimatePresence>
         {isMobileMenuOpen && (
-          <>
             <motion.div 
+              key="mobile-menu-overlay"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsMobileMenuOpen(false)}
               className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] md:hidden"
             />
+        )}
+        {isMobileMenuOpen && (
             <motion.div 
+              key="mobile-menu-content"
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
@@ -393,7 +396,6 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, user
                   </button>
               </div>
             </motion.div>
-          </>
         )}
       </AnimatePresence>
 
